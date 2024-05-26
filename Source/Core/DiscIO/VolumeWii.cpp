@@ -92,7 +92,7 @@ VolumeWii::VolumeWii(std::unique_ptr<BlobReader> reader)
         {
           // This check is normally done by ES in ES_DiVerify, but that would happen too late
           // (after allocating the buffer), so we do the check here.
-          PanicAlert("Invalid TMD size");
+          PanicAlertFmt("Invalid TMD size");
           return INVALID_TMD;
         }
         std::vector<u8> tmd_buffer(*tmd_size);
@@ -171,11 +171,9 @@ bool VolumeWii::Read(u64 offset, u64 length, u8* buffer, const Partition& partit
     return false;
   const PartitionDetails& partition_details = it->second;
 
-  if (m_reader->SupportsReadWiiDecrypted())
-  {
-    return m_reader->ReadWiiDecrypted(offset, length, buffer,
-                                      partition.offset + *partition_details.data_offset);
-  }
+  const u64 partition_data_offset = partition.offset + *partition_details.data_offset;
+  if (m_reader->SupportsReadWiiDecrypted(offset, length, partition_data_offset))
+    return m_reader->ReadWiiDecrypted(offset, length, buffer, partition_data_offset);
 
   if (!m_encrypted)
   {
@@ -362,6 +360,33 @@ u64 VolumeWii::GetRawSize() const
 const BlobReader& VolumeWii::GetBlobReader() const
 {
   return *m_reader;
+}
+
+std::array<u8, 20> VolumeWii::GetSyncHash() const
+{
+  mbedtls_sha1_context context;
+  mbedtls_sha1_init(&context);
+  mbedtls_sha1_starts_ret(&context);
+
+  // Disc header
+  ReadAndAddToSyncHash(&context, 0, 0x80, PARTITION_NONE);
+
+  // Region code
+  ReadAndAddToSyncHash(&context, 0x4E000, 4, PARTITION_NONE);
+
+  // The data offset of the game partition - an important factor for disc drive timings
+  const u64 data_offset = PartitionOffsetToRawOffset(0, GetGamePartition());
+  mbedtls_sha1_update_ret(&context, reinterpret_cast<const u8*>(&data_offset), sizeof(data_offset));
+
+  // TMD
+  AddTMDToSyncHash(&context, GetGamePartition());
+
+  // Game partition contents
+  AddGamePartitionToSyncHash(&context);
+
+  std::array<u8, 20> hash;
+  mbedtls_sha1_finish_ret(&context, hash.data());
+  return hash;
 }
 
 bool VolumeWii::CheckH3TableIntegrity(const Partition& partition) const

@@ -13,6 +13,7 @@ namespace OGL
 {
 class VideoBackend : public VideoBackendBase
 {
+public:
   bool Initialize(const WindowSystemInfo& wsi) override;
   void Shutdown() override;
 
@@ -21,7 +22,8 @@ class VideoBackend : public VideoBackendBase
 
   void InitBackendInfo() override;
 
-public:
+  static constexpr const char* NAME = "OGL";
+
   bool InitializeGLExtensions(GLContext* context);
   bool FillBackendInfo();
 };

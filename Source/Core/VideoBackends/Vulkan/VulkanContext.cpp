@@ -85,7 +85,7 @@ bool VulkanContext::CheckValidationLayerAvailablility()
                          return strcmp(it.extensionName, VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0;
                        }) != extension_list.end() &&
           std::find_if(layer_list.begin(), layer_list.end(), [](const auto& it) {
-            return strcmp(it.layerName, "VK_LAYER_LUNARG_standard_validation") == 0;
+            return strcmp(it.layerName, "VK_LAYER_KHRONOS_validation") == 0;
           }) != layer_list.end());
 }
 
@@ -131,7 +131,7 @@ VkInstance VulkanContext::CreateVulkanInstance(WindowSystemType wstype, bool ena
   // Enable debug layer on debug builds
   if (enable_validation_layer)
   {
-    static const char* layer_names[] = {"VK_LAYER_LUNARG_standard_validation"};
+    static const char* layer_names[] = {"VK_LAYER_KHRONOS_validation"};
     instance_create_info.enabledLayerCount = 1;
     instance_create_info.ppEnabledLayerNames = layer_names;
   }
@@ -160,7 +160,7 @@ bool VulkanContext::SelectInstanceExtensions(std::vector<const char*>* extension
 
   if (extension_count == 0)
   {
-    ERROR_LOG(VIDEO, "Vulkan: No extensions supported by instance.");
+    ERROR_LOG_FMT(VIDEO, "Vulkan: No extensions supported by instance.");
     return false;
   }
 
@@ -170,7 +170,7 @@ bool VulkanContext::SelectInstanceExtensions(std::vector<const char*>* extension
   ASSERT(res == VK_SUCCESS);
 
   for (const auto& extension_properties : available_extension_list)
-    INFO_LOG(VIDEO, "Available extension: %s", extension_properties.extensionName);
+    INFO_LOG_FMT(VIDEO, "Available extension: {}", extension_properties.extensionName);
 
   auto AddExtension = [&](const char* name, bool required) {
     if (std::find_if(available_extension_list.begin(), available_extension_list.end(),
@@ -178,13 +178,13 @@ bool VulkanContext::SelectInstanceExtensions(std::vector<const char*>* extension
                        return !strcmp(name, properties.extensionName);
                      }) != available_extension_list.end())
     {
-      INFO_LOG(VIDEO, "Enabling extension: %s", name);
+      INFO_LOG_FMT(VIDEO, "Enabling extension: {}", name);
       extension_list->push_back(name);
       return true;
     }
 
     if (required)
-      ERROR_LOG(VIDEO, "Vulkan: Missing required extension %s.", name);
+      ERROR_LOG_FMT(VIDEO, "Vulkan: Missing required extension {}.", name);
 
     return false;
   };
@@ -224,7 +224,7 @@ bool VulkanContext::SelectInstanceExtensions(std::vector<const char*>* extension
 
   // VK_EXT_debug_report
   if (enable_debug_report && !AddExtension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, false))
-    WARN_LOG(VIDEO, "Vulkan: Debug report requested, but extension is not available.");
+    WARN_LOG_FMT(VIDEO, "Vulkan: Debug report requested, but extension is not available.");
 
   AddExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, false);
   AddExtension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, false);
@@ -435,7 +435,7 @@ bool VulkanContext::SelectDeviceExtensions(bool enable_surface)
 
   if (extension_count == 0)
   {
-    ERROR_LOG(VIDEO, "Vulkan: No extensions supported by device.");
+    ERROR_LOG_FMT(VIDEO, "Vulkan: No extensions supported by device.");
     return false;
   }
 
@@ -445,7 +445,7 @@ bool VulkanContext::SelectDeviceExtensions(bool enable_surface)
   ASSERT(res == VK_SUCCESS);
 
   for (const auto& extension_properties : available_extension_list)
-    INFO_LOG(VIDEO, "Available extension: %s", extension_properties.extensionName);
+    INFO_LOG_FMT(VIDEO, "Available extension: {}", extension_properties.extensionName);
 
   auto AddExtension = [&](const char* name, bool required) {
     if (std::find_if(available_extension_list.begin(), available_extension_list.end(),
@@ -453,13 +453,13 @@ bool VulkanContext::SelectDeviceExtensions(bool enable_surface)
                        return !strcmp(name, properties.extensionName);
                      }) != available_extension_list.end())
     {
-      INFO_LOG(VIDEO, "Enabling extension: %s", name);
+      INFO_LOG_FMT(VIDEO, "Enabling extension: {}", name);
       m_device_extensions.push_back(name);
       return true;
     }
 
     if (required)
-      ERROR_LOG(VIDEO, "Vulkan: Missing required extension %s.", name);
+      ERROR_LOG_FMT(VIDEO, "Vulkan: Missing required extension {}.", name);
 
     return false;
   };
@@ -470,7 +470,7 @@ bool VulkanContext::SelectDeviceExtensions(bool enable_surface)
 #ifdef SUPPORTS_VULKAN_EXCLUSIVE_FULLSCREEN
   // VK_EXT_full_screen_exclusive
   if (AddExtension(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME, true))
-    INFO_LOG(VIDEO, "Using VK_EXT_full_screen_exclusive for exclusive fullscreen.");
+    INFO_LOG_FMT(VIDEO, "Using VK_EXT_full_screen_exclusive for exclusive fullscreen.");
 #endif
 
   return true;
@@ -486,12 +486,14 @@ bool VulkanContext::SelectDeviceFeatures()
 
   // Not having geometry shaders or wide lines will cause issues with rendering.
   if (!available_features.geometryShader && !available_features.wideLines)
-    WARN_LOG(VIDEO, "Vulkan: Missing both geometryShader and wideLines features.");
+    WARN_LOG_FMT(VIDEO, "Vulkan: Missing both geometryShader and wideLines features.");
   if (!available_features.largePoints)
-    WARN_LOG(VIDEO, "Vulkan: Missing large points feature. CPU EFB writes will be slower.");
+    WARN_LOG_FMT(VIDEO, "Vulkan: Missing large points feature. CPU EFB writes will be slower.");
   if (!available_features.occlusionQueryPrecise)
-    WARN_LOG(VIDEO, "Vulkan: Missing precise occlusion queries. Perf queries will be inaccurate.");
-
+  {
+    WARN_LOG_FMT(VIDEO,
+                 "Vulkan: Missing precise occlusion queries. Perf queries will be inaccurate.");
+  }
   // Enable the features we use.
   m_device_features.dualSrcBlend = available_features.dualSrcBlend;
   m_device_features.geometryShader = available_features.geometryShader;
@@ -517,14 +519,14 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
   vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count, nullptr);
   if (queue_family_count == 0)
   {
-    ERROR_LOG(VIDEO, "No queue families found on specified vulkan physical device.");
+    ERROR_LOG_FMT(VIDEO, "No queue families found on specified vulkan physical device.");
     return false;
   }
 
   std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_count);
   vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count,
                                            queue_family_properties.data());
-  INFO_LOG(VIDEO, "%u vulkan queue families", queue_family_count);
+  INFO_LOG_FMT(VIDEO, "{} vulkan queue families", queue_family_count);
 
   // Find graphics and present queues.
   m_graphics_queue_family_index = queue_family_count;
@@ -567,12 +569,12 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
   }
   if (m_graphics_queue_family_index == queue_family_count)
   {
-    ERROR_LOG(VIDEO, "Vulkan: Failed to find an acceptable graphics queue.");
+    ERROR_LOG_FMT(VIDEO, "Vulkan: Failed to find an acceptable graphics queue.");
     return false;
   }
   if (m_surface && m_present_queue_family_index == queue_family_count)
   {
-    ERROR_LOG(VIDEO, "Vulkan: Failed to find an acceptable present queue.");
+    ERROR_LOG_FMT(VIDEO, "Vulkan: Failed to find an acceptable present queue.");
     return false;
   }
 
@@ -664,16 +666,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT 
                                                           const char* pLayerPrefix,
                                                           const char* pMessage, void* pUserData)
 {
-  std::string log_message =
-      StringFromFormat("Vulkan debug report: (%s) %s", pLayerPrefix ? pLayerPrefix : "", pMessage);
+  const std::string log_message =
+      fmt::format("Vulkan debug report: ({}) {}", pLayerPrefix ? pLayerPrefix : "", pMessage);
   if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-    GENERIC_LOG(Common::Log::HOST_GPU, Common::Log::LERROR, "%s", log_message.c_str());
+    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LERROR, "{}", log_message);
   else if (flags & (VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
-    GENERIC_LOG(Common::Log::HOST_GPU, Common::Log::LWARNING, "%s", log_message.c_str());
+    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LWARNING, "{}", log_message);
   else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
-    GENERIC_LOG(Common::Log::HOST_GPU, Common::Log::LINFO, "%s", log_message.c_str());
+    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LINFO, "{}", log_message);
   else
-    GENERIC_LOG(Common::Log::HOST_GPU, Common::Log::LDEBUG, "%s", log_message.c_str());
+    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LDEBUG, "{}", log_message);
 
   return VK_FALSE;
 }
@@ -761,13 +763,13 @@ u32 VulkanContext::GetUploadMemoryType(u32 bits, bool* is_coherent)
   type_index = GetMemoryType(bits, COHERENT_FLAGS, false, is_coherent);
   if (type_index)
   {
-    WARN_LOG(VIDEO,
-             "Strict check for upload memory properties failed, this may affect performance");
+    WARN_LOG_FMT(VIDEO,
+                 "Strict check for upload memory properties failed, this may affect performance");
     return type_index.value();
   }
 
   // Fall back to non-coherent memory.
-  WARN_LOG(
+  WARN_LOG_FMT(
       VIDEO,
       "Vulkan: Failed to find a coherent memory type for uploads, this will affect performance.");
   type_index = GetMemoryType(bits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, false, is_coherent);
@@ -775,7 +777,7 @@ u32 VulkanContext::GetUploadMemoryType(u32 bits, bool* is_coherent)
     return type_index.value();
 
   // Shouldn't happen, there should be at least one host-visible heap.
-  PanicAlert("Unable to get memory type for upload.");
+  PanicAlertFmt("Unable to get memory type for upload.");
   return 0;
 }
 
@@ -809,15 +811,15 @@ u32 VulkanContext::GetReadbackMemoryType(u32 bits, bool* is_coherent)
   if (type_index)
     return type_index.value();
 
-  WARN_LOG(VIDEO, "Vulkan: Failed to find a cached memory type for readbacks, this will affect "
-                  "performance.");
+  WARN_LOG_FMT(VIDEO, "Vulkan: Failed to find a cached memory type for readbacks, this will affect "
+                      "performance.");
   type_index = GetMemoryType(bits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, false, is_coherent);
   *is_coherent = false;
   if (type_index)
     return type_index.value();
 
   // We should have at least one host visible memory type...
-  PanicAlert("Unable to get memory type for upload.");
+  PanicAlertFmt("Unable to get memory type for upload.");
   return 0;
 }
 
@@ -900,8 +902,8 @@ void VulkanContext::InitDriverDetails()
   }
   else
   {
-    WARN_LOG(VIDEO, "Unknown Vulkan driver vendor, please report it to us.");
-    WARN_LOG(VIDEO, "Vendor ID: 0x%X, Device Name: %s", vendor_id, device_name.c_str());
+    WARN_LOG_FMT(VIDEO, "Unknown Vulkan driver vendor, please report it to us.");
+    WARN_LOG_FMT(VIDEO, "Vendor ID: {:#X}, Device Name: {}", vendor_id, device_name);
     vendor = DriverDetails::VENDOR_UNKNOWN;
     driver = DriverDetails::DRIVER_UNKNOWN;
   }

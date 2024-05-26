@@ -27,11 +27,9 @@
 
 namespace DX11
 {
-static bool s_create_device = false;
-
 std::string VideoBackend::GetName() const
 {
-  return "D3D";
+  return NAME;
 }
 
 std::string VideoBackend::GetDisplayName() const
@@ -136,27 +134,22 @@ void VideoBackend::FillBackendInfo()
 
 bool VideoBackend::Initialize(const WindowSystemInfo& wsi)
 {
-  if (!g_renderer)
+  if (!D3D::Create(g_Config.iAdapter, g_Config.bEnableValidationLayer))
+    return false;
+
+  FillBackendInfo();
+  InitializeShared();
+
+  std::unique_ptr<SwapChain> swap_chain;
+  if (wsi.render_surface && !(swap_chain = SwapChain::Create(wsi)))
   {
-    if (!D3D::Create(g_Config.iAdapter, g_Config.bEnableValidationLayer))
-      return false;
-
-    s_create_device = true;
-    FillBackendInfo();
-    InitializeShared();
-
-    std::unique_ptr<SwapChain> swap_chain;
-    if (wsi.render_surface && !(swap_chain = SwapChain::Create(wsi)))
-    {
-      PanicAlertT("Failed to create D3D swap chain");
-      ShutdownShared();
-      D3D::Destroy();
-      return false;
-    }
-
-    g_renderer = std::make_unique<Renderer>(std::move(swap_chain), wsi.render_surface_scale);
+    PanicAlertFmtT("Failed to create D3D swap chain");
+    ShutdownShared();
+    D3D::Destroy();
+    return false;
   }
 
+  g_renderer = std::make_unique<Renderer>(std::move(swap_chain), wsi.render_surface_scale);
   g_vertex_manager = std::make_unique<VertexManager>();
   g_shader_cache = std::make_unique<VideoCommon::ShaderCache>();
   g_framebuffer_manager = std::make_unique<FramebufferManager>();
@@ -190,7 +183,6 @@ void VideoBackend::Shutdown()
   g_renderer.reset();
 
   ShutdownShared();
-  if (s_create_device)
-    D3D::Destroy();
+  D3D::Destroy();
 }
 }  // namespace DX11

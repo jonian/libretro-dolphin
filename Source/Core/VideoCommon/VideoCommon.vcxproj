@@ -15,6 +15,16 @@
     <Import Project="$(VSPropsDir)PCHUse.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>HAS_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>HAS_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AbstractFramebuffer.cpp" />
     <ClCompile Include="AbstractStagingTexture.cpp" />
@@ -38,7 +48,6 @@
     <ClCompile Include="FreeLookCamera.cpp" />
     <ClCompile Include="HiresTextures.cpp" />
     <ClCompile Include="HiresTextures_DDSLoader.cpp" />
-    <ClCompile Include="ImageWrite.cpp" />
     <ClCompile Include="IndexGenerator.cpp" />
     <ClCompile Include="NetPlayChatUI.cpp" />
     <ClCompile Include="NetPlayGolfUI.cpp" />
@@ -122,7 +131,6 @@
     <ClInclude Include="UberShaderCommon.h" />
     <ClInclude Include="UberShaderPixel.h" />
     <ClInclude Include="HiresTextures.h" />
-    <ClInclude Include="ImageWrite.h" />
     <ClInclude Include="IndexGenerator.h" />
     <ClInclude Include="LightingShaderGen.h" />
     <ClInclude Include="LookUpTables.h" />

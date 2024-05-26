@@ -112,12 +112,9 @@ void EmuThread(WindowSystemInfo wsi);
 // [NOT THREADSAFE] For use by Host only
 void SetState(State state);
 State GetState();
-void WaitUntilDoneBooting();
 
 void SaveScreenShot();
 void SaveScreenShot(std::string_view name);
-
-void Callback_WiimoteInterruptChannel(int number, u16 channel_id, const u8* data, u32 size);
 
 // This displays messages in a user-visible way.
 void DisplayMessage(std::string message, int time_in_ms);

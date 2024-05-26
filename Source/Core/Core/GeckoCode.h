@@ -16,7 +16,7 @@ namespace Gecko
 class GeckoCode
 {
 public:
-  GeckoCode() : enabled(false) {}
+  GeckoCode() = default;
   struct Code
   {
     u32 address = 0;

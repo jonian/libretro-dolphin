@@ -40,6 +40,7 @@
     <ClCompile Include="CoreTiming.cpp" />
     <ClCompile Include="Debugger\Debugger_SymbolMap.cpp" />
     <ClCompile Include="Debugger\Dump.cpp" />
+    <ClCompile Include="Debugger\OSThread.cpp" />
     <ClCompile Include="Debugger\PPCDebugInterface.cpp" />
     <ClCompile Include="Debugger\RSO.cpp" />
     <ClCompile Include="DSPEmulator.cpp" />
@@ -370,6 +371,7 @@
     <ClCompile Include="PowerPC\SignatureDB\SignatureDB.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="SysConf.cpp" />
+    <ClCompile Include="System.cpp" />
     <ClCompile Include="TitleDatabase.cpp" />
     <ClCompile Include="WiiRoot.cpp" />
     <ClCompile Include="WiiUtils.cpp" />
@@ -400,6 +402,7 @@
     <ClInclude Include="Debugger\Debugger_SymbolMap.h" />
     <ClInclude Include="Debugger\Dump.h" />
     <ClInclude Include="Debugger\GCELF.h" />
+    <ClInclude Include="Debugger\OSThread.h" />
     <ClInclude Include="Debugger\PPCDebugInterface.h" />
     <ClInclude Include="Debugger\RSO.h" />
     <ClInclude Include="DSPEmulator.h" />
@@ -674,7 +677,9 @@
     <ClInclude Include="PowerPC\PPCTables.h" />
     <ClInclude Include="PowerPC\Profiler.h" />
     <ClInclude Include="State.h" />
+    <ClInclude Include="SyncIdentifier.h" />
     <ClInclude Include="SysConf.h" />
+    <ClInclude Include="System.h" />
     <ClInclude Include="Titles.h" />
     <ClInclude Include="TitleDatabase.h" />
     <ClInclude Include="WiiRoot.h" />

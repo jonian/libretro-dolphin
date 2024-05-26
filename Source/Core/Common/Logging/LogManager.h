@@ -39,10 +39,7 @@ public:
   static void Init();
   static void Shutdown();
 
-  void Log(LOG_LEVELS level, LOG_TYPE type, const char* file, int line, const char* fmt,
-           va_list args);
-  void LogWithFullPath(LOG_LEVELS level, LOG_TYPE type, const char* file, int line, const char* fmt,
-                       va_list args);
+  void Log(LOG_LEVELS level, LOG_TYPE type, const char* file, int line, const char* message);
 
   LOG_LEVELS GetLogLevel() const;
   void SetLogLevel(LOG_LEVELS level);
@@ -76,6 +73,9 @@ private:
   LogManager& operator=(const LogManager&) = delete;
   LogManager(LogManager&&) = delete;
   LogManager& operator=(LogManager&&) = delete;
+
+  void LogWithFullPath(LOG_LEVELS level, LOG_TYPE type, const char* file, int line,
+                       const char* message);
 
   LOG_LEVELS m_level;
   std::array<LogContainer, NUMBER_OF_LOGS> m_log{};

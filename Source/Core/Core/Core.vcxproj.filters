@@ -187,6 +187,7 @@
     <ClCompile Include="PatchEngine.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="SysConf.cpp" />
+    <ClCompile Include="System.cpp" />
     <ClCompile Include="TitleDatabase.cpp" />
     <ClCompile Include="WiiRoot.cpp" />
     <ClCompile Include="WiiUtils.cpp" />
@@ -215,6 +216,9 @@
       <Filter>Debugger</Filter>
     </ClCompile>
     <ClCompile Include="Debugger\Dump.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="Debugger\OSThread.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
     <ClCompile Include="Debugger\PPCDebugInterface.cpp">
@@ -1019,6 +1023,7 @@
     <ClInclude Include="PatchEngine.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="SysConf.h" />
+    <ClInclude Include="System.h" />
     <ClInclude Include="Titles.h" />
     <ClInclude Include="TitleDatabase.h" />
     <ClInclude Include="WiiRoot.h" />
@@ -1048,6 +1053,9 @@
       <Filter>Debugger</Filter>
     </ClInclude>
     <ClInclude Include="Debugger\GCELF.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="Debugger\OSThread.h">
       <Filter>Debugger</Filter>
     </ClInclude>
     <ClInclude Include="Debugger\PPCDebugInterface.h">
@@ -1758,6 +1766,7 @@
     <ClInclude Include="HW\EXI\BBA\TAP_Win32.h">
       <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface\BBA</Filter>
     </ClInclude>
+    <ClInclude Include="SyncIdentifier.h" />
     <ClInclude Include="CheatCodes.h" />
   </ItemGroup>
   <ItemGroup>
