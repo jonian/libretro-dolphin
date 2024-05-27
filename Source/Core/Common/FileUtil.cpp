@@ -62,9 +62,7 @@
 // REMEMBER: strdup considered harmful!
 namespace File
 {
-#ifdef ANDROID
-static std::string s_android_sys_directory;
-#endif
+static std::string s_sys_directory;
 
 #ifdef _WIN32
 FileInfo::FileInfo(const std::string& path)
@@ -797,29 +795,31 @@ std::string GetSysDirectory()
 #endif
 #endif
 
+if (s_sys_directory.empty()) {
 #if defined(__APPLE__)
   sysDir = GetBundleDirectory() + DIR_SEP + SYSDATA_DIR;
 #elif defined(_WIN32) || defined(LINUX_LOCAL_DEV)
   sysDir = GetExeDirectory() + DIR_SEP + SYSDATA_DIR;
 #elif defined ANDROID
-  sysDir = s_android_sys_directory;
+  sysDir = s_sys_directory;
   ASSERT_MSG(COMMON, !sysDir.empty(), "Sys directory has not been set");
 #else
   sysDir = SYSDATA_DIR;
 #endif
   sysDir += DIR_SEP;
+} else {
+  sysDir = s_sys_directory;
+}
 
   INFO_LOG_FMT(COMMON, "GetSysDirectory: Setting to {}:", sysDir);
   return sysDir;
 }
 
-#ifdef ANDROID
 void SetSysDirectory(const std::string& path)
 {
   INFO_LOG_FMT(COMMON, "Setting Sys directory to {}", path);
-  s_android_sys_directory = path;
+  s_sys_directory = path + DIR_SEP;
 }
-#endif
 
 static std::string s_user_paths[NUM_PATH_INDICES];
 static void RebuildUserDirectories(unsigned int dir_index)
