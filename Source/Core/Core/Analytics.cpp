@@ -295,6 +295,12 @@ void DolphinAnalytics::MakeBaseBuilder()
   builder.AddData("os-type", "linux");
 #elif defined(__FreeBSD__)
   builder.AddData("os-type", "freebsd");
+#elif defined(__OpenBSD__)
+  builder.AddData("os-type", "openbsd");
+#elif defined(__NetBSD__)
+  builder.AddData("os-type", "netbsd");
+#elif defined(__HAIKU__)
+  builder.AddData("os-type", "haiku");
 #else
   builder.AddData("os-type", "unknown");
 #endif
