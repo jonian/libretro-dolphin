@@ -285,9 +285,14 @@ std::shared_ptr<FS::FileSystem> Kernel::GetFS()
   return m_fs;
 }
 
-std::shared_ptr<Device::ES> Kernel::GetES()
+std::shared_ptr<FSDevice> Kernel::GetFSDevice()
 {
-  return std::static_pointer_cast<Device::ES>(m_device_map.at("/dev/es"));
+  return std::static_pointer_cast<FSDevice>(m_device_map.at("/dev/fs"));
+}
+
+std::shared_ptr<ESDevice> Kernel::GetES()
+{
+  return std::static_pointer_cast<ESDevice>(m_device_map.at("/dev/es"));
 }
 
 // Since we don't have actual processes, we keep track of only the PPC's UID/GID.
@@ -406,9 +411,9 @@ bool Kernel::BootIOS(const u64 ios_title_id, const std::string& boot_content_pat
   return true;
 }
 
-void Kernel::AddDevice(std::unique_ptr<Device::Device> device)
+void Kernel::AddDevice(std::unique_ptr<Device> device)
 {
-  ASSERT(device->GetDeviceType() == Device::Device::DeviceType::Static);
+  ASSERT(device->GetDeviceType() == Device::DeviceType::Static);
   m_device_map.insert_or_assign(device->GetDeviceName(), std::move(device));
 }
 
@@ -418,9 +423,9 @@ void Kernel::AddCoreDevices()
   ASSERT(m_fs);
 
   std::lock_guard lock(m_device_map_mutex);
-  AddDevice(std::make_unique<Device::FS>(*this, "/dev/fs"));
-  AddDevice(std::make_unique<Device::ES>(*this, "/dev/es"));
-  AddDevice(std::make_unique<Device::DolphinDevice>(*this, "/dev/dolphin"));
+  AddDevice(std::make_unique<FSDevice>(*this, "/dev/fs"));
+  AddDevice(std::make_unique<ESDevice>(*this, "/dev/es"));
+  AddDevice(std::make_unique<DolphinDevice>(*this, "/dev/dolphin"));
 }
 
 void Kernel::AddStaticDevices()
@@ -430,49 +435,49 @@ void Kernel::AddStaticDevices()
   const Feature features = GetFeatures(GetVersion());
 
   // OH1 (Bluetooth)
-  AddDevice(std::make_unique<Device::Stub>(*this, "/dev/usb/oh1"));
+  AddDevice(std::make_unique<DeviceStub>(*this, "/dev/usb/oh1"));
   if (!SConfig::GetInstance().m_bt_passthrough_enabled)
-    AddDevice(std::make_unique<Device::BluetoothEmu>(*this, "/dev/usb/oh1/57e/305"));
+    AddDevice(std::make_unique<BluetoothEmuDevice>(*this, "/dev/usb/oh1/57e/305"));
   else
-    AddDevice(std::make_unique<Device::BluetoothReal>(*this, "/dev/usb/oh1/57e/305"));
+    AddDevice(std::make_unique<BluetoothRealDevice>(*this, "/dev/usb/oh1/57e/305"));
 
   // Other core modules
-  AddDevice(std::make_unique<Device::STMImmediate>(*this, "/dev/stm/immediate"));
-  AddDevice(std::make_unique<Device::STMEventHook>(*this, "/dev/stm/eventhook"));
-  AddDevice(std::make_unique<Device::DI>(*this, "/dev/di"));
-  AddDevice(std::make_unique<Device::SDIOSlot0>(*this, "/dev/sdio/slot0"));
-  AddDevice(std::make_unique<Device::Stub>(*this, "/dev/sdio/slot1"));
+  AddDevice(std::make_unique<STMImmediateDevice>(*this, "/dev/stm/immediate"));
+  AddDevice(std::make_unique<STMEventHookDevice>(*this, "/dev/stm/eventhook"));
+  AddDevice(std::make_unique<DIDevice>(*this, "/dev/di"));
+  AddDevice(std::make_unique<SDIOSlot0Device>(*this, "/dev/sdio/slot0"));
+  AddDevice(std::make_unique<DeviceStub>(*this, "/dev/sdio/slot1"));
 
   // Network modules
   if (HasFeature(features, Feature::KD))
   {
-    AddDevice(std::make_unique<Device::NetKDRequest>(*this, "/dev/net/kd/request"));
-    AddDevice(std::make_unique<Device::NetKDTime>(*this, "/dev/net/kd/time"));
+    AddDevice(std::make_unique<NetKDRequestDevice>(*this, "/dev/net/kd/request"));
+    AddDevice(std::make_unique<NetKDTimeDevice>(*this, "/dev/net/kd/time"));
   }
   if (HasFeature(features, Feature::NCD))
   {
-    AddDevice(std::make_unique<Device::NetNCDManage>(*this, "/dev/net/ncd/manage"));
+    AddDevice(std::make_unique<NetNCDManageDevice>(*this, "/dev/net/ncd/manage"));
   }
   if (HasFeature(features, Feature::WiFi))
   {
-    AddDevice(std::make_unique<Device::NetWDCommand>(*this, "/dev/net/wd/command"));
+    AddDevice(std::make_unique<NetWDCommandDevice>(*this, "/dev/net/wd/command"));
   }
   if (HasFeature(features, Feature::SO))
   {
-    AddDevice(std::make_unique<Device::NetIPTop>(*this, "/dev/net/ip/top"));
+    AddDevice(std::make_unique<NetIPTopDevice>(*this, "/dev/net/ip/top"));
   }
   if (HasFeature(features, Feature::SSL))
   {
-    AddDevice(std::make_unique<Device::NetSSL>(*this, "/dev/net/ssl"));
+    AddDevice(std::make_unique<NetSSLDevice>(*this, "/dev/net/ssl"));
   }
 
   // USB modules
   // OH0 is unconditionally added because this device path is registered in all cases.
-  AddDevice(std::make_unique<Device::OH0>(*this, "/dev/usb/oh0"));
+  AddDevice(std::make_unique<OH0>(*this, "/dev/usb/oh0"));
   if (HasFeature(features, Feature::NewUSB))
   {
-    AddDevice(std::make_unique<Device::USB_HIDv5>(*this, "/dev/usb/hid"));
-    AddDevice(std::make_unique<Device::USB_VEN>(*this, "/dev/usb/ven"));
+    AddDevice(std::make_unique<USB_HIDv5>(*this, "/dev/usb/hid"));
+    AddDevice(std::make_unique<USB_VEN>(*this, "/dev/usb/ven"));
 
     // TODO(IOS): register /dev/usb/usb, /dev/usb/msc, /dev/usb/hub and /dev/usb/ehc
     //            as stubs that return IPC_EACCES.
@@ -480,15 +485,15 @@ void Kernel::AddStaticDevices()
   else
   {
     if (HasFeature(features, Feature::USB_HIDv4))
-      AddDevice(std::make_unique<Device::USB_HIDv4>(*this, "/dev/usb/hid"));
+      AddDevice(std::make_unique<USB_HIDv4>(*this, "/dev/usb/hid"));
     if (HasFeature(features, Feature::USB_KBD))
-      AddDevice(std::make_unique<Device::USB_KBD>(*this, "/dev/usb/kbd"));
+      AddDevice(std::make_unique<USB_KBD>(*this, "/dev/usb/kbd"));
   }
 
   if (HasFeature(features, Feature::WFS))
   {
-    AddDevice(std::make_unique<Device::WFSSRV>(*this, "/dev/usb/wfssrv"));
-    AddDevice(std::make_unique<Device::WFSI>(*this, "/dev/wfsi"));
+    AddDevice(std::make_unique<WFSSRVDevice>(*this, "/dev/usb/wfssrv"));
+    AddDevice(std::make_unique<WFSIDevice>(*this, "/dev/wfsi"));
   }
 }
 
@@ -505,35 +510,35 @@ s32 Kernel::GetFreeDeviceID()
   return -1;
 }
 
-std::shared_ptr<Device::Device> Kernel::GetDeviceByName(std::string_view device_name)
+std::shared_ptr<Device> Kernel::GetDeviceByName(std::string_view device_name)
 {
   std::lock_guard lock(m_device_map_mutex);
   const auto iterator = m_device_map.find(device_name);
   return iterator != m_device_map.end() ? iterator->second : nullptr;
 }
 
-std::shared_ptr<Device::Device> EmulationKernel::GetDeviceByName(std::string_view device_name)
+std::shared_ptr<Device> EmulationKernel::GetDeviceByName(std::string_view device_name)
 {
   return Kernel::GetDeviceByName(device_name);
 }
 
 // Returns the FD for the newly opened device (on success) or an error code.
-IPCCommandResult Kernel::OpenDevice(OpenRequest& request)
+std::optional<IPCReply> Kernel::OpenDevice(OpenRequest& request)
 {
   const s32 new_fd = GetFreeDeviceID();
   INFO_LOG_FMT(IOS, "Opening {} (mode {}, fd {})", request.path, request.flags, new_fd);
   if (new_fd < 0 || new_fd >= IPC_MAX_FDS)
   {
     ERROR_LOG_FMT(IOS, "Couldn't get a free fd, too many open files");
-    return IPCCommandResult{IPC_EMAX, true, 5000 * SystemTimers::TIMER_RATIO};
+    return IPCReply{IPC_EMAX, 5000_tbticks};
   }
   request.fd = new_fd;
 
-  std::shared_ptr<Device::Device> device;
+  std::shared_ptr<Device> device;
   if (request.path.find("/dev/usb/oh0/") == 0 && !GetDeviceByName(request.path) &&
       !HasFeature(GetVersion(), Feature::NewUSB))
   {
-    device = std::make_shared<Device::OH0Device>(*this, request.path);
+    device = std::make_shared<OH0Device>(*this, request.path);
   }
   else if (request.path.find("/dev/") == 0)
   {
@@ -547,22 +552,22 @@ IPCCommandResult Kernel::OpenDevice(OpenRequest& request)
   if (!device)
   {
     ERROR_LOG_FMT(IOS, "Unknown device: {}", request.path);
-    return {IPC_ENOENT, true, 3700 * SystemTimers::TIMER_RATIO};
+    return IPCReply{IPC_ENOENT, 3700_tbticks};
   }
 
-  IPCCommandResult result = device->Open(request);
-  if (result.return_value >= IPC_SUCCESS)
+  std::optional<IPCReply> result = device->Open(request);
+  if (result && result->return_value >= IPC_SUCCESS)
   {
     m_fdmap[new_fd] = device;
-    result.return_value = new_fd;
+    result->return_value = new_fd;
   }
   return result;
 }
 
-IPCCommandResult Kernel::HandleIPCCommand(const Request& request)
+std::optional<IPCReply> Kernel::HandleIPCCommand(const Request& request)
 {
   if (request.command < IPC_CMD_OPEN || request.command > IPC_CMD_IOCTLV)
-    return IPCCommandResult{IPC_EINVAL, true, 978 * SystemTimers::TIMER_RATIO};
+    return IPCReply{IPC_EINVAL, 978_tbticks};
 
   if (request.command == IPC_CMD_OPEN)
   {
@@ -572,9 +577,9 @@ IPCCommandResult Kernel::HandleIPCCommand(const Request& request)
 
   const auto device = (request.fd < IPC_MAX_FDS) ? m_fdmap[request.fd] : nullptr;
   if (!device)
-    return IPCCommandResult{IPC_EINVAL, true, 550 * SystemTimers::TIMER_RATIO};
+    return IPCReply{IPC_EINVAL, 550_tbticks};
 
-  IPCCommandResult ret;
+  std::optional<IPCReply> ret;
   const u64 wall_time_before = Common::Timer::GetTimeUs();
 
   switch (request.command)
@@ -600,7 +605,7 @@ IPCCommandResult Kernel::HandleIPCCommand(const Request& request)
     break;
   default:
     ASSERT_MSG(IOS, false, "Unexpected command: %x", request.command);
-    ret = IPCCommandResult{IPC_EINVAL, true, 978 * SystemTimers::TIMER_RATIO};
+    ret = IPCReply{IPC_EINVAL, 978_tbticks};
     break;
   }
 
@@ -618,18 +623,18 @@ IPCCommandResult Kernel::HandleIPCCommand(const Request& request)
 void Kernel::ExecuteIPCCommand(const u32 address)
 {
   Request request{address};
-  IPCCommandResult result = HandleIPCCommand(request);
+  std::optional<IPCReply> result = HandleIPCCommand(request);
 
-  if (!result.send_reply)
+  if (!result)
     return;
 
   // Ensure replies happen in order
   const s64 ticks_until_last_reply = m_last_reply_time - CoreTiming::GetTicks();
   if (ticks_until_last_reply > 0)
-    result.reply_delay_ticks += ticks_until_last_reply;
-  m_last_reply_time = CoreTiming::GetTicks() + result.reply_delay_ticks;
+    result->reply_delay_ticks += ticks_until_last_reply;
+  m_last_reply_time = CoreTiming::GetTicks() + result->reply_delay_ticks;
 
-  EnqueueIPCReply(request, result.return_value, static_cast<int>(result.reply_delay_ticks));
+  EnqueueIPCReply(request, result->return_value, result->reply_delay_ticks);
 }
 
 // Happens AS SOON AS IPC gets a new pointer!
@@ -638,12 +643,11 @@ void Kernel::EnqueueIPCRequest(u32 address)
   // Based on hardware tests, IOS takes between 5µs and 10µs to acknowledge an IPC request.
   // Console 1: 456 TB ticks before ACK
   // Console 2: 658 TB ticks before ACK
-  CoreTiming::ScheduleEvent(500 * SystemTimers::TIMER_RATIO, s_event_enqueue,
-                            address | ENQUEUE_REQUEST_FLAG);
+  CoreTiming::ScheduleEvent(500_tbticks, s_event_enqueue, address | ENQUEUE_REQUEST_FLAG);
 }
 
 // Called to send a reply to an IOS syscall
-void Kernel::EnqueueIPCReply(const Request& request, const s32 return_value, int cycles_in_future,
+void Kernel::EnqueueIPCReply(const Request& request, const s32 return_value, s64 cycles_in_future,
                              CoreTiming::FromThread from)
 {
   Memory::Write_U32(static_cast<u32>(return_value), request.address + 4);
@@ -746,14 +750,6 @@ void Kernel::DoState(PointerWrap& p)
   if (m_title_id == Titles::MIOS)
     return;
 
-  // We need to make sure all file handles are closed so IOS::HLE::Device::FS::DoState can
-  // successfully save or re-create /tmp
-  for (auto& descriptor : m_fdmap)
-  {
-    if (descriptor)
-      descriptor->PrepareForState(p.GetMode());
-  }
-
   for (const auto& entry : m_device_map)
     entry.second->DoState(p);
 
@@ -765,19 +761,19 @@ void Kernel::DoState(PointerWrap& p)
       p.Do(exists);
       if (exists)
       {
-        auto device_type = Device::Device::DeviceType::Static;
+        auto device_type = Device::DeviceType::Static;
         p.Do(device_type);
         switch (device_type)
         {
-        case Device::Device::DeviceType::Static:
+        case Device::DeviceType::Static:
         {
           std::string device_name;
           p.Do(device_name);
           m_fdmap[i] = GetDeviceByName(device_name);
           break;
         }
-        case Device::Device::DeviceType::OH0:
-          m_fdmap[i] = std::make_shared<Device::OH0Device>(*this, "");
+        case Device::DeviceType::OH0:
+          m_fdmap[i] = std::make_shared<OH0Device>(*this, "");
           m_fdmap[i]->DoState(p);
           break;
         }
@@ -825,13 +821,13 @@ void Init()
       return;
 
     auto sdio_slot0 = s_ios->GetDeviceByName("/dev/sdio/slot0");
-    auto device = static_cast<Device::SDIOSlot0*>(sdio_slot0.get());
+    auto device = static_cast<SDIOSlot0Device*>(sdio_slot0.get());
     if (device)
       device->EventNotify();
   });
 
-  Device::DI::s_finish_executing_di_command =
-      CoreTiming::RegisterEvent("FinishDICommand", Device::DI::FinishDICommandCallback);
+  DIDevice::s_finish_executing_di_command =
+      CoreTiming::RegisterEvent("FinishDICommand", DIDevice::FinishDICommandCallback);
 
   // Start with IOS80 to simulate part of the Wii boot process.
   s_ios = std::make_unique<EmulationKernel>(Titles::SYSTEM_MENU_IOS);
@@ -851,5 +847,21 @@ void Shutdown()
 EmulationKernel* GetIOS()
 {
   return s_ios.get();
+}
+
+// Based on a hardware test, a device takes at least ~2700 ticks to reply to an IPC request.
+// Depending on how much work a command performs, this can take much longer (10000+)
+// especially if the NAND filesystem is accessed.
+//
+// Because we currently don't emulate timing very accurately, we should not return
+// the minimum possible reply time (~960 ticks from the kernel or ~2700 from devices)
+// but an average value, otherwise we are going to be much too fast in most cases.
+IPCReply::IPCReply(s32 return_value_) : IPCReply(return_value_, 4000_tbticks)
+{
+}
+
+IPCReply::IPCReply(s32 return_value_, u64 reply_delay_ticks_)
+    : return_value(return_value_), reply_delay_ticks(reply_delay_ticks_)
+{
 }
 }  // namespace IOS::HLE

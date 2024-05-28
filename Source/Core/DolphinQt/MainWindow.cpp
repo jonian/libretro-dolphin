@@ -419,11 +419,12 @@ void MainWindow::CreateComponents()
   };
   const auto request_view_in_memory = [this](u32 addr) { m_memory_widget->SetAddress(addr); };
   const auto request_view_in_code = [this](u32 addr) {
-    m_code_widget->SetAddress(addr, CodeViewWidget::SetAddressUpdate::WithUpdate);
+    m_code_widget->SetAddress(addr, CodeViewWidget::SetAddressUpdate::WithDetailedUpdate);
   };
 
   connect(m_watch_widget, &WatchWidget::RequestMemoryBreakpoint, request_memory_breakpoint);
   connect(m_register_widget, &RegisterWidget::RequestMemoryBreakpoint, request_memory_breakpoint);
+  connect(m_register_widget, &RegisterWidget::RequestWatch, request_watch);
   connect(m_register_widget, &RegisterWidget::RequestViewInMemory, request_view_in_memory);
   connect(m_register_widget, &RegisterWidget::RequestViewInCode, request_view_in_code);
   connect(m_thread_widget, &ThreadWidget::RequestBreakpoint, request_breakpoint);
@@ -439,8 +440,9 @@ void MainWindow::CreateComponents()
   connect(m_memory_widget, &MemoryWidget::BreakpointsChanged, m_breakpoint_widget,
           &BreakpointWidget::Update);
   connect(m_memory_widget, &MemoryWidget::ShowCode, m_code_widget, [this](u32 address) {
-    m_code_widget->SetAddress(address, CodeViewWidget::SetAddressUpdate::WithUpdate);
+    m_code_widget->SetAddress(address, CodeViewWidget::SetAddressUpdate::WithDetailedUpdate);
   });
+  connect(m_memory_widget, &MemoryWidget::RequestWatch, request_watch);
 
   connect(m_breakpoint_widget, &BreakpointWidget::BreakpointsChanged, m_code_widget,
           &CodeWidget::Update);
@@ -448,7 +450,7 @@ void MainWindow::CreateComponents()
           &MemoryWidget::Update);
   connect(m_breakpoint_widget, &BreakpointWidget::SelectedBreakpoint, [this](u32 address) {
     if (Core::GetState() == Core::State::Paused)
-      m_code_widget->SetAddress(address, CodeViewWidget::SetAddressUpdate::WithUpdate);
+      m_code_widget->SetAddress(address, CodeViewWidget::SetAddressUpdate::WithDetailedUpdate);
   });
 }
 
@@ -1732,7 +1734,7 @@ void MainWindow::OnConnectWiiRemote(int id)
   if (!ios || SConfig::GetInstance().m_bt_passthrough_enabled)
     return;
   Core::RunAsCPUThread([&] {
-    if (const auto bt = std::static_pointer_cast<IOS::HLE::Device::BluetoothEmu>(
+    if (const auto bt = std::static_pointer_cast<IOS::HLE::BluetoothEmuDevice>(
             ios->GetDeviceByName("/dev/usb/oh1/57e/305")))
     {
       const auto wm = bt->AccessWiimoteByIndex(id);

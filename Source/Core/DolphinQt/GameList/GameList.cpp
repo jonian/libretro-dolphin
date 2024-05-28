@@ -318,14 +318,13 @@ void GameList::ShowContextMenu(const QPoint&)
   {
     const auto game = GetSelectedGame();
     DiscIO::Platform platform = game->GetPlatform();
-
+    menu->addAction(tr("&Properties"), this, &GameList::OpenProperties);
     if (platform != DiscIO::Platform::ELFOrDOL)
     {
-      menu->addAction(tr("&Properties"), this, &GameList::OpenProperties);
       menu->addAction(tr("&Wiki"), this, &GameList::OpenWiki);
-
-      menu->addSeparator();
     }
+
+    menu->addSeparator();
 
     if (DiscIO::IsDisc(platform))
     {
@@ -503,7 +502,8 @@ void GameList::OpenWiki()
     return;
 
   QString game_id = QString::fromStdString(game->GetGameID());
-  QString url = QStringLiteral("https://wiki.dolphin-emu.org/index.php?title=").append(game_id);
+  QString url =
+      QStringLiteral("https://wiki.dolphin-emu.org/dolphin-redirect.php?gameid=").append(game_id);
   QDesktopServices::openUrl(QUrl(url));
 }
 
