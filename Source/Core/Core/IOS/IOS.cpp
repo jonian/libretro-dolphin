@@ -1,6 +1,5 @@
 // Copyright 2017 Dolphin Emulator Project
-// Licensed under GPLv2+
-// Refer to the license.txt file included.
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Core/IOS/IOS.h"
 
@@ -256,8 +255,11 @@ Kernel::Kernel()
   // Until the Wii root and NAND path stuff is entirely managed by IOS and made non-static,
   // using more than one IOS instance at a time is not supported.
   ASSERT(GetIOS() == nullptr);
-  Core::InitializeWiiRoot(false);
-  m_is_responsible_for_nand_root = true;
+
+  m_is_responsible_for_nand_root = !Core::WiiRootIsInitialized();
+  if (m_is_responsible_for_nand_root)
+    Core::InitializeWiiRoot(false);
+
   AddCoreDevices();
 }
 
