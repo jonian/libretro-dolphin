@@ -462,6 +462,9 @@ void EmuThread(WindowSystemInfo wsi)
   Movie::Init(*boot);
   Common::ScopeGuard movie_guard{&Movie::Shutdown};
 
+  AudioCommon::InitSoundStream();
+  Common::ScopeGuard audio_guard{&AudioCommon::ShutdownSoundStream};
+
   HW::Init();
 
   Common::ScopeGuard hw_guard{[] {
@@ -571,8 +574,7 @@ void EmuThread(WindowSystemInfo wsi)
     g_controller_interface.Shutdown();
   }};
 
-  AudioCommon::InitSoundStream();
-  Common::ScopeGuard audio_guard{&AudioCommon::ShutdownSoundStream};
+  AudioCommon::PostInitSoundStream();
 
   // The hardware is initialized.
   s_hardware_initialized = true;
