@@ -556,15 +556,6 @@ void EmuThread(WindowSystemInfo wsi)
       NetPlay::SetupWiimotes();
   }
 
-  if (init_controllers)
-  {
-    FreeLook::Initialize();
-  }
-  else
-  {
-    FreeLook::LoadInputConfig();
-  }
-
   Common::ScopeGuard controller_guard{[init_controllers, init_wiimotes] {
     if (!init_controllers)
       return;
@@ -574,8 +565,6 @@ void EmuThread(WindowSystemInfo wsi)
       Wiimote::ResetAllWiimotes();
       Wiimote::Shutdown();
     }
-
-    FreeLook::Shutdown();
 
     ResetRumble();
 
