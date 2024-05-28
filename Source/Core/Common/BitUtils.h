@@ -362,44 +362,56 @@ T ExpandValue(T value, size_t left_shift_amount)
          (T(-ExtractBit<0>(value)) >> (BitSize<T>() - left_shift_amount));
 }
 
-constexpr int CountLeadingZeros(uint64_t value)
+template <typename T>
+constexpr int CountLeadingZerosConst(T value)
 {
-#if defined(__GNUC__)
-  return __builtin_clzll(value);
-#elif defined(_MSC_VER) && defined(_M_ARM_64)
-  return _CountLeadingZeros64(value);
-#elif defined(_MSC_VER) && defined(_M_X86_64)
-  unsigned long index;
-  return _BitScanReverse64(&index, value) ? 63 - index : 64;
-#else
-  int result = 64;
+  int result = sizeof(T) * 8;
   while (value)
   {
     result--;
     value >>= 1;
   }
   return result;
+}
+
+constexpr int CountLeadingZeros(uint64_t value)
+{
+#if defined(__GNUC__)
+  return value ? __builtin_clzll(value) : 64;
+#elif defined(_MSC_VER)
+  if (std::is_constant_evaluated())
+  {
+    return CountLeadingZerosConst(value);
+  }
+  else
+  {
+    unsigned long index = 0;
+    return _BitScanReverse64(&index, value) ? 63 - index : 64;
+  }
+#else
+  return CountLeadingZerosConst(value);
 #endif
 }
 
 constexpr int CountLeadingZeros(uint32_t value)
 {
 #if defined(__GNUC__)
-  return __builtin_clz(value);
-#elif defined(_MSC_VER) && defined(_M_ARM_64)
-  return _CountLeadingZeros(value);
-#elif defined(_MSC_VER) && defined(_M_X86_64)
-  unsigned long index;
-  return _BitScanReverse(&index, value) ? 31 - index : 32;
-#else
-  int result = 32;
-  while (value)
+  return value ? __builtin_clz(value) : 32;
+#elif defined(_MSC_VER)
+  if (std::is_constant_evaluated())
   {
-    result--;
-    value >>= 1;
+    return CountLeadingZerosConst(value);
   }
-  return result;
+  else
+  {
+    unsigned long index = 0;
+    return _BitScanReverse(&index, value) ? 31 - index : 32;
+  }
+#else
+  return CountLeadingZerosConst(value);
 #endif
 }
+
+#undef CONSTEXPR_FROM_INTRINSIC
 
 }  // namespace Common

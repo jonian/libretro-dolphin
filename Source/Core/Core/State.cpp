@@ -17,8 +17,8 @@
 #include "Common/ChunkFile.h"
 #include "Common/CommonTypes.h"
 #include "Common/Event.h"
-#include "Common/File.h"
 #include "Common/FileUtil.h"
+#include "Common/IOFile.h"
 #include "Common/MsgHandler.h"
 #include "Common/ScopeGuard.h"
 #include "Common/Thread.h"
@@ -74,7 +74,7 @@ static Common::Event g_compressAndDumpStateSyncEvent;
 static std::thread g_save_thread;
 
 // Don't forget to increase this after doing changes on the savestate system
-constexpr u32 STATE_VERSION = 126;  // Last changed in PR 9348
+constexpr u32 STATE_VERSION = 128;  // Last changed in PR 9366
 
 // Maps savestate versions to Dolphin versions.
 // Versions after 42 don't need to be added to this list,
@@ -99,11 +99,11 @@ enum
   STATE_LOAD = 2,
 };
 
-static bool g_use_compression = true;
+static bool s_use_compression = true;
 
 void EnableCompression(bool compression)
 {
-  g_use_compression = compression;
+  s_use_compression = compression;
 }
 
 // Returns true if state version matches current Dolphin state version, false otherwise.
@@ -358,7 +358,7 @@ static void CompressAndDumpState(CompressAndDumpState_args save_args)
   // Setting up the header
   StateHeader header{};
   SConfig::GetInstance().GetGameID().copy(header.gameID, std::size(header.gameID));
-  header.size = g_use_compression ? (u32)buffer_size : 0;
+  header.size = s_use_compression ? (u32)buffer_size : 0;
   header.time = Common::Timer::GetDoubleTime();
 
   f.WriteArray(&header, 1);
@@ -455,14 +455,7 @@ bool ReadHeader(const std::string& filename, StateHeader& header)
 {
   Flush();
   File::IOFile f(filename, "rb");
-  if (!f)
-  {
-    Core::DisplayMessage("State not found", 2000);
-    return false;
-  }
-
-  f.ReadArray(&header, 1);
-  return true;
+  return f.ReadArray(&header, 1);
 }
 
 std::string GetInfoStringOfSlot(int slot, bool translate)
@@ -493,14 +486,13 @@ static void LoadFileStateData(const std::string& filename, std::vector<u8>& ret_
 {
   Flush();
   File::IOFile f(filename, "rb");
-  if (!f)
+
+  StateHeader header;
+  if (!f.ReadArray(&header, 1))
   {
     Core::DisplayMessage("State not found", 2000);
     return;
   }
-
-  StateHeader header;
-  f.ReadArray(&header, 1);
 
   if (strncmp(SConfig::GetInstance().GetGameID().c_str(), header.gameID, 6))
   {

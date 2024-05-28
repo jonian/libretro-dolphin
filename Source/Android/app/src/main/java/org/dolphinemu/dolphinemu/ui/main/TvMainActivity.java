@@ -168,26 +168,24 @@ public final class TvMainActivity extends FragmentActivity implements MainView
   @Override
   public void launchFileListActivity()
   {
-    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-    startActivityForResult(intent, MainPresenter.REQUEST_DIRECTORY);
+    if (DirectoryInitialization.preferOldFolderPicker(this))
+    {
+      FileBrowserHelper.openDirectoryPicker(this, FileBrowserHelper.GAME_EXTENSIONS);
+    }
+    else
+    {
+      Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+      startActivityForResult(intent, MainPresenter.REQUEST_DIRECTORY);
+    }
   }
 
   @Override
-  public void launchOpenFileActivity()
+  public void launchOpenFileActivity(int requestCode)
   {
     Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
     intent.addCategory(Intent.CATEGORY_OPENABLE);
     intent.setType("*/*");
-    startActivityForResult(intent, MainPresenter.REQUEST_GAME_FILE);
-  }
-
-  @Override
-  public void launchInstallWAD()
-  {
-    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-    intent.addCategory(Intent.CATEGORY_OPENABLE);
-    intent.setType("*/*");
-    startActivityForResult(intent, MainPresenter.REQUEST_WAD_FILE);
+    startActivityForResult(intent, requestCode);
   }
 
   @Override
@@ -226,7 +224,14 @@ public final class TvMainActivity extends FragmentActivity implements MainView
       switch (requestCode)
       {
         case MainPresenter.REQUEST_DIRECTORY:
-          mPresenter.onDirectorySelected(result);
+          if (DirectoryInitialization.preferOldFolderPicker(this))
+          {
+            mPresenter.onDirectorySelected(FileBrowserHelper.getSelectedPath(result));
+          }
+          else
+          {
+            mPresenter.onDirectorySelected(result);
+          }
           break;
 
         case MainPresenter.REQUEST_GAME_FILE:
@@ -238,6 +243,11 @@ public final class TvMainActivity extends FragmentActivity implements MainView
         case MainPresenter.REQUEST_WAD_FILE:
           FileBrowserHelper.runAfterExtensionCheck(this, uri, FileBrowserHelper.WAD_EXTENSION,
                   () -> mPresenter.installWAD(result.getData().toString()));
+          break;
+
+        case MainPresenter.REQUEST_WII_SAVE_FILE:
+          FileBrowserHelper.runAfterExtensionCheck(this, uri, FileBrowserHelper.BIN_EXTENSION,
+                  () -> mPresenter.importWiiSave(result.getData().toString()));
           break;
       }
     }
@@ -338,6 +348,10 @@ public final class TvMainActivity extends FragmentActivity implements MainView
     rowItems.add(new TvSettingsItem(R.id.menu_install_wad,
             R.drawable.ic_folder,
             R.string.grid_menu_install_wad));
+
+    rowItems.add(new TvSettingsItem(R.id.menu_import_wii_save,
+            R.drawable.ic_folder,
+            R.string.grid_menu_import_wii_save));
 
     // Create a header for this row.
     HeaderItem header =

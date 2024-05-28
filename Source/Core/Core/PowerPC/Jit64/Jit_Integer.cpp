@@ -122,15 +122,7 @@ void Jit64::FinalizeCarryOverflow(bool oe, bool inv)
 {
   if (oe)
   {
-    // Make sure not to lose the carry flags (not a big deal, this path is rare).
-    PUSHF();
-    // XER[OV] = 0
-    AND(8, PPCSTATE(xer_so_ov), Imm8(~XER_OV_MASK));
-    FixupBranch jno = J_CC(CC_NO);
-    // XER[OV/SO] = 1
-    MOV(8, PPCSTATE(xer_so_ov), Imm8(XER_SO_MASK | XER_OV_MASK));
-    SetJumpTarget(jno);
-    POPF();
+    GenerateOverflow();
   }
   // Do carry
   FinalizeCarry(inv ? CC_NC : CC_C);
@@ -698,7 +690,7 @@ void Jit64::boolX(UGeckoInstruction inst)
       else
       {
         RCOpArg Rs = gpr.Use(s, RCMode::Read);
-        RCX64Reg Ra = gpr.Bind(a, RCMode::ReadWrite);
+        RCX64Reg Ra = gpr.Bind(a, RCMode::Write);
         RegCache::Realize(Rs, Ra);
         MOV(32, Ra, Rs);
         NOT(32, Ra);
@@ -941,12 +933,62 @@ void Jit64::subfx(UGeckoInstruction inst)
   JITDISABLE(bJITIntegerOff);
   int a = inst.RA, b = inst.RB, d = inst.RD;
 
-  if (gpr.IsImm(a) && gpr.IsImm(b))
+  if (a == b)
+  {
+    gpr.SetImmediate32(d, 0);
+    if (inst.OE)
+      GenerateConstantOverflow(false);
+  }
+  else if (gpr.IsImm(a, b))
   {
     s32 i = gpr.SImm32(b), j = gpr.SImm32(a);
     gpr.SetImmediate32(d, i - j);
     if (inst.OE)
       GenerateConstantOverflow((s64)i - (s64)j);
+  }
+  else if (gpr.IsImm(a))
+  {
+    s32 j = gpr.SImm32(a);
+    RCOpArg Rb = gpr.Use(b, RCMode::Read);
+    RCX64Reg Rd = gpr.Bind(d, RCMode::Write);
+    RegCache::Realize(Rb, Rd);
+
+    if (j == 0)
+    {
+      if (d != b)
+        MOV(32, Rd, Rb);
+      if (inst.OE)
+        GenerateConstantOverflow(false);
+    }
+    else if (d == b)
+    {
+      SUB(32, Rd, Imm32(j));
+      if (inst.OE)
+        GenerateOverflow();
+    }
+    else if (Rb.IsSimpleReg() && !inst.OE)
+    {
+      LEA(32, Rd, MDisp(Rb.GetSimpleReg(), -j));
+    }
+    else
+    {
+      MOV(32, Rd, Rb);
+      SUB(32, Rd, Imm32(j));
+      if (inst.OE)
+        GenerateOverflow();
+    }
+  }
+  else if (gpr.IsImm(b) && gpr.Imm32(b) == 0)
+  {
+    RCOpArg Ra = gpr.Use(a, RCMode::Read);
+    RCX64Reg Rd = gpr.Bind(d, RCMode::Write);
+    RegCache::Realize(Ra, Rd);
+
+    if (d != a)
+      MOV(32, Rd, Ra);
+    NEG(32, Rd);
+    if (inst.OE)
+      GenerateOverflow();
   }
   else
   {
@@ -964,10 +1006,6 @@ void Jit64::subfx(UGeckoInstruction inst)
       MOV(32, R(RSCRATCH), Ra);
       MOV(32, Rd, Rb);
       SUB(32, Rd, R(RSCRATCH));
-    }
-    else if (Rb.IsSimpleReg() && Ra.IsImm() && !inst.OE)
-    {
-      LEA(32, Rd, MDisp(Rb.GetSimpleReg(), -Ra.SImm32()));
     }
     else
     {
@@ -1870,6 +1908,16 @@ void Jit64::srwx(UGeckoInstruction inst)
         SHR(32, Ra, Imm8(amount));
     }
   }
+  else if (cpu_info.bBMI2)
+  {
+    RCX64Reg Ra = gpr.Bind(a, RCMode::Write);
+    RCX64Reg Rb = gpr.Bind(b, RCMode::Read);
+    RCX64Reg Rs = gpr.Bind(s, RCMode::Read);
+    RegCache::Realize(Ra, Rb, Rs);
+
+    // Rs must be in register: This is a 64-bit operation, using an OpArg will have invalid results
+    SHRX(64, Ra, Rs, Rb);
+  }
   else
   {
     RCX64Reg ecx = gpr.Scratch(ECX);  // no register choice
@@ -1932,6 +1980,25 @@ void Jit64::slwx(UGeckoInstruction inst)
     gpr.SetImmediate32(a, 0);
     if (inst.Rc)
       ComputeRC(a);
+  }
+  else if (cpu_info.bBMI2)
+  {
+    RCX64Reg Ra = gpr.Bind(a, RCMode::Write);
+    RCX64Reg Rb = gpr.Bind(b, RCMode::Read);
+    RCOpArg Rs = gpr.UseNoImm(s, RCMode::Read);
+    RegCache::Realize(Ra, Rb, Rs);
+
+    SHLX(64, Ra, Rs, Rb);
+    if (inst.Rc)
+    {
+      AND(32, Ra, Ra);
+      RegCache::Unlock(Ra, Rb, Rs);
+      ComputeRC(a, false);
+    }
+    else
+    {
+      MOVZX(64, 32, Ra, Ra);
+    }
   }
   else
   {
@@ -2022,6 +2089,33 @@ void Jit64::srawx(UGeckoInstruction inst)
   {
     gpr.SetImmediate32(a, 0);
     FinalizeCarry(false);
+  }
+  else if (cpu_info.bBMI2)
+  {
+    RCX64Reg Ra = gpr.Bind(a, RCMode::Write);
+    RCX64Reg Rb = gpr.Bind(b, RCMode::Read);
+    RCOpArg Rs = gpr.Use(s, RCMode::Read);
+    RegCache::Realize(Ra, Rb, Rs);
+
+    X64Reg tmp = RSCRATCH;
+    if (a == s && a != b)
+      tmp = Ra;
+    else
+      MOV(32, R(tmp), Rs);
+
+    SHL(64, R(tmp), Imm8(32));
+    SARX(64, Ra, R(tmp), Rb);
+    if (js.op->wantsCA)
+    {
+      MOV(32, R(RSCRATCH), Ra);
+      SHR(64, Ra, Imm8(32));
+      TEST(32, Ra, R(RSCRATCH));
+    }
+    else
+    {
+      SHR(64, Ra, Imm8(32));
+    }
+    FinalizeCarry(CC_NZ);
   }
   else
   {

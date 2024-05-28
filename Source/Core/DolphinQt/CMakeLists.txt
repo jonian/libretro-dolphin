@@ -59,6 +59,8 @@ add_executable(dolphin-emu
   Config/CheatCodeEditor.h
   Config/CheatWarningWidget.cpp
   Config/CheatWarningWidget.h
+  Config/CommonControllersWidget.cpp
+  Config/CommonControllersWidget.h
   Config/ControllerInterface/DualShockUDPClientAddServerDialog.cpp
   Config/ControllerInterface/DualShockUDPClientAddServerDialog.h
   Config/ControllerInterface/DualShockUDPClientWidget.cpp
@@ -75,6 +77,8 @@ add_executable(dolphin-emu
   Config/FreeLookWidget.h
   Config/FreeLookWindow.cpp
   Config/FreeLookWindow.h
+  Config/GamecubeControllersWidget.cpp
+  Config/GamecubeControllersWidget.h
   Config/GameConfigEdit.cpp
   Config/GameConfigEdit.h
   Config/GameConfigHighlighter.cpp
@@ -190,6 +194,8 @@ add_executable(dolphin-emu
   Config/ToolTipControls/ToolTipWidget.h
   Config/VerifyWidget.cpp
   Config/VerifyWidget.h
+  Config/WiimoteControllersWidget.cpp
+  Config/WiimoteControllersWidget.h
   Debugger/BreakpointWidget.cpp
   Debugger/BreakpointWidget.h
   Debugger/CodeViewWidget.cpp

@@ -90,6 +90,11 @@ void LoadPatchSection(const std::string& section, std::vector<Patch>& patches, I
           bool success = true;
           success &= TryParse(items[0], &pE.address);
           success &= TryParse(items[2], &pE.value);
+          if (items.size() >= 4)
+          {
+            success &= TryParse(items[3], &pE.comparand);
+            pE.conditional = true;
+          }
 
           if (items.size() >= 4)
           {
