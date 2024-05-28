@@ -2,7 +2,7 @@
 #pragma once
 
 #include <libretro.h>
-#include "VideoBackends/Null/Render.h"
+#include "VideoBackends/Null/NullRender.h"
 #include "VideoBackends/Software/SWOGLWindow.h"
 #include "VideoBackends/Software/SWRenderer.h"
 #include "VideoBackends/Software/SWTexture.h"
@@ -16,7 +16,7 @@
 #include "VideoBackends/D3D/D3DState.h"
 #include "VideoBackends/D3D/DXShader.h"
 #include "VideoBackends/D3D/DXTexture.h"
-#include "VideoBackends/D3D/Render.h"
+#include "VideoBackends/D3D/D3DRender.h"
 #include "VideoBackends/D3D/SwapChain.h"
 #endif
 
