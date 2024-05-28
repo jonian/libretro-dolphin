@@ -130,6 +130,6 @@ extern Option<bool> DSPEnableJIT;
 extern Option<DiscIO::Language> Language;
 extern Option<bool> cheatsEnabled;
 extern Option<bool> osdEnabled;
-extern Option<Common::Log::LOG_LEVELS> logLevel;
+extern Option<Common::Log::LogLevel> logLevel;
 }  // namespace Options
 }  // namespace Libretro

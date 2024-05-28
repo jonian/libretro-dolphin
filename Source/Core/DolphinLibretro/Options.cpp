@@ -237,13 +237,13 @@ Option<DiscIO::Language> Language("dolphin_language", "Language",
                                    {"Korean", DiscIO::Language::Korean}});
 Option<bool> cheatsEnabled("dolphin_cheats_enabled", "Internal Cheats Enabled", false);
 Option<bool> osdEnabled("dolphin_osd_enabled", "OSD Enabled", true);
-Option<Common::Log::LOG_LEVELS> logLevel("dolphin_log_level", "Log Level", {
-                                         {"Info", Common::Log::LINFO},
+Option<Common::Log::LogLevel> logLevel("dolphin_log_level", "Log Level", {
+                                         {"Info", Common::Log::LogLevel::LINFO},
 #if defined(_DEBUG) || defined(DEBUGFAST)
-                                         {"Debug", Common::Log::LDEBUG},
+                                         {"Debug", Common::Log::LogLevel::LDEBUG},
 #endif
-                                         {"Notice", Common::Log::LNOTICE},
-                                         {"Error", Common::Log::LERROR},
-                                         {"Warning", Common::Log::LWARNING}});
+                                         {"Notice", Common::Log::LogLevel::LNOTICE},
+                                         {"Error", Common::Log::LogLevel::LERROR},
+                                         {"Warning", Common::Log::LogLevel::LWARNING}});
 }  // namespace Options
 }  // namespace Libretro
