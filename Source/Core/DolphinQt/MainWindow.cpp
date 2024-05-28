@@ -119,7 +119,7 @@
 #include "VideoCommon/NetPlayChatUI.h"
 #include "VideoCommon/VideoConfig.h"
 
-#if defined(HAVE_XRANDR) && HAVE_XRANDR
+#ifdef HAVE_XRANDR
 #include "UICommon/X11Utils.h"
 // This #define within X11/X.h conflicts with our WiimoteSource enum.
 #undef None
@@ -1174,7 +1174,7 @@ void MainWindow::ShowGraphicsWindow()
 {
   if (!m_graphics_window)
   {
-#if defined(HAVE_XRANDR) && HAVE_XRANDR
+#ifdef HAVE_XRANDR
     if (GetWindowSystemType() == WindowSystemType::X11)
     {
       m_xrr_config = std::make_unique<X11Utils::XRRConfiguration>(
@@ -1465,7 +1465,7 @@ void MainWindow::UpdateScreenSaverInhibition()
 
   m_is_screensaver_inhibited = inhibit;
 
-#if defined(HAVE_XRANDR) && HAVE_XRANDR
+#ifdef HAVE_X11
   if (GetWindowSystemType() == WindowSystemType::X11)
     UICommon::InhibitScreenSaver(winId(), inhibit);
 #else
@@ -1675,19 +1675,12 @@ void MainWindow::OnStopRecording()
 
 void MainWindow::OnExportRecording()
 {
-  bool was_paused = Core::GetState() == Core::State::Paused;
-
-  if (!was_paused)
-    Core::SetState(Core::State::Paused);
-
-  QString dtm_file = QFileDialog::getSaveFileName(this, tr("Select the Recording File"), QString(),
-                                                  tr("Dolphin TAS Movies (*.dtm)"));
-
-  if (!dtm_file.isEmpty())
-    Movie::SaveRecording(dtm_file.toStdString());
-
-  if (!was_paused)
-    Core::SetState(Core::State::Running);
+  Core::RunAsCPUThread([this] {
+    QString dtm_file = QFileDialog::getSaveFileName(this, tr("Select the Recording File"),
+                                                    QString(), tr("Dolphin TAS Movies (*.dtm)"));
+    if (!dtm_file.isEmpty())
+      Movie::SaveRecording(dtm_file.toStdString());
+  });
 }
 
 void MainWindow::OnActivateChat()

@@ -45,6 +45,7 @@
     <ClInclude Include="Common\DebugInterface.h" />
     <ClInclude Include="Common\DynamicLibrary.h" />
     <ClInclude Include="Common\ENetUtil.h" />
+    <ClInclude Include="Common\EnumFormatter.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\FileSearch.h" />
     <ClInclude Include="Common\FileUtil.h" />
@@ -142,6 +143,7 @@
     <ClInclude Include="Common\Semaphore.h" />
     <ClInclude Include="Common\SettingsHandler.h" />
     <ClInclude Include="Common\SFMLHelper.h" />
+    <ClInclude Include="Common\SocketContext.h" />
     <ClInclude Include="Common\SPSCQueue.h" />
     <ClInclude Include="Common\StringUtil.h" />
     <ClInclude Include="Common\Swap.h" />
@@ -415,6 +417,7 @@
     <ClInclude Include="DiscIO\DirectoryBlob.h" />
     <ClInclude Include="DiscIO\DiscExtractor.h" />
     <ClInclude Include="DiscIO\DiscScrubber.h" />
+    <ClInclude Include="DiscIO\DiscUtils.h" />
     <ClInclude Include="DiscIO\DriveBlob.h" />
     <ClInclude Include="DiscIO\Enums.h" />
     <ClInclude Include="DiscIO\FileBlob.h" />
@@ -718,6 +721,7 @@
     <ClCompile Include="Common\SDCardUtil.cpp" />
     <ClCompile Include="Common\SettingsHandler.cpp" />
     <ClCompile Include="Common\SFMLHelper.cpp" />
+    <ClCompile Include="Common\SocketContext.cpp" />
     <ClCompile Include="Common\StringUtil.cpp" />
     <ClCompile Include="Common\SymbolDB.cpp" />
     <ClCompile Include="Common\Thread.cpp" />
@@ -988,6 +992,7 @@
     <ClCompile Include="DiscIO\DirectoryBlob.cpp" />
     <ClCompile Include="DiscIO\DiscExtractor.cpp" />
     <ClCompile Include="DiscIO\DiscScrubber.cpp" />
+    <ClCompile Include="DiscIO\DiscUtils.cpp" />
     <ClCompile Include="DiscIO\DriveBlob.cpp" />
     <ClCompile Include="DiscIO\Enums.cpp" />
     <ClCompile Include="DiscIO\FileBlob.cpp" />
