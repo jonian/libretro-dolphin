@@ -78,8 +78,8 @@ bool retro_load_game(const struct retro_game_info* game)
   Discord::SetDiscordPresenceEnabled(false);
   Common::SetEnableAlert(false);
 
-  INFO_LOG(COMMON, "User Directory set to '%s'", user_dir.c_str());
-  INFO_LOG(COMMON, "System Directory set to '%s'", sys_dir.c_str());
+  INFO_LOG_FMT(COMMON, "User Directory set to '{}'", user_dir);
+  INFO_LOG_FMT(COMMON, "System Directory set to '{}'", sys_dir);
 
   /* disable throttling emulation to match GetTargetRefreshRate() */
   Core::SetIsThrottlerTempDisabled(true);
@@ -174,7 +174,7 @@ bool retro_load_game(const struct retro_game_info* game)
 
   Libretro::Video::Init();
   VideoBackendBase::PopulateBackendInfo();
-  NOTICE_LOG(VIDEO, "Using GFX backend: %s", Config::Get(Config::MAIN_GFX_BACKEND).c_str());
+  NOTICE_LOG_FMT(VIDEO, "Using GFX backend: {}", Config::Get(Config::MAIN_GFX_BACKEND));
 
   WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
 
@@ -190,7 +190,7 @@ bool retro_load_game(const struct retro_game_info* game)
     normalized_game_paths = ReadM3UFile(normalized_game_paths.front(), folder_path);
     if (normalized_game_paths.empty())
     {
-      ERROR_LOG(BOOT, "Could not boot %s. M3U contains no paths\n", game->path);
+      ERROR_LOG_FMT(BOOT, "Could not boot {}. M3U contains no paths\n", game->path);
       return false;
     }
   }
@@ -200,7 +200,7 @@ bool retro_load_game(const struct retro_game_info* game)
 
   if (!BootManager::BootCore(BootParameters::GenerateFromFile(normalized_game_paths), wsi))
   {
-    ERROR_LOG(BOOT, "Could not boot %s\n", game->path);
+    ERROR_LOG_FMT(BOOT, "Could not boot {}\n", game->path);
     return false;
   }
 

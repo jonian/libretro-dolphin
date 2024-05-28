@@ -24,13 +24,13 @@ void Host_RefreshDSPDebuggerWindow()
 
 void Host_Message(HostMessageID id)
 {
-  DEBUG_LOG(COMMON, "message id: %i\n", (int)id);
+  DEBUG_LOG_FMT(COMMON, "message id: {}\n", (int)id);
 }
 
 void Host_UpdateTitle(const std::string& title)
 {
 #if 0
-  DEBUG_LOG(COMMON, "title : %s\n", title.c_str());
+  DEBUG_LOG_FMT(COMMON, "title : {}\n", title);
 #endif
 }
 
