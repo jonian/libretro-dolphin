@@ -36,9 +36,7 @@
 #include "Common/Timer.h"
 #include "Common/Version.h"
 
-#ifdef USE_ANALYTICS
 #include "Core/Analytics.h"
-#endif
 #include "Core/Boot/Boot.h"
 #include "Core/BootManager.h"
 #include "Core/ConfigManager.h"
@@ -204,10 +202,10 @@ bool IsGPUThread()
   const SConfig& _CoreParameter = SConfig::GetInstance();
   if (_CoreParameter.bCPUThread)
   {
-    if (_CoreParameter.bEMUThread)
-      return (s_emu_thread.joinable() && (s_emu_thread.get_id() == std::this_thread::get_id()));
+    if (!_CoreParameter.bEMUThread)
+      return s_gpu_thread_id == std::this_thread::get_id();
 
-    return s_gpu_thread_id == std::this_thread::get_id();
+    return (s_emu_thread.joinable() && (s_emu_thread.get_id() == std::this_thread::get_id()));
   }
   else
   {
@@ -257,10 +255,10 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   if (!SConfig::GetInstance().bCPUThread)
     SConfig::GetInstance().bEMUThread = true;
 
-  if (SConfig::GetInstance().bEMUThread)
-  {
-    s_emu_thread = std::thread(EmuThread, prepared_wsi);
-  }
+  if (!SConfig::GetInstance().bEMUThread)
+    return true;
+
+  s_emu_thread = std::thread(EmuThread, prepared_wsi);
   return true;
 }
 
@@ -345,10 +343,8 @@ static void CpuThread(const std::optional<std::string>& savestate_path, bool del
   else
     Common::SetCurrentThreadName("CPU-GPU thread");
 
-#ifdef USE_ANALYTICS
   // This needs to be delayed until after the video backend is ready.
   DolphinAnalytics::Instance().ReportGameStart();
-#endif
 
 #ifdef ANDROID
   // For some reason, calling the JNI function AttachCurrentThread from the CPU thread after a
@@ -441,6 +437,9 @@ static void FifoPlayerThread(const std::optional<std::string>& savestate_path,
 // See the BootManager.cpp file description for a complete call schedule.
 void EmuThread(WindowSystemInfo wsi)
 {
+  std::unique_ptr<BootParameters> boot;
+  boot = std::move(boot_params);
+
   const SConfig& core_parameter = SConfig::GetInstance();
   if (s_on_state_changed_callback)
     s_on_state_changed_callback(State::Starting);
@@ -462,7 +461,7 @@ void EmuThread(WindowSystemInfo wsi)
   DeclareAsCPUThread();
   s_frame_step = false;
 
-  Movie::Init(*boot_params);
+  Movie::Init(*boot);
   Common::ScopeGuard movie_guard{&Movie::Shutdown};
 
   HW::Init();
@@ -535,8 +534,8 @@ void EmuThread(WindowSystemInfo wsi)
     Keyboard::LoadConfig();
   }
 
-  const std::optional<std::string> savestate_path = boot_params->savestate_path;
-  const bool delete_savestate = boot_params->delete_savestate;
+  const std::optional<std::string> savestate_path = boot->savestate_path;
+  const bool delete_savestate = boot->delete_savestate;
 
   // Load and Init Wiimotes - only if we are booting in Wii mode
   bool init_wiimotes = false;
@@ -589,12 +588,12 @@ void EmuThread(WindowSystemInfo wsi)
 
   // Determine the CPU thread function
   void (*cpuThreadFunc)(const std::optional<std::string>& savestate_path, bool delete_savestate);
-  if (std::holds_alternative<BootParameters::DFF>(boot_params->parameters))
+  if (std::holds_alternative<BootParameters::DFF>(boot->parameters))
     cpuThreadFunc = FifoPlayerThread;
   else
     cpuThreadFunc = CpuThread;
 
-  if (!CBoot::BootUp(std::move(boot_params)))
+  if (!CBoot::BootUp(std::move(boot)))
     return;
 
   // Initialise Wii filesystem contents.
