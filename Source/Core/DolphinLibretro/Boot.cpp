@@ -83,30 +83,30 @@ bool retro_load_game(const struct retro_game_info* game)
 
   /* disable throttling emulation to match GetTargetRefreshRate() */
   Core::SetIsThrottlerTempDisabled(true);
-  SConfig::GetInstance().m_EmulationSpeed = Libretro::Options::EmulationSpeed;
+  Config::SetBase(Config::MAIN_EMULATION_SPEED, Libretro::Options::EmulationSpeed);
 
 #if defined(_DEBUG)
-  SConfig::GetInstance().bFastmem = false;
+  Config::SetBase(Config::MAIN_FASTMEM, false);
 #else
-  SConfig::GetInstance().bFastmem = Libretro::Options::fastmem;
+  Config::SetBase(Config::MAIN_FASTMEM, Libretro::Options::fastmem);
 #endif
-  SConfig::GetInstance().bDSPHLE = Libretro::Options::DSPHLE;
-  SConfig::GetInstance().m_DSPEnableJIT = Libretro::Options::DSPEnableJIT;
-  SConfig::GetInstance().cpu_core = Libretro::Options::cpu_core;
-  SConfig::GetInstance().SelectedLanguage = (int)(DiscIO::Language)Libretro::Options::Language - 1;
-  SConfig::GetInstance().bCPUThread = true;
+  Config::SetBase(Config::MAIN_DSP_HLE, Libretro::Options::DSPHLE);
+  Config::SetBase(Config::MAIN_DSP_JIT, Libretro::Options::DSPEnableJIT);
+  Config::SetBase(Config::MAIN_CPU_CORE, Libretro::Options::cpu_core);
+  Config::SetBase(Config::MAIN_GC_LANGUAGE, (int)(DiscIO::Language)Libretro::Options::Language - 1);
+  Config::SetBase(Config::MAIN_CPU_THREAD, true);
   SConfig::GetInstance().bEMUThread = false;
   SConfig::GetInstance().bBootToPause = true;
-  SConfig::GetInstance().m_OCFactor = Libretro::Options::cpuClockRate;
-  SConfig::GetInstance().m_OCEnable = Libretro::Options::cpuClockRate != 1.0;
-  SConfig::GetInstance().sBackend = BACKEND_NULLSOUND;
-  SConfig::GetInstance().m_DumpAudio = false;
-  SConfig::GetInstance().bDPL2Decoder = false;
-  SConfig::GetInstance().iLatency = 0;
-  SConfig::GetInstance().m_audio_stretch = false;
-  SConfig::GetInstance().m_WiimoteContinuousScanning = Libretro::Options::WiimoteContinuousScanning;
-  SConfig::GetInstance().bEnableCheats = Libretro::Options::cheatsEnabled;
-  SConfig::GetInstance().bFastDiscSpeed = Libretro::Options::fastDiscSpeed;
+  Config::SetBase(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
+  Config::SetBase(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
+  Config::SetBase(Config::MAIN_AUDIO_BACKEND, BACKEND_NULLSOUND);
+  Config::SetBase(Config::MAIN_DUMP_AUDIO, false);
+  Config::SetBase(Config::MAIN_DPL2_DECODER, false);
+  Config::SetBase(Config::MAIN_AUDIO_LATENCY, 0);
+  Config::SetBase(Config::MAIN_AUDIO_STRETCH, false);
+  Config::SetBase(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING, Libretro::Options::WiimoteContinuousScanning);
+  Config::SetBase(Config::MAIN_ENABLE_CHEATS, Libretro::Options::cheatsEnabled);
+  Config::SetBase(Config::MAIN_FAST_DISC_SPEED, Libretro::Options::fastDiscSpeed);
 
   Config::SetBase(Config::MAIN_OSD_MESSAGES, Libretro::Options::osdEnabled);
   Config::SetBase(Config::SYSCONF_LANGUAGE, (u32)(DiscIO::Language)Libretro::Options::Language);
