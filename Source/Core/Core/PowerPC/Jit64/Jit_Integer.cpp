@@ -298,11 +298,11 @@ void Jit64::reg_imm(UGeckoInstruction inst)
   {
   case 14:  // addi
     // occasionally used as MOV - emulate, with immediate propagation
-    if (gpr.IsImm(a) && d != a && a != 0)
+    if (a != 0 && d != a && gpr.IsImm(a))
     {
       gpr.SetImmediate32(d, gpr.Imm32(a) + (u32)(s32)inst.SIMM_16);
     }
-    else if (inst.SIMM_16 == 0 && d != a && a != 0)
+    else if (a != 0 && d != a && inst.SIMM_16 == 0)
     {
       RCOpArg Ra = gpr.Use(a, RCMode::Read);
       RCX64Reg Rd = gpr.Bind(d, RCMode::Write);
@@ -1480,9 +1480,9 @@ void Jit64::divwx(UGeckoInstruction inst)
       if (inst.OE)
         GenerateConstantOverflow(false);
     }
-    else if (MathUtil::IsPow2(divisor) || MathUtil::IsPow2(-divisor))
+    else if (MathUtil::IsPow2(divisor) || MathUtil::IsPow2(-static_cast<s64>(divisor)))
     {
-      u32 abs_val = std::abs(divisor);
+      const u32 abs_val = static_cast<u32>(std::abs(static_cast<s64>(divisor)));
 
       X64Reg tmp = RSCRATCH;
       if (Ra.IsSimpleReg() && Ra.GetSimpleReg() != Rd)

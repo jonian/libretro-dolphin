@@ -10,12 +10,16 @@ set(CMAKE_OSX_ARCHITECTURES "x86_64")
 # handle configuration options
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12.0" CACHE STRING "")
 
+set(CMAKE_USER_MAKE_RULES_OVERRIDE "CMake/FlagsOverride.cmake")
+
 project(dolphin-emu)
 
 # Name of the Dolphin distributor. If you redistribute Dolphin builds (forks,
 # unofficial builds) please consider identifying your distribution with a
 # unique name here.
 set(DISTRIBUTOR "None" CACHE STRING "Name of the distributor.")
+
+set(DOLPHIN_DEFAULT_UPDATE_TRACK "" CACHE STRING "Name of the default update track. If empty, disables auto-update.")
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
   option(ENABLE_X11 "Enables X11 Support" ON)
@@ -121,7 +125,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Binaries)
 if (WIN32)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Binary)
 
-  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
+    string(APPEND CMAKE_RUNTIME_OUTPUT_DIRECTORY /x64)
+  elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     string(APPEND CMAKE_RUNTIME_OUTPUT_DIRECTORY /ARM64)
   endif()
 
@@ -296,6 +302,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     # See http://www.cmake.org/cmake/help/v3.0/command/find_program.html
     list(APPEND CMAKE_PREFIX_PATH "/usr")
   endif()
+
+  # Prevents Xcode from overriding the -fno-strict-aliasing flag
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
 
   # Specify target CPUs.
   check_and_add_flag(HAVE_MSSSE3 -mssse3)
@@ -638,11 +647,16 @@ else()
 endif()
 
 pkg_check_modules(ZSTD QUIET libzstd>=1.4.0)
-if(ZSTD_FOUND)
+check_include_file(zstd.h HAVE_ZSTD_H)
+if(ZSTD_FOUND AND HAVE_ZSTD_H)
   message(STATUS "Using shared zstd version: " ${ZSTD_VERSION})
 else()
   check_vendoring_approved(zstd)
-  message(STATUS "Shared zstd not found, falling back to the static library")
+  if(ZSTD_FOUND AND NOT HAVE_ZSTD_H)
+    message(STATUS "Shared zstd found but lacks headers, falling back to the static library")
+  else()
+    message(STATUS "Shared zstd not found, falling back to the static library")
+  endif()
   add_subdirectory(Externals/zstd)
 endif()
 

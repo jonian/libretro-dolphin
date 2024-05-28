@@ -161,6 +161,11 @@ void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
   MOVI2R(ARM64Reg::W0, inst.hex);
   BLR(ARM64Reg::X8);
 
+  // If the instruction wrote to any registers which were marked as discarded,
+  // we must mark them as no longer discarded
+  gpr.ResetRegisters(js.op->regsOut);
+  fpr.ResetRegisters(js.op->GetFregsOut());
+
   if (js.op->opinfo->flags & FL_ENDBLOCK)
   {
     if (js.isLastInstruction)
@@ -623,12 +628,6 @@ void JitArm64::Jit(u32)
 
 void JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
 {
-  if (em_address == 0)
-  {
-    Core::SetState(Core::State::Paused);
-    WARN_LOG_FMT(DYNA_REC, "ERROR: Compiling at 0. LR={:08x} CTR={:08x}", LR, CTR);
-  }
-
   js.isLastInstruction = false;
   js.firstFPInstructionFound = false;
   js.assumeNoPairedQuantize = false;
@@ -696,6 +695,7 @@ void JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
 
     js.compilerPC = op.address;
     js.op = &op;
+    js.fpr_is_store_safe = op.fprIsStoreSafeBeforeInst;
     js.instructionNumber = i;
     js.instructionsLeft = (code_block.m_num_instructions - 1) - i;
     const GekkoOPInfo* opinfo = op.opinfo;
@@ -831,10 +831,18 @@ void JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       }
 
       CompileInstruction(op);
+
+      js.fpr_is_store_safe = op.fprIsStoreSafeAfterInst;
+
       if (!CanMergeNextInstructions(1) || js.op[1].opinfo->type != ::OpType::Integer)
         FlushCarry();
 
-      // If we have a register that will never be used again, flush it.
+      // If we have a register that will never be used again, discard or flush it.
+      if (!SConfig::GetInstance().bJITRegisterCacheOff)
+      {
+        gpr.DiscardRegisters(op.gprDiscardable);
+        fpr.DiscardRegisters(op.fprDiscardable);
+      }
       gpr.StoreRegisters(~op.gprInUse);
       fpr.StoreRegisters(~op.fprInUse);
 

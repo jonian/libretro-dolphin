@@ -5,7 +5,6 @@
 #include "Core/NetPlayClient.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -692,6 +691,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
       packet >> m_net_settings.m_PerfQueriesEnable;
       packet >> m_net_settings.m_FPRF;
       packet >> m_net_settings.m_AccurateNaNs;
+      packet >> m_net_settings.m_DisableICache;
       packet >> m_net_settings.m_SyncOnSkipIdle;
       packet >> m_net_settings.m_SyncGPU;
       packet >> m_net_settings.m_SyncGpuMaxDistance;
@@ -2026,7 +2026,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const std::size_t size,
     }
   }
 
-  assert(nw.data.size() == size);
+  ASSERT(nw.data.size() == size);
   std::copy(nw.data.begin(), nw.data.end(), data);
   return true;
 }
