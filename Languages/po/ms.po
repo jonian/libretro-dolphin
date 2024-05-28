@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Dolphin Emulator\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-31 23:46+0200\n"
-"PO-Revision-Date: 2021-07-31 21:46+0000\n"
+"POT-Creation-Date: 2021-08-31 16:41+0200\n"
+"PO-Revision-Date: 2021-08-31 14:41+0000\n"
 "Last-Translator: JosJuice\n"
 "Language-Team: Malay (http://www.transifex.com/delroth/dolphin-emu/language/"
 "ms/)\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1399
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1402
 msgid ""
 "\n"
 "\n"
@@ -27,7 +27,7 @@ msgid ""
 "problems that Dolphin is unable to detect."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1405
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1408
 msgid ""
 "\n"
 "\n"
@@ -257,7 +257,7 @@ msgstr ""
 msgid "&About"
 msgstr "Perih&al"
 
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:314
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:316
 msgid "&Add Memory Breakpoint"
 msgstr "&Tambah Titik Henti Ingatan"
 
@@ -348,7 +348,7 @@ msgstr "Pa&dam"
 
 #. i18n: This kind of "watch" is used for watching emulated memory.
 #. It's not related to timekeeping devices.
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:313
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:315
 msgid "&Delete Watch"
 msgstr "Pa&dam Pantauan"
 
@@ -583,7 +583,7 @@ msgstr ""
 msgid "'%1' not found, no symbol names generated"
 msgstr "'%1' tidak ditemui, tiada nama simbol dijana"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1462
+#: Source/Core/DolphinQt/MenuBar.cpp:1465
 msgid "'%1' not found, scanning for common functions instead"
 msgstr "'%1' tidak ditemui, mengimbas fungsi umum sebagai ganti"
 
@@ -864,7 +864,7 @@ msgstr ""
 msgid "Accuracy:"
 msgstr "Ketepatan:"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:88
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:89
 msgid "Action"
 msgstr "Tindakan"
 
@@ -877,58 +877,58 @@ msgid ""
 "{0}"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:524
+#: Source/Core/Core/ActionReplay.cpp:525
 msgid ""
 "Action Replay Error: Invalid size ({0:08x} : address = {1:08x}) in Add Code "
 "({2})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:615
+#: Source/Core/Core/ActionReplay.cpp:616
 msgid ""
 "Action Replay Error: Invalid size ({0:08x} : address = {1:08x}) in Fill and "
 "Slide ({2})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:402
+#: Source/Core/Core/ActionReplay.cpp:403
 msgid ""
 "Action Replay Error: Invalid size ({0:08x} : address = {1:08x}) in Ram Write "
 "And Fill ({2})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:462
+#: Source/Core/Core/ActionReplay.cpp:463
 msgid ""
 "Action Replay Error: Invalid size ({0:08x} : address = {1:08x}) in Write To "
 "Pointer ({2})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:670
+#: Source/Core/Core/ActionReplay.cpp:671
 msgid "Action Replay Error: Invalid value ({0:08x}) in Memory Copy ({1})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:539
+#: Source/Core/Core/ActionReplay.cpp:540
 msgid ""
 "Action Replay Error: Master Code and Write To CCXXXXXX not implemented "
 "({0})\n"
 "Master codes are not needed. Do not use master codes."
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:232
+#: Source/Core/Core/ActionReplay.cpp:233
 msgid "Action Replay Error: invalid AR code line: {0}"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:781
+#: Source/Core/Core/ActionReplay.cpp:782
 msgid "Action Replay: Conditional Code: Invalid Size {0:08x} ({1})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:749
+#: Source/Core/Core/ActionReplay.cpp:750
 msgid "Action Replay: Invalid Normal Code Type {0:08x} ({1})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:707
+#: Source/Core/Core/ActionReplay.cpp:708
 msgid "Action Replay: Normal Code 0: Invalid Subtype {0:08x} ({1})"
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:805
+#: Source/Core/Core/ActionReplay.cpp:806
 msgid "Action Replay: Normal Code {0}: Invalid subtype {1:08x} ({2})"
 msgstr ""
 
@@ -1025,9 +1025,9 @@ msgstr "Tambah..."
 #: Source/Core/DolphinQt/Debugger/BreakpointWidget.cpp:162
 #: Source/Core/DolphinQt/Debugger/CodeViewWidget.cpp:147
 #: Source/Core/DolphinQt/Debugger/JITWidget.cpp:80
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:48
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:163
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:175
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:49
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:166
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:178
 #: Source/Core/DolphinQt/Debugger/ThreadWidget.cpp:180
 #: Source/Core/DolphinQt/Debugger/ThreadWidget.cpp:232
 #: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:155
@@ -1040,8 +1040,8 @@ msgid "Address Space"
 msgstr ""
 
 #: Source/Core/DolphinQt/Config/NewPatchDialog.cpp:155
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:42
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:134
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:43
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:137
 msgid "Address:"
 msgstr "Alamat:"
 
@@ -1238,7 +1238,7 @@ msgstr "Anti-Alias:"
 msgid "Any Region"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1599
+#: Source/Core/DolphinQt/MenuBar.cpp:1604
 msgid "Append signature to"
 msgstr ""
 
@@ -1264,7 +1264,7 @@ msgstr "Tarikh Pemuatapl:"
 msgid "Apply"
 msgstr "Laksana"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1622
+#: Source/Core/DolphinQt/MenuBar.cpp:1627
 msgid "Apply signature file"
 msgstr ""
 
@@ -1386,7 +1386,7 @@ msgid "Auxiliary"
 msgstr ""
 
 #. i18n: The symbol for the unit "bytes"
-#: Source/Core/UICommon/UICommon.cpp:442
+#: Source/Core/UICommon/UICommon.cpp:443
 msgid "B"
 msgstr "B"
 
@@ -1595,7 +1595,7 @@ msgid "Branches"
 msgstr ""
 
 #. i18n: This is a selectable action when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:66
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:67
 msgid "Break"
 msgstr "Henti"
 
@@ -1769,7 +1769,7 @@ msgstr "Tidak dapat memulakan Sesi NetPlay ketika permainan masih berlangsung!"
 
 #: Source/Core/DolphinQt/Config/ControllerInterface/DualShockUDPClientAddServerDialog.cpp:58
 #: Source/Core/DolphinQt/Config/VerifyWidget.cpp:151
-#: Source/Core/DolphinQt/MenuBar.cpp:1297
+#: Source/Core/DolphinQt/MenuBar.cpp:1299
 #: Source/Core/DolphinQt/NKitWarningDialog.cpp:59
 #: Source/Core/DolphinQt/Settings/USBDeviceAddToWhitelistDialog.cpp:50
 #: qtbase/src/gui/kernel/qplatformtheme.cpp:732
@@ -1853,11 +1853,15 @@ msgstr ""
 msgid "Changing cheats will only take effect when the game is restarted."
 msgstr "Pengubahanan tipu hanya berkesan bila permainan dimulakan semula."
 
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:149
+msgid "Channel Partition (%1)"
+msgstr ""
+
 #: Source/Core/DolphinQt/NetPlay/NetPlayDialog.cpp:210
 msgid "Chat"
 msgstr "Sembang"
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:23
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:25
 msgid "Cheat Code Editor"
 msgstr ""
 
@@ -1901,15 +1905,15 @@ msgstr ""
 msgid "Choose a file to open"
 msgstr "Pilih satu fail untuk dibuka"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1640
+#: Source/Core/DolphinQt/MenuBar.cpp:1645
 msgid "Choose priority input file"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1645
+#: Source/Core/DolphinQt/MenuBar.cpp:1650
 msgid "Choose secondary input file"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:160
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:214
 msgid "Choose the folder to extract to"
 msgstr "Pilih folder untuk diekstrak ke"
 
@@ -1960,7 +1964,7 @@ msgstr "Ko&nfigurasi"
 msgid "Code"
 msgstr "Kod"
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:101
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:103
 msgid "Code:"
 msgstr "Kod:"
 
@@ -2004,7 +2008,7 @@ msgstr ""
 msgid "Compression:"
 msgstr ""
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:79
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:80
 msgid "Condition"
 msgstr "Keadaan:"
 
@@ -2116,7 +2120,7 @@ msgstr ""
 msgid "Connection Type:"
 msgstr "Jenis Sambungan:"
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1197
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1200
 msgid "Content {0:08x} is corrupt."
 msgstr ""
 
@@ -2423,12 +2427,12 @@ msgid ""
 "<br><br><dolphin_emphasis>If unsure, leave this unchecked.</dolphin_emphasis>"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:90
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:92
 #: Source/Core/DolphinQt/Config/GeckoCodeWidget.cpp:96
 msgid "Creator:"
 msgstr "Pencipta:"
 
-#: Source/Core/Common/MsgHandler.cpp:60
+#: Source/Core/Common/MsgHandler.cpp:62
 msgid "Critical"
 msgstr "Kritikal"
 
@@ -2477,6 +2481,14 @@ msgstr "Pilihan RTC Suai"
 msgid "D-Pad"
 msgstr "Pad-D"
 
+#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:229
+msgid "DFF file magic number is incorrect: got {0:08x}, expected {1:08x}"
+msgstr ""
+
+#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:219
+msgid "DFF file size is 0; corrupt/incomplete file?"
+msgstr ""
+
 #: Source/Core/Core/HW/WiimoteEmu/Extension/Turntable.cpp:47
 #: Source/Core/DolphinQt/Config/Mapping/WiimoteEmuExtension.cpp:147
 msgid "DJ Turntable"
@@ -2524,6 +2536,10 @@ msgstr "Tikar Menari"
 
 #: Source/Core/DolphinQt/NetPlay/NetPlayDialog.cpp:109
 msgid "Data"
+msgstr ""
+
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:143
+msgid "Data Partition (%1)"
 msgstr ""
 
 #: Source/Core/DolphinQt/NetPlay/ChunkedProgressDialog.cpp:46
@@ -2705,7 +2721,7 @@ msgstr ""
 msgid "Detect"
 msgstr "Kesan"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1298
+#: Source/Core/DolphinQt/MenuBar.cpp:1300
 msgid "Detecting RSO Modules"
 msgstr ""
 
@@ -2821,7 +2837,7 @@ msgid ""
 "checked.</dolphin_emphasis>"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:93
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:95
 msgid "Disc"
 msgstr "Cakera"
 
@@ -2879,9 +2895,9 @@ msgstr "Penyahkod Dolby Pro Logic II"
 msgid "Dolphin FIFO Log (*.dff)"
 msgstr "Log FIFO Dolphin (*.dff)"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1492
-#: Source/Core/DolphinQt/MenuBar.cpp:1508
-#: Source/Core/DolphinQt/MenuBar.cpp:1526
+#: Source/Core/DolphinQt/MenuBar.cpp:1495
+#: Source/Core/DolphinQt/MenuBar.cpp:1511
+#: Source/Core/DolphinQt/MenuBar.cpp:1529
 msgid "Dolphin Map File (*.map)"
 msgstr "Fail Peta Dolphin (*.map)"
 
@@ -2922,13 +2938,13 @@ msgstr "Dolphin ialah emulator GameCube dan Wii bebas dan bersumber-terbuka."
 msgid "Dolphin is too old for traversal server"
 msgstr "Dolphin terlalu tua untuk pelayan traversal"
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1346
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1349
 msgid ""
 "Dolphin is unable to verify typical TGC files properly, since they are not "
 "dumps of actual discs."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1339
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1342
 msgid "Dolphin is unable to verify unlicensed discs."
 msgstr ""
 
@@ -3208,7 +3224,7 @@ msgstr ""
 msgid "Effective priority"
 msgstr ""
 
-#: Source/Core/UICommon/UICommon.cpp:443
+#: Source/Core/UICommon/UICommon.cpp:444
 msgid "EiB"
 msgstr "EiB"
 
@@ -3236,7 +3252,7 @@ msgstr "Emulasikan penyuai Bluetooth Wii"
 msgid "Emulated Wii Remote"
 msgstr "Wii Remote Teremulasi"
 
-#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:259
+#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:276
 msgid ""
 "Emulated memory size mismatch!\n"
 "Current: MEM1 {0:08X} ({1} MiB), MEM2 {2:08X} ({3} MiB)\n"
@@ -3404,9 +3420,9 @@ msgstr ""
 #: Source/Core/DolphinQt/Config/Graphics/AdvancedWidget.cpp:205
 msgid ""
 "Enables validation of API calls made by the video backend, which may assist "
-"in debugging graphical issues. On D3D backends, this also enables debug "
-"symbols for the compiled shaders.<br><br><dolphin_emphasis>If unsure, leave "
-"this unchecked.</dolphin_emphasis>"
+"in debugging graphical issues. On the Vulkan and D3D backends, this also "
+"enables debug symbols for the compiled shaders.<br><br><dolphin_emphasis>If "
+"unsure, leave this unchecked.</dolphin_emphasis>"
 msgstr ""
 
 #: Source/Core/DolphinQt/Config/Graphics/AdvancedWidget.cpp:248
@@ -3454,7 +3470,7 @@ msgstr ""
 msgid "Enter USB device ID"
 msgstr "Masukkan ID peranti USB"
 
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:253
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:254
 msgid "Enter address to watch:"
 msgstr ""
 
@@ -3466,7 +3482,7 @@ msgstr ""
 msgid "Enter password"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1273
+#: Source/Core/DolphinQt/MenuBar.cpp:1274
 msgid "Enter the RSO module address:"
 msgstr "Masukkan alamat modul RSO:"
 
@@ -3474,10 +3490,10 @@ msgstr "Masukkan alamat modul RSO:"
 msgid "Equals to"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:216
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:280
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:205
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:328
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:228
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:302
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:259
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:382
 #: Source/Core/DolphinQt/Config/GameConfigEdit.cpp:265
 #: Source/Core/DolphinQt/Config/GeckoCodeWidget.cpp:309
 #: Source/Core/DolphinQt/Config/GeckoCodeWidget.cpp:315
@@ -3495,10 +3511,10 @@ msgstr ""
 #: Source/Core/DolphinQt/Debugger/MemoryWidget.cpp:545
 #: Source/Core/DolphinQt/Debugger/MemoryWidget.cpp:578
 #: Source/Core/DolphinQt/Debugger/MemoryWidget.cpp:585
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:140
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:143
 #: Source/Core/DolphinQt/Debugger/RegisterColumn.cpp:86
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:259
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:375
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:261
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:377
 #: Source/Core/DolphinQt/FIFO/FIFOPlayerWindow.cpp:215
 #: Source/Core/DolphinQt/GBAWidget.cpp:526
 #: Source/Core/DolphinQt/GCMemcardManager.cpp:332
@@ -3514,16 +3530,16 @@ msgstr ""
 #: Source/Core/DolphinQt/MainWindow.cpp:1559
 #: Source/Core/DolphinQt/MenuBar.cpp:1188
 #: Source/Core/DolphinQt/MenuBar.cpp:1258
-#: Source/Core/DolphinQt/MenuBar.cpp:1279
-#: Source/Core/DolphinQt/MenuBar.cpp:1291
-#: Source/Core/DolphinQt/MenuBar.cpp:1322
-#: Source/Core/DolphinQt/MenuBar.cpp:1342
-#: Source/Core/DolphinQt/MenuBar.cpp:1545
-#: Source/Core/DolphinQt/MenuBar.cpp:1554
-#: Source/Core/DolphinQt/MenuBar.cpp:1566
-#: Source/Core/DolphinQt/MenuBar.cpp:1587
-#: Source/Core/DolphinQt/MenuBar.cpp:1612
-#: Source/Core/DolphinQt/MenuBar.cpp:1662
+#: Source/Core/DolphinQt/MenuBar.cpp:1281
+#: Source/Core/DolphinQt/MenuBar.cpp:1293
+#: Source/Core/DolphinQt/MenuBar.cpp:1324
+#: Source/Core/DolphinQt/MenuBar.cpp:1345
+#: Source/Core/DolphinQt/MenuBar.cpp:1548
+#: Source/Core/DolphinQt/MenuBar.cpp:1557
+#: Source/Core/DolphinQt/MenuBar.cpp:1569
+#: Source/Core/DolphinQt/MenuBar.cpp:1591
+#: Source/Core/DolphinQt/MenuBar.cpp:1617
+#: Source/Core/DolphinQt/MenuBar.cpp:1667
 #: Source/Core/DolphinQt/NetPlay/NetPlayBrowser.cpp:314
 #: Source/Core/DolphinQt/NetPlay/NetPlayDialog.cpp:426
 #: Source/Core/DolphinQt/NetPlay/NetPlayDialog.cpp:641
@@ -3637,11 +3653,11 @@ msgstr ""
 "Ralat: Ketika cuba mencapai fon Windows-1252 tetapi ia tidak dimuatkan. "
 "Permainan mungkin tidak menunjukkan fon yang betul, atau mengalami kerosakan."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1295
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1298
 msgid "Errors were found in {0} blocks in the {1} partition."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1306
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1309
 msgid "Errors were found in {0} unused blocks in the {1} partition."
 msgstr ""
 
@@ -3778,31 +3794,31 @@ msgstr "Penimbal Bingkai Luaran (XFB)"
 msgid "Extract Certificates from NAND"
 msgstr "Ekstrak Sijil dari NAND"
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:212
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:266
 msgid "Extract Entire Disc..."
 msgstr "Ektrak Keseluruhan Cakera..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:236
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:290
 msgid "Extract Entire Partition..."
 msgstr "Ekstrak Keseluruhan Sekatan..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:243
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:297
 msgid "Extract File..."
 msgstr "Ekstrak Fail..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:185
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:239
 msgid "Extract Files..."
 msgstr "Ekstrak Fail..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:195
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:249
 msgid "Extract System Data..."
 msgstr "Ekstrak Data Sistem..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:299
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:353
 msgid "Extracting All Files..."
 msgstr "Mengekstrak Semua Fail..."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:300
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:354
 msgid "Extracting Directory..."
 msgstr "Mengekstrak Direktori..."
 
@@ -3826,7 +3842,7 @@ msgstr ""
 msgid "Failed to add this session to the NetPlay index: %1"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1613
+#: Source/Core/DolphinQt/MenuBar.cpp:1618
 msgid "Failed to append to signature file '%1'"
 msgstr ""
 
@@ -3901,11 +3917,11 @@ msgstr ""
 msgid "Failed to extract certificates from NAND"
 msgstr "Gagal mengekstrak sijil dari NAND"
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:328
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:382
 msgid "Failed to extract file."
 msgstr "Gagal mengekstrak fail."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:205
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:259
 msgid "Failed to extract system data."
 msgstr "Gagal mengekstrak data sistem."
 
@@ -3974,8 +3990,8 @@ msgstr ""
 "Gagal mendengar pada port %1. Adakah kejadian lain pelayan NetPlay masih "
 "berjalan?"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1291
-#: Source/Core/DolphinQt/MenuBar.cpp:1342
+#: Source/Core/DolphinQt/MenuBar.cpp:1293
+#: Source/Core/DolphinQt/MenuBar.cpp:1345
 msgid "Failed to load RSO module at %1"
 msgstr "Gagal memuatkan modul RSO pada %1"
 
@@ -3987,7 +4003,7 @@ msgstr ""
 msgid "Failed to load dxgi.dll"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1554
+#: Source/Core/DolphinQt/MenuBar.cpp:1557
 msgid "Failed to load map file '%1'"
 msgstr ""
 
@@ -4054,6 +4070,10 @@ msgstr ""
 msgid "Failed to parse Redump.org data"
 msgstr ""
 
+#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:213
+msgid "Failed to read DFF file."
+msgstr ""
+
 #: Source/Core/DolphinQt/GCMemcardManager.cpp:848
 msgid "Failed to read from file."
 msgstr ""
@@ -4099,19 +4119,19 @@ msgstr ""
 msgid "Failed to save FIFO log."
 msgstr "Gagal menyimpan log FIFO."
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1546
+#: Source/Core/DolphinQt/MenuBar.cpp:1549
 msgid "Failed to save code map to path '%1'"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1587
+#: Source/Core/DolphinQt/MenuBar.cpp:1591
 msgid "Failed to save signature file '%1'"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1567
+#: Source/Core/DolphinQt/MenuBar.cpp:1570
 msgid "Failed to save symbol map to path '%1'"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1663
+#: Source/Core/DolphinQt/MenuBar.cpp:1668
 msgid "Failed to save to signature file '%1'"
 msgstr ""
 
@@ -4487,11 +4507,11 @@ msgstr ""
 msgid "Frets"
 msgstr "Frets"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:175
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:178
 msgid "From"
 msgstr "Dari"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:134
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:137
 #: Source/Core/DolphinQt/FIFO/FIFOPlayerWindow.cpp:92
 #: Source/Core/DolphinQt/FIFO/FIFOPlayerWindow.cpp:107
 msgid "From:"
@@ -4630,7 +4650,7 @@ msgid ""
 "GPU: Does your video card support OpenGL 3?"
 msgstr ""
 
-#: Source/Core/VideoBackends/OGL/OGLRender.cpp:589
+#: Source/Core/VideoBackends/OGL/OGLRender.cpp:586
 msgid ""
 "GPU: OGL ERROR: Need at least GLSL 1.30\n"
 "GPU: Does your video card support OpenGL 3.0?\n"
@@ -4809,7 +4829,7 @@ msgstr "Jerman"
 msgid "Germany"
 msgstr "Jerman"
 
-#: Source/Core/UICommon/UICommon.cpp:442
+#: Source/Core/UICommon/UICommon.cpp:443
 msgid "GiB"
 msgstr "GiB"
 
@@ -5238,10 +5258,10 @@ msgstr ""
 msgid "Info"
 msgstr "Maklumat"
 
-#: Source/Core/Common/MsgHandler.cpp:57
+#: Source/Core/Common/MsgHandler.cpp:59
 #: Source/Core/DolphinQt/GameList/GameList.cpp:688
 #: Source/Core/DolphinQt/MenuBar.cpp:1251
-#: Source/Core/DolphinQt/MenuBar.cpp:1472
+#: Source/Core/DolphinQt/MenuBar.cpp:1475
 msgid "Information"
 msgstr "Maklumat"
 
@@ -5249,11 +5269,11 @@ msgstr "Maklumat"
 msgid "Inhibit Screensaver During Emulation"
 msgstr ""
 
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:253
-#: Source/Core/DolphinQt/MenuBar.cpp:1273
-#: Source/Core/DolphinQt/MenuBar.cpp:1328
-#: Source/Core/DolphinQt/MenuBar.cpp:1573
-#: Source/Core/DolphinQt/MenuBar.cpp:1597
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:254
+#: Source/Core/DolphinQt/MenuBar.cpp:1274
+#: Source/Core/DolphinQt/MenuBar.cpp:1330
+#: Source/Core/DolphinQt/MenuBar.cpp:1576
+#: Source/Core/DolphinQt/MenuBar.cpp:1601
 msgid "Input"
 msgstr "Input"
 
@@ -5280,6 +5300,10 @@ msgstr "Sisip Kad SD"
 msgid "Install"
 msgstr ""
 
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:152
+msgid "Install Partition (%1)"
+msgstr ""
+
 #: Source/Core/DolphinQt/Updater.cpp:72
 msgid "Install Update"
 msgstr ""
@@ -5300,11 +5324,11 @@ msgstr ""
 msgid "Instruction"
 msgstr ""
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:35
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:36
 msgid "Instruction Breakpoint"
 msgstr "Titik Henti Arahan"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1688
+#: Source/Core/DolphinQt/MenuBar.cpp:1694
 msgid "Instruction:"
 msgstr ""
 
@@ -5363,7 +5387,7 @@ msgstr ""
 msgid "Invalid Expression."
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:188
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:200
 msgid "Invalid Mixed Code"
 msgstr "Kod Bercampur Tidak Sah"
 
@@ -5376,7 +5400,7 @@ msgstr ""
 msgid "Invalid Player ID"
 msgstr "ID Pemain Tidak Sah"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1279
+#: Source/Core/DolphinQt/MenuBar.cpp:1281
 msgid "Invalid RSO module address: %1"
 msgstr "Alamat modul RSO tidak sah: %1"
 
@@ -5392,12 +5416,12 @@ msgstr ""
 msgid "Invalid host"
 msgstr "Hos tidak sah"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:141
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:144
 msgid "Invalid input for the field \"%1\""
 msgstr "Input tidak sah untuk medan \"%1\""
 
 #: Source/Core/DolphinQt/Debugger/RegisterColumn.cpp:86
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:375
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:377
 msgid "Invalid input provided"
 msgstr "Input tidak sah disediakan"
 
@@ -5429,7 +5453,7 @@ msgstr "Parameter gelintar tidak sah (hanya panjang rentetan disokong)"
 msgid "Invalid title ID."
 msgstr "ID tajuk tidak sah."
 
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:259
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:261
 msgid "Invalid watch address: %1"
 msgstr ""
 
@@ -5555,7 +5579,7 @@ msgstr "Papan Kekunci"
 msgid "Keys"
 msgstr "Kekunci"
 
-#: Source/Core/UICommon/UICommon.cpp:442
+#: Source/Core/UICommon/UICommon.cpp:443
 msgid "KiB"
 msgstr "KiB"
 
@@ -5652,7 +5676,7 @@ msgid ""
 "Right click to re-center it."
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/Mapping/MappingButton.cpp:86
+#: Source/Core/DolphinQt/Config/Mapping/MappingButton.cpp:89
 msgid ""
 "Left-click to detect input.\n"
 "Middle-click to clear.\n"
@@ -5662,7 +5686,7 @@ msgstr ""
 "Klik-tengah untuk kosongkan.\n"
 "Klik-kanan untuk lagi pilihan."
 
-#: Source/Core/DolphinQt/Config/Mapping/MappingButton.cpp:90
+#: Source/Core/DolphinQt/Config/Mapping/MappingButton.cpp:93
 msgid ""
 "Left/Right-click to configure output.\n"
 "Middle-click to clear."
@@ -5845,8 +5869,8 @@ msgstr "Muat dari Slot Terpilih"
 msgid "Load from Slot %1 - %2"
 msgstr "Muat dari Slot %1 - %2"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1491
-#: Source/Core/DolphinQt/MenuBar.cpp:1507
+#: Source/Core/DolphinQt/MenuBar.cpp:1494
+#: Source/Core/DolphinQt/MenuBar.cpp:1510
 msgid "Load map file"
 msgstr "Muat fail peta"
 
@@ -5854,7 +5878,7 @@ msgstr "Muat fail peta"
 msgid "Load..."
 msgstr "Muat..."
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1473
+#: Source/Core/DolphinQt/MenuBar.cpp:1476
 msgid "Loaded symbols from '%1'"
 msgstr "Simbol dimuatkan dari '%1'"
 
@@ -6003,7 +6027,7 @@ msgstr ""
 msgid "Memory"
 msgstr "Ingatan"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:46
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:47
 msgid "Memory Breakpoint"
 msgstr "Titik Henti Ingatan"
 
@@ -6062,7 +6086,7 @@ msgstr ""
 "tidak boleh dikembalikan, oleh itu disarankan anda sandar kedua-dua NAND. "
 "Anda pasti mahu teruskan?"
 
-#: Source/Core/UICommon/UICommon.cpp:442
+#: Source/Core/UICommon/UICommon.cpp:443
 msgid "MiB"
 msgstr "MiB"
 
@@ -6112,8 +6136,8 @@ msgid ""
 "unchecked.</dolphin_emphasis>"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1297
-#: Source/Core/DolphinQt/MenuBar.cpp:1440
+#: Source/Core/DolphinQt/MenuBar.cpp:1299
+#: Source/Core/DolphinQt/MenuBar.cpp:1443
 msgid "Modules found: %1"
 msgstr ""
 
@@ -6190,7 +6214,7 @@ msgid "NTSC-U"
 msgstr "NTSC-U"
 
 #: Source/Core/DolphinQt/CheatsManager.cpp:643
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:58
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:60
 #: Source/Core/DolphinQt/Debugger/NetworkWidget.cpp:302
 #: Source/Core/DolphinQt/Debugger/NetworkWidget.cpp:324
 #: Source/Core/DolphinQt/NetPlay/NetPlayBrowser.cpp:222
@@ -6199,11 +6223,11 @@ msgstr "NTSC-U"
 msgid "Name"
 msgstr ""
 
-#: Source/Core/DolphinQt/GameList/GameList.cpp:1033
+#: Source/Core/DolphinQt/GameList/GameList.cpp:1034
 msgid "Name for a new tag:"
 msgstr ""
 
-#: Source/Core/DolphinQt/GameList/GameList.cpp:1043
+#: Source/Core/DolphinQt/GameList/GameList.cpp:1046
 msgid "Name of the tag to remove:"
 msgstr ""
 
@@ -6211,7 +6235,7 @@ msgstr ""
 msgid "Name of your session shown in the server browser"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:95
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:97
 #: Source/Core/DolphinQt/Config/GeckoCodeWidget.cpp:95
 #: Source/Core/DolphinQt/Config/InfoWidget.cpp:120
 #: Source/Core/DolphinQt/Config/InfoWidget.cpp:155
@@ -6271,7 +6295,7 @@ msgstr ""
 msgid "New"
 msgstr "Baharu"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:22
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:23
 msgid "New Breakpoint"
 msgstr "Titik Henti Baharu"
 
@@ -6291,7 +6315,7 @@ msgstr "Identiti baharu dijanakan."
 msgid "New instruction:"
 msgstr "Arahan baharu:"
 
-#: Source/Core/DolphinQt/GameList/GameList.cpp:1033
+#: Source/Core/DolphinQt/GameList/GameList.cpp:1034
 msgid "New tag"
 msgstr ""
 
@@ -6376,11 +6400,11 @@ msgstr "Tiada isu dikesan."
 msgid "No paths found in the M3U file \"{0}\""
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1376
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1379
 msgid "No problems were found."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1370
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1373
 msgid ""
 "No problems were found. This does not guarantee that this is a good dump, "
 "but since Wii titles contain a lot of verification data, it does mean that "
@@ -6463,7 +6487,7 @@ msgid ""
 "use."
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:91
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:93
 msgid "Notes:"
 msgstr "Nota:"
 
@@ -6548,13 +6572,13 @@ msgstr ""
 msgid "Online &Documentation"
 msgstr "&Dokumentasi Atas Talian"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1597
+#: Source/Core/DolphinQt/MenuBar.cpp:1601
 msgid ""
 "Only append symbols with prefix:\n"
 "(Blank for all symbols)"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1573
+#: Source/Core/DolphinQt/MenuBar.cpp:1576
 msgid ""
 "Only export symbols with prefix:\n"
 "(Blank for all symbols)"
@@ -6645,6 +6669,10 @@ msgstr ""
 msgid "Other"
 msgstr "Lain-lain"
 
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:156
+msgid "Other Partition (%1)"
+msgstr ""
+
 #: Source/Core/Core/HotkeyManager.cpp:351
 #: Source/Core/DolphinQt/Config/Mapping/HotkeyStatesOther.cpp:25
 msgid "Other State Hotkeys"
@@ -6701,14 +6729,10 @@ msgstr "Pad"
 msgid "Parameters"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:171
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:257
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:183
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:279
 msgid "Parsing Error"
 msgstr "Ralat menghurai"
-
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:104
-msgid "Partition %1"
-msgstr "Sekatan %1"
 
 #: Source/Core/DolphinQt/Config/Graphics/EnhancementsWidget.cpp:120
 msgid "Passive"
@@ -6796,7 +6820,7 @@ msgstr "Lakukan Kemaskini Sistem"
 msgid "Physical"
 msgstr ""
 
-#: Source/Core/UICommon/UICommon.cpp:443
+#: Source/Core/UICommon/UICommon.cpp:444
 msgid "PiB"
 msgstr "PiB"
 
@@ -6962,19 +6986,19 @@ msgstr ""
 msgid "Problem"
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1391
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1394
 msgid ""
 "Problems with high severity were found. The game will most likely not work "
 "at all."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1381
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1384
 msgid ""
 "Problems with low severity were found. They will most likely not prevent the "
 "game from running."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1386
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1389
 msgid ""
 "Problems with medium severity were found. The whole game or certain parts of "
 "the game might not work correctly."
@@ -6989,7 +7013,7 @@ msgstr "Profil"
 msgid "Program Counter"
 msgstr "Kiraan Program"
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:288
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:342
 #: Source/Core/DolphinQt/ConvertDialog.cpp:411
 msgid "Progress"
 msgstr ""
@@ -7026,7 +7050,7 @@ msgstr ""
 msgid "Quality of the DPLII decoder. Audio latency increases with quality."
 msgstr ""
 
-#: Source/Core/Common/MsgHandler.cpp:58
+#: Source/Core/Common/MsgHandler.cpp:60
 #: Source/Core/DolphinQt/ConvertDialog.cpp:429
 #: Source/Core/DolphinQt/GCMemcardManager.cpp:645
 #: Source/Core/DolphinQt/MainWindow.cpp:1603
@@ -7071,7 +7095,7 @@ msgstr ""
 
 #. i18n: A range of memory addresses
 #: Source/Core/DolphinQt/Config/Mapping/IOWindow.cpp:323
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:51
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:52
 msgid "Range"
 msgstr "Julat"
 
@@ -7080,7 +7104,7 @@ msgid "Re&place instruction"
 msgstr "&Ganti arahan"
 
 #. i18n: This is a selectable condition when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:57
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:58
 msgid "Read"
 msgstr "Baca"
 
@@ -7099,7 +7123,7 @@ msgid "Read only"
 msgstr "Baca sahaja"
 
 #. i18n: This is a selectable condition when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:61
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:62
 msgid "Read or Write"
 msgstr "Baca atau Tulis"
 
@@ -7239,7 +7263,7 @@ msgstr ""
 msgid "Remove from Watch"
 msgstr ""
 
-#: Source/Core/DolphinQt/GameList/GameList.cpp:1043
+#: Source/Core/DolphinQt/GameList/GameList.cpp:1046
 msgid "Remove tag"
 msgstr ""
 
@@ -7507,7 +7531,7 @@ msgstr ""
 msgid "Save FIFO log"
 msgstr "Simpan log FIFO"
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:245
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:299
 msgid "Save File to"
 msgstr "Simpan Fail ke"
 
@@ -7601,7 +7625,7 @@ msgstr "Simpan dan Muat Keadaan"
 msgid "Save as..."
 msgstr "Simpan sebagai..."
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1649
+#: Source/Core/DolphinQt/MenuBar.cpp:1654
 msgid "Save combined output file as"
 msgstr ""
 
@@ -7616,11 +7640,11 @@ msgstr ""
 msgid "Save in Same Directory as the ROM"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1524
+#: Source/Core/DolphinQt/MenuBar.cpp:1527
 msgid "Save map file"
 msgstr "Simpan fail peta"
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1575
+#: Source/Core/DolphinQt/MenuBar.cpp:1579
 msgid "Save signature file"
 msgstr "Simpan fail tandatangan"
 
@@ -7685,7 +7709,7 @@ msgstr ""
 msgid "Search games..."
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1688
+#: Source/Core/DolphinQt/MenuBar.cpp:1694
 msgid "Search instruction"
 msgstr ""
 
@@ -7835,7 +7859,7 @@ msgstr "Pilih satu tajuk untuk dipasang ke dalam NAND"
 msgid "Select e-Reader Cards"
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1328
+#: Source/Core/DolphinQt/MenuBar.cpp:1330
 msgid "Select the RSO module address:"
 msgstr ""
 
@@ -8291,7 +8315,7 @@ msgstr "Simulasikan DK Bongos"
 msgid "Six Axis"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:58
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:60
 #: Source/Core/DolphinQt/GameList/GameListModel.cpp:225
 msgid "Size"
 msgstr "Saiz"
@@ -8368,11 +8392,11 @@ msgstr ""
 msgid "Software Renderer"
 msgstr "Penerap Perisian"
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1285
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1288
 msgid "Some of the data could not be read."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1020
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1023
 msgid ""
 "Some padding data that should be zero is not zero. This can make the game "
 "freeze at certain points."
@@ -8633,8 +8657,8 @@ msgstr "Strum"
 msgid "Stylus"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:202
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:326
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:256
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:380
 #: Source/Core/DolphinQt/Config/Mapping/MappingWindow.cpp:258
 #: Source/Core/DolphinQt/ConvertDialog.cpp:509
 #: Source/Core/DolphinQt/GameList/GameList.cpp:555
@@ -8671,11 +8695,11 @@ msgstr "Berjaya mengimport fail simpan"
 msgid "Successfully extracted certificates from NAND"
 msgstr "Berjaya mengekstrak sijil dari NAND"
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:326
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:380
 msgid "Successfully extracted file."
 msgstr "Berjaya mengekstrak fail."
 
-#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:203
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:257
 msgid "Successfully extracted system data."
 msgstr "Berjaya mengekstrak data sistem."
 
@@ -8859,7 +8883,7 @@ msgstr ""
 msgid "Texture Format Overlay"
 msgstr "Tindihan Format Tekstur"
 
-#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:218
+#: Source/Core/Core/FifoPlayer/FifoDataFile.cpp:237
 msgid ""
 "The DFF's minimum loader version ({0}) exceeds the version of this FIFO "
 "Player ({1})"
@@ -8895,14 +8919,14 @@ msgstr ""
 msgid "The NAND has been repaired."
 msgstr "NAND telah dibaiki."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:975
+#: Source/Core/DiscIO/VolumeVerifier.cpp:978
 msgid ""
 "The TMD is not correctly signed. If you move or copy this title to the SD "
 "Card, the Wii System Menu will not launch it anymore and will also refuse to "
 "copy or move it back to the NAND."
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:235
+#: Source/Core/Core/ActionReplay.cpp:236
 msgid "The address is invalid"
 msgstr "Alamat tidak sah"
 
@@ -9007,21 +9031,21 @@ msgstr ""
 msgid "The filesystem is invalid or could not be read."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:756
+#: Source/Core/DiscIO/VolumeVerifier.cpp:759
 msgid ""
 "The format that the disc image is saved in does not store the size of the "
 "disc image."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:859
+#: Source/Core/DiscIO/VolumeVerifier.cpp:862
 msgid "The game ID is inconsistent."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:870
+#: Source/Core/DiscIO/VolumeVerifier.cpp:873
 msgid "The game ID is unusually short."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:851
+#: Source/Core/DiscIO/VolumeVerifier.cpp:854
 msgid "The game ID is {0} but should be {1}."
 msgstr ""
 
@@ -9044,7 +9068,7 @@ msgstr ""
 "masalah dengan menu sistem. Adalah mustahil mengemaskini konsol teremulasi "
 "dengan cakera ini."
 
-#: Source/Core/VideoBackends/OGL/OGLRender.cpp:720
+#: Source/Core/VideoBackends/OGL/OGLRender.cpp:717
 msgid ""
 "The graphics driver is forcibly enabling anti-aliasing for Dolphin. You need "
 "to turn this off in the graphics driver's settings in order for Dolphin to "
@@ -9080,15 +9104,14 @@ msgstr "Profil '%1' tidak wujud"
 msgid "The recorded game ({0}) is not the same as the selected game ({1})"
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:888
+#: Source/Core/DiscIO/VolumeVerifier.cpp:891
 msgid ""
 "The region code does not match the game ID. If this is because the region "
 "code has been modified, the game might run at the wrong speed, graphical "
 "elements might be offset, or the game might not run at all."
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:217
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:281
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:229
 msgid "The resulting decrypted AR code doesn't contain any lines."
 msgstr "Kod AR dinyahsulit yang terhasil tidak mengandungi sebarang baris."
 
@@ -9117,7 +9140,7 @@ msgid ""
 msgstr ""
 
 #. i18n: This is "common" as in "shared", not the opposite of "uncommon"
-#: Source/Core/DiscIO/VolumeVerifier.cpp:948
+#: Source/Core/DiscIO/VolumeVerifier.cpp:951
 msgid "The specified common key index is {0} but should be {1}."
 msgstr ""
 
@@ -9130,7 +9153,7 @@ msgid "The target memory card already contains a file \"%1\"."
 msgstr ""
 
 #. i18n: "Ticket" here is a kind of digital authorization to use a certain title (e.g. a game)
-#: Source/Core/DiscIO/VolumeVerifier.cpp:966
+#: Source/Core/DiscIO/VolumeVerifier.cpp:969
 msgid "The ticket is not correctly signed."
 msgstr ""
 
@@ -9146,7 +9169,7 @@ msgstr ""
 "Kemaskini dibatalkan. Adalah disarankan selesaikannya supaya dapat "
 "menghindari ketidaktepatan versi perisian sistem."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:658
+#: Source/Core/DiscIO/VolumeVerifier.cpp:661
 msgid "The update partition does not contain the IOS used by this title."
 msgstr ""
 
@@ -9158,7 +9181,7 @@ msgstr ""
 msgid "The update partition is not at its normal position."
 msgstr ""
 
-#: Source/Core/Core/ActionReplay.cpp:238
+#: Source/Core/Core/ActionReplay.cpp:239
 msgid "The value is invalid"
 msgstr "Nilai tidak sah"
 
@@ -9198,7 +9221,7 @@ msgstr ""
 "Tetapan ini membatalkan tetapan teras Dolphin.\n"
 "Tidak ditentukan bermaksud permainan menggunakan tetapan Dolphin."
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:189
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:201
 msgid ""
 "This Action Replay code contains both encrypted and unencrypted lines; you "
 "should check that you have entered it correctly.\n"
@@ -9210,9 +9233,13 @@ msgstr ""
 "\n"
 "Anda mahu singkirkan semua baris tidak tersulit?"
 
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:302
+msgid "This Gecko code doesn't contain any lines."
+msgstr ""
+
 #. i18n: You may want to leave the term "ERROR #002" untranslated,
 #. since the emulated software always displays it in English.
-#: Source/Core/DiscIO/VolumeVerifier.cpp:913
+#: Source/Core/DiscIO/VolumeVerifier.cpp:916
 msgid ""
 "This Korean title is set to use an IOS that typically isn't used on Korean "
 "consoles. This is likely to lead to ERROR #002."
@@ -9222,15 +9249,15 @@ msgstr ""
 msgid "This USB device is already whitelisted."
 msgstr "Peranti USB sudah berada dalam senarai putih."
 
-#: Source/Core/Core/ConfigManager.cpp:889
+#: Source/Core/Core/ConfigManager.cpp:887
 msgid "This WAD is not bootable."
 msgstr "WAD ini tidak boleh dibutkan."
 
-#: Source/Core/Core/ConfigManager.cpp:884
+#: Source/Core/Core/ConfigManager.cpp:882
 msgid "This WAD is not valid."
 msgstr "WAD ini tidak sah."
 
-#: Source/Core/Core/ActionReplay.cpp:890
+#: Source/Core/Core/ActionReplay.cpp:891
 msgid ""
 "This action replay simulator does not support codes that modify Action "
 "Replay itself."
@@ -9243,22 +9270,22 @@ msgstr ""
 msgid "This cannot be undone!"
 msgstr "Ia tidak boleh dikembalikan!"
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:800
+#: Source/Core/DiscIO/VolumeVerifier.cpp:803
 msgid "This debug disc image has the size of a retail disc image."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:823
+#: Source/Core/DiscIO/VolumeVerifier.cpp:826
 msgid "This disc image has an unusual size."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:817
+#: Source/Core/DiscIO/VolumeVerifier.cpp:820
 msgid ""
 "This disc image has an unusual size. This will likely make the emulated "
 "loading times longer. You will likely be unable to share input recordings "
 "and use NetPlay with anyone who is using a good dump."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:985
+#: Source/Core/DiscIO/VolumeVerifier.cpp:988
 msgid ""
 "This disc image is in the NKit format. It is not a good dump in its current "
 "form, but it might become a good dump if converted back. The CRC32 of this "
@@ -9266,13 +9293,13 @@ msgid ""
 "identical."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:776
+#: Source/Core/DiscIO/VolumeVerifier.cpp:779
 msgid ""
 "This disc image is too small and lacks some data. If your dumping program "
 "saved the disc image as several parts, you need to merge them into one file."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:773
+#: Source/Core/DiscIO/VolumeVerifier.cpp:776
 msgid ""
 "This disc image is too small and lacks some data. The problem is most likely "
 "that this is a dual-layer disc that has been dumped as a single-layer disc."
@@ -9282,7 +9309,7 @@ msgstr ""
 msgid "This file does not look like a BootMii NAND backup."
 msgstr "Fail ini tidak kelihatan seperti sandar NAND BootMii."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:748
+#: Source/Core/DiscIO/VolumeVerifier.cpp:751
 msgid ""
 "This game has been hacked to fit on a single-layer DVD. Some content such as "
 "pre-rendered videos, extra languages or entire game modes will be broken. "
@@ -9299,23 +9326,23 @@ msgstr ""
 "tetapi kad grafik anda atau pemacunya tidak menyokong ia. Hasilnya anda akan "
 "menghadapi pepijat atau menjadi kaku ketika menjalankan permainan ini."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1361
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1364
 msgid "This is a bad dump."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1355
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1358
 msgid ""
 "This is a bad dump. This doesn't necessarily mean that the game won't run "
 "correctly."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1331
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1334
 msgid ""
 "This is a good dump according to Redump.org, but Dolphin has found problems. "
 "This might be a bug in Dolphin."
 msgstr ""
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:1326
+#: Source/Core/DiscIO/VolumeVerifier.cpp:1329
 msgid "This is a good dump."
 msgstr ""
 
@@ -9337,16 +9364,16 @@ msgstr ""
 "Perisian ini tidak seharusnya digunakan untuk main permainan bukan milik "
 "anda secara sah."
 
-#: Source/Core/Core/ConfigManager.cpp:907
+#: Source/Core/Core/ConfigManager.cpp:905
 msgid "This title cannot be booted."
 msgstr "Tajuk ini tidak boleh dibutkan."
 
-#: Source/Core/DiscIO/VolumeVerifier.cpp:921
+#: Source/Core/DiscIO/VolumeVerifier.cpp:924
 msgid "This title is set to use an invalid IOS."
 msgstr ""
 
 #. i18n: This is "common" as in "shared", not the opposite of "uncommon"
-#: Source/Core/DiscIO/VolumeVerifier.cpp:935
+#: Source/Core/DiscIO/VolumeVerifier.cpp:938
 msgid "This title is set to use an invalid common key."
 msgstr ""
 
@@ -9406,7 +9433,7 @@ msgstr ""
 msgid "Threshold"
 msgstr "Ambang"
 
-#: Source/Core/UICommon/UICommon.cpp:443
+#: Source/Core/UICommon/UICommon.cpp:444
 msgid "TiB"
 msgstr "TiB"
 
@@ -9428,11 +9455,11 @@ msgstr ""
 msgid "Title"
 msgstr "Tajuk"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:184
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:187
 msgid "To"
 msgstr "Ke"
 
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:55
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:56
 #: Source/Core/DolphinQt/FIFO/FIFOPlayerWindow.cpp:94
 #: Source/Core/DolphinQt/FIFO/FIFOPlayerWindow.cpp:109
 msgid "To:"
@@ -9662,11 +9689,11 @@ msgid ""
 "behavior."
 msgstr ""
 
-#: Source/Core/DolphinQt/MenuBar.cpp:1322
+#: Source/Core/DolphinQt/MenuBar.cpp:1324
 msgid "Unable to auto-detect RSO module"
 msgstr ""
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:172
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:184
 msgid ""
 "Unable to parse line %1 of the entered AR code as a valid encrypted or "
 "decrypted code. Make sure you typed it correctly.\n"
@@ -9678,7 +9705,7 @@ msgstr ""
 "\n"
 "Anda hendak abaikan baris ini dan teruskan menghurai?"
 
-#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:258
+#: Source/Core/DolphinQt/Config/CheatCodeEditor.cpp:280
 msgid ""
 "Unable to parse line %1 of the entered Gecko code as a valid code. Make sure "
 "you typed it correctly.\n"
@@ -9807,10 +9834,14 @@ msgid "Up"
 msgstr "Naik"
 
 #: Source/Core/DolphinQt/Debugger/RegisterWidget.cpp:227
-#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:322
+#: Source/Core/DolphinQt/Debugger/WatchWidget.cpp:324
 #: Source/Core/DolphinQt/MenuBar.cpp:567
 msgid "Update"
 msgstr "Kemaskini"
+
+#: Source/Core/DolphinQt/Config/FilesystemWidget.cpp:146
+msgid "Update Partition (%1)"
+msgstr ""
 
 #: Source/Core/DolphinQt/Updater.cpp:63
 msgid "Update after closing Dolphin"
@@ -10142,13 +10173,13 @@ msgid ""
 "<br><br><dolphin_emphasis>If unsure, leave this checked.</dolphin_emphasis>"
 msgstr ""
 
-#: Source/Core/Common/MsgHandler.cpp:59
+#: Source/Core/Common/MsgHandler.cpp:61
 #: Source/Core/DolphinQt/Config/GameConfigEdit.cpp:124
 #: Source/Core/DolphinQt/Config/GameConfigEdit.cpp:131
 #: Source/Core/DolphinQt/Config/LogConfigWidget.cpp:47
 #: Source/Core/DolphinQt/Config/WiimoteControllersWidget.cpp:240
 #: Source/Core/DolphinQt/Config/WiimoteControllersWidget.cpp:256
-#: Source/Core/DolphinQt/MenuBar.cpp:1461
+#: Source/Core/DolphinQt/MenuBar.cpp:1464
 #: Source/Core/DolphinQt/NetPlay/NetPlayDialog.cpp:418
 msgid "Warning"
 msgstr "Amaran"
@@ -10354,7 +10385,7 @@ msgid "World"
 msgstr "Dunia"
 
 #. i18n: This is a selectable condition when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:59
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:60
 msgid "Write"
 msgstr "Tulis"
 
@@ -10378,12 +10409,12 @@ msgid "Write to File"
 msgstr "Tulis ke Fail"
 
 #. i18n: This is a selectable action when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:64
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:65
 msgid "Write to Log"
 msgstr "Tulis ke Log"
 
 #. i18n: This is a selectable action when adding a breakpoint
-#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:68
+#: Source/Core/DolphinQt/Debugger/NewBreakpointDialog.cpp:69
 msgid "Write to Log and Break"
 msgstr "Tulis ke Log dan Henti"
 
@@ -10467,6 +10498,19 @@ msgstr ""
 msgid "You are running the latest version available on this update track."
 msgstr ""
 
+#: Source/Core/Core/DSP/DSPCore.cpp:89
+msgid ""
+"You are using an old free DSP ROM made by the Dolphin Team.\n"
+"Due to emulation accuracy improvements, this ROM no longer works correctly.\n"
+"\n"
+"Delete the dsp_rom.bin and dsp_coef.bin files in the GC folder in the Global "
+"User Directory to use the most recent free DSP ROM, or replace them with "
+"good dumps from a real GameCube/Wii.\n"
+"\n"
+"Would you like to stop now to fix the problem?\n"
+"If you select \"No\", audio might be garbled."
+msgstr ""
+
 #: Source/Core/Core/IOS/ES/ES.cpp:308
 msgid ""
 "You cannot use the Wii Shop Channel without using your own device "
@@ -10499,15 +10543,17 @@ msgstr "Anda mesti mulakan semula Dolphin supaya perubahan berkesan."
 msgid "You must select a game to host!"
 msgstr "Anda mesti pilih satu permainan untuk dihoskan!"
 
-#: Source/Core/Core/DSP/DSPCore.cpp:72
+#: Source/Core/Core/DSP/DSPCore.cpp:75
 msgid ""
 "Your DSP ROMs have incorrect hashes.\n"
+"\n"
+"Delete the dsp_rom.bin and dsp_coef.bin files in the GC folder in the Global "
+"User Directory to use the free DSP ROM, or replace them with good dumps from "
+"a real GameCube/Wii.\n"
+"\n"
 "Would you like to stop now to fix the problem?\n"
 "If you select \"No\", audio might be garbled."
 msgstr ""
-"ROM DSP anda mempunyai cincangan yang salah.\n"
-"Anda hendak hentikan sekarang untuk membaiki masalah?\n"
-"Jika anda pilih \"Tidak\", audio akan tidak berbutir."
 
 #. i18n: Refers to a 3D axis (used when mapping motion controls)
 #: Source/Core/DolphinQt/TAS/WiiTASInputWindow.cpp:116
@@ -10516,11 +10562,11 @@ msgstr ""
 msgid "Z"
 msgstr "Z"
 
-#: Source/Core/Core/ActionReplay.cpp:923
+#: Source/Core/Core/ActionReplay.cpp:924
 msgid "Zero 3 code not supported"
 msgstr "Kod Zero 3 tidak disokong"
 
-#: Source/Core/Core/ActionReplay.cpp:943
+#: Source/Core/Core/ActionReplay.cpp:944
 msgid "Zero code unknown to Dolphin: {0:08x}"
 msgstr ""
 
@@ -10612,7 +10658,7 @@ msgstr ""
 #. (French), Clásicos (Spanish), Capolavori (Italian), 클래식 게임 체험판 (Korean).
 #. If your language is not one of the languages above, consider leaving the string untranslated
 #. so that people will recognize it as the name of the game mode.
-#: Source/Core/DiscIO/VolumeVerifier.cpp:680
+#: Source/Core/DiscIO/VolumeVerifier.cpp:683
 msgid "{0} (Masterpiece)"
 msgstr ""
 
