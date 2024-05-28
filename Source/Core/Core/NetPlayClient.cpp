@@ -324,7 +324,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
                  player.revision);
 
     {
-      std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+      std::lock_guard lkp(m_crit.players);
       m_players[player.pid] = player;
     }
 
@@ -340,7 +340,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
     packet >> pid;
 
     {
-      std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+      std::lock_guard lkp(m_crit.players);
       const auto it = m_players.find(pid);
       if (it == m_players.end())
         break;
@@ -591,7 +591,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
   {
     std::string netplay_name;
     {
-      std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
+      std::lock_guard lkg(m_crit.game);
       ReceiveSyncIdentifier(packet, m_selected_game);
       packet >> netplay_name;
     }
@@ -623,7 +623,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
     packet >> pid;
 
     {
-      std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+      std::lock_guard lkp(m_crit.players);
       Player& player = m_players[pid];
       u32 status;
       packet >> status;
@@ -637,7 +637,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
   case NP_MSG_START_GAME:
   {
     {
-      std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
+      std::lock_guard lkg(m_crit.game);
       packet >> m_current_game;
       packet >> m_net_settings.m_CPUthread;
 
@@ -767,7 +767,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
     packet >> pid;
 
     {
-      std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+      std::lock_guard lkp(m_crit.players);
       Player& player = m_players[pid];
       packet >> player.ping;
     }
@@ -785,7 +785,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
     packet >> frame;
 
     std::string player = "??";
-    std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+    std::lock_guard lkp(m_crit.players);
     {
       auto it = m_players.find(pid_to_blame);
       if (it != m_players.end())
@@ -808,7 +808,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
     }
 
     {
-      std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
+      std::lock_guard lkg(m_crit.game);
       memcpy(&g_SRAM.settings, sram, sram_settings_len);
       g_SRAM_netplay_initialized = true;
     }
@@ -1305,7 +1305,7 @@ void NetPlayClient::Disconnect()
 void NetPlayClient::SendAsync(sf::Packet&& packet, const u8 channel_id)
 {
   {
-    std::lock_guard<std::recursive_mutex> lkq(m_crit.async_queue_write);
+    std::lock_guard lkq(m_crit.async_queue_write);
     m_async_queue.Push(AsyncQueueEntry{std::move(packet), channel_id});
   }
   ENetUtil::WakeupThread(m_client);
@@ -1376,7 +1376,7 @@ void NetPlayClient::ThreadFunc()
 // called from ---GUI--- thread
 void NetPlayClient::GetPlayerList(std::string& list, std::vector<int>& pid_list)
 {
-  std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+  std::lock_guard lkp(m_crit.players);
 
   std::ostringstream ss;
 
@@ -1432,7 +1432,7 @@ void NetPlayClient::GetPlayerList(std::string& list, std::vector<int>& pid_list)
 // called from ---GUI--- thread
 std::vector<const Player*> NetPlayClient::GetPlayers()
 {
-  std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+  std::lock_guard lkp(m_crit.players);
   std::vector<const Player*> players;
 
   for (const auto& pair : m_players)
@@ -1499,7 +1499,7 @@ void NetPlayClient::SendStopGamePacket()
 // called from ---GUI--- thread
 bool NetPlayClient::StartGame(const std::string& path)
 {
-  std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
+  std::lock_guard lkg(m_crit.game);
   SendStartGamePacket();
 
   if (m_is_running.IsSet())
@@ -1950,7 +1950,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const std::size_t size,
   WiimoteInput nw;
   nw.report_id = reporting_mode;
   {
-    std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+    std::lock_guard lkp(m_crit.players);
 
     // Only send data, if this Wiimote is mapped to this player
     if (m_wiimote_map[_number] == m_local_player->pid)
@@ -2213,7 +2213,7 @@ void NetPlayClient::RequestGolfControl()
 // called from ---GUI--- thread
 std::string NetPlayClient::GetCurrentGolfer()
 {
-  std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+  std::lock_guard lkp(m_crit.players);
   if (m_players.count(m_current_golfer))
     return m_players[m_current_golfer].name;
   return "";
@@ -2290,7 +2290,7 @@ bool NetPlayClient::IsLocalPlayer(const PlayerId pid) const
 
 void NetPlayClient::SendTimeBase()
 {
-  std::lock_guard<std::mutex> lk(crit_netplay_client);
+  std::lock_guard lk(crit_netplay_client);
 
   if (netplay_client->m_timebase_frame % 60 == 0)
   {
@@ -2309,7 +2309,7 @@ void NetPlayClient::SendTimeBase()
 
 bool NetPlayClient::DoAllPlayersHaveGame()
 {
-  std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+  std::lock_guard lkp(m_crit.players);
 
   return std::all_of(std::begin(m_players), std::end(m_players), [](auto entry) {
     return entry.second.game_status == SyncIdentifierComparison::SameGame;
@@ -2430,7 +2430,7 @@ void SendPowerButtonEvent()
 
 bool IsSyncingAllWiiSaves()
 {
-  std::lock_guard<std::mutex> lk(crit_netplay_client);
+  std::lock_guard lk(crit_netplay_client);
 
   if (netplay_client)
     return netplay_client->GetNetSettings().m_SyncAllWiiSaves;
@@ -2457,13 +2457,13 @@ void SetupWiimotes()
 
 void NetPlay_Enable(NetPlayClient* const np)
 {
-  std::lock_guard<std::mutex> lk(crit_netplay_client);
+  std::lock_guard lk(crit_netplay_client);
   netplay_client = np;
 }
 
 void NetPlay_Disable()
 {
-  std::lock_guard<std::mutex> lk(crit_netplay_client);
+  std::lock_guard lk(crit_netplay_client);
   netplay_client = nullptr;
 }
 }  // namespace NetPlay
@@ -2474,7 +2474,7 @@ void NetPlay_Disable()
 // Actual Core function which is called on every frame
 bool SerialInterface::CSIDevice_GCController::NetPlay_GetInput(int pad_num, GCPadStatus* status)
 {
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+  std::lock_guard lk(NetPlay::crit_netplay_client);
 
   if (NetPlay::netplay_client)
     return NetPlay::netplay_client->GetNetPads(pad_num, NetPlay::s_si_poll_batching, status);
@@ -2484,7 +2484,7 @@ bool SerialInterface::CSIDevice_GCController::NetPlay_GetInput(int pad_num, GCPa
 
 bool WiimoteEmu::Wiimote::NetPlay_GetWiimoteData(int wiimote, u8* data, u8 size, u8 reporting_mode)
 {
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+  std::lock_guard lk(NetPlay::crit_netplay_client);
 
   if (NetPlay::netplay_client)
     return NetPlay::netplay_client->WiimoteUpdate(wiimote, data, size, reporting_mode);
@@ -2495,7 +2495,7 @@ bool WiimoteEmu::Wiimote::NetPlay_GetWiimoteData(int wiimote, u8* data, u8 size,
 // Sync the info whether a button was pressed or not. Used for the reconnect on button press feature
 bool Wiimote::NetPlay_GetButtonPress(int wiimote, bool pressed)
 {
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+  std::lock_guard lk(NetPlay::crit_netplay_client);
 
   // Use the reporting mode 0 for the button pressed event, the real ones start at RT_REPORT_CORE
   static const u8 BUTTON_PRESS_REPORTING_MODE = 0;
@@ -2521,7 +2521,7 @@ bool Wiimote::NetPlay_GetButtonPress(int wiimote, bool pressed)
 // also called from ---GUI--- thread when starting input recording
 u64 ExpansionInterface::CEXIIPL::NetPlay_GetEmulatedTime()
 {
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+  std::lock_guard lk(NetPlay::crit_netplay_client);
 
   if (NetPlay::netplay_client)
     return NetPlay::netplay_client->GetInitialRTCValue();
@@ -2533,7 +2533,7 @@ u64 ExpansionInterface::CEXIIPL::NetPlay_GetEmulatedTime()
 // return the local pad num that should rumble given a ingame pad num
 int SerialInterface::CSIDevice_GCController::NetPlay_InGamePadToLocalPad(int numPAD)
 {
-  std::lock_guard<std::mutex> lk(NetPlay::crit_netplay_client);
+  std::lock_guard lk(NetPlay::crit_netplay_client);
 
   if (NetPlay::netplay_client)
     return NetPlay::netplay_client->InGamePadToLocalPad(numPAD);

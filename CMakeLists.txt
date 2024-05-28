@@ -51,7 +51,7 @@ option(ENCODE_FRAMEDUMPS "Encode framedumps in AVI format" ON)
 
 option(ENABLE_GPROF "Enable gprof profiling (must be using Debug build)" OFF)
 option(FASTLOG "Enable all logs" OFF)
-option(GDBSTUB "Enable gdb stub for remote debugging." OFF)
+option(GDBSTUB "Enable gdb stub for remote debugging." ON)
 option(OPROFILING "Enable profiling" OFF)
 
 if (MSVC)
@@ -212,7 +212,7 @@ elseif(_ARCH_64 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
   add_definitions(-D_M_X86=1)
   add_definitions(-D_M_X86_64=1)
   check_and_add_flag(HAVE_SSE2 -msse2)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+elseif(_ARCH_64 AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
   set(_M_ARM_64 1)
   add_definitions(-D_M_ARM_64=1)
   # CRC instruction set is used in the CRC32 hash function

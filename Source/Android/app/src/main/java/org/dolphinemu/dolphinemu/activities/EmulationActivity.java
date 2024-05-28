@@ -45,6 +45,7 @@ import org.dolphinemu.dolphinemu.fragments.SaveLoadStateFragment;
 import org.dolphinemu.dolphinemu.overlay.InputOverlay;
 import org.dolphinemu.dolphinemu.overlay.InputOverlayPointer;
 import org.dolphinemu.dolphinemu.ui.main.MainActivity;
+import org.dolphinemu.dolphinemu.ui.main.MainPresenter;
 import org.dolphinemu.dolphinemu.ui.main.TvMainActivity;
 import org.dolphinemu.dolphinemu.utils.AfterDirectoryInitializationRunner;
 import org.dolphinemu.dolphinemu.utils.ControllerMappingHelper;
@@ -164,6 +165,11 @@ public final class EmulationActivity extends AppCompatActivity
             EmulationActivity.MENU_ACTION_MOTION_CONTROLS);
   }
 
+  public static void launch(FragmentActivity activity, String filePath)
+  {
+    launch(activity, new String[]{filePath});
+  }
+
   public static void launch(FragmentActivity activity, String[] filePaths)
   {
     if (sIgnoreLaunchRequests)
@@ -267,7 +273,7 @@ public final class EmulationActivity extends AppCompatActivity
     mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
     mSettings = new Settings();
-    mSettings.loadSettings(null);
+    mSettings.loadSettings();
 
     updateOrientation();
 
@@ -410,11 +416,7 @@ public final class EmulationActivity extends AppCompatActivity
       // If the user picked a file, as opposed to just backing out.
       if (resultCode == MainActivity.RESULT_OK)
       {
-        String newDiscPath = FileBrowserHelper.getSelectedPath(result);
-        if (!TextUtils.isEmpty(newDiscPath))
-        {
-          NativeLibrary.ChangeDisc(newDiscPath);
-        }
+        NativeLibrary.ChangeDisc(result.getData().toString());
       }
     }
   }
@@ -639,8 +641,10 @@ public final class EmulationActivity extends AppCompatActivity
         break;
 
       case MENU_ACTION_CHANGE_DISC:
-        FileBrowserHelper.openFilePicker(this, REQUEST_CHANGE_DISC, false,
-                FileBrowserHelper.GAME_EXTENSIONS);
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQUEST_CHANGE_DISC);
         break;
 
       case MENU_SET_IR_SENSITIVITY:

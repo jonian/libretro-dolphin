@@ -233,9 +233,6 @@
     <ClCompile Include="DSP\Interpreter\DSPIntBranch.cpp">
       <Filter>DSPCore\Interpreter</Filter>
     </ClCompile>
-    <ClCompile Include="DSP\Interpreter\DSPIntCCUtil.cpp">
-      <Filter>DSPCore\Interpreter</Filter>
-    </ClCompile>
     <ClCompile Include="DSP\Interpreter\DSPInterpreter.cpp">
       <Filter>DSPCore\Interpreter</Filter>
     </ClCompile>
@@ -416,9 +413,6 @@
     <ClCompile Include="HW\DSPHLE\MailHandler.cpp">
       <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\HLE</Filter>
     </ClCompile>
-    <ClCompile Include="HW\DSPLLE\DSPDebugInterface.cpp">
-      <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\LLE</Filter>
-    </ClCompile>
     <ClCompile Include="HW\DSPLLE\DSPHost.cpp">
       <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\LLE</Filter>
     </ClCompile>
@@ -465,9 +459,6 @@
       <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClCompile>
     <ClCompile Include="HW\EXI\EXI_DeviceMic.cpp">
-      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="HW\EXI\BBA-TAP\TAP_Win32.cpp">
       <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClCompile>
     <ClCompile Include="HW\Sram.cpp">
@@ -1001,11 +992,16 @@
       <Filter>PowerPC\Jit64</Filter>
     </ClCompile>
     <ClCompile Include="HW\EXI\BBA\XLINK_KAI_BBA.cpp">
-      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface\BBA</Filter>
+      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClCompile>
     <ClCompile Include="HW\EXI\BBA\TAP_Win32.cpp">
-      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface\BBA</Filter>
+      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClCompile>
+    <ClCompile Include="Config\FreeLookSettings.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="FreeLookConfig.cpp" />
+    <ClCompile Include="FreeLookManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BootManager.h" />
@@ -1068,9 +1064,6 @@
       <Filter>DSPCore\Interpreter</Filter>
     </ClInclude>
     <ClInclude Include="DSP\Interpreter\DSPInterpreter.h">
-      <Filter>DSPCore\Interpreter</Filter>
-    </ClInclude>
-    <ClInclude Include="DSP\Interpreter\DSPIntExtOps.h">
       <Filter>DSPCore\Interpreter</Filter>
     </ClInclude>
     <ClInclude Include="DSP\Interpreter\DSPIntTables.h">
@@ -1199,9 +1192,6 @@
     <ClInclude Include="HW\DSPHLE\MailHandler.h">
       <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\HLE</Filter>
     </ClInclude>
-    <ClInclude Include="HW\DSPLLE\DSPDebugInterface.h">
-      <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\LLE</Filter>
-    </ClInclude>
     <ClInclude Include="DSP\DSPHost.h">
       <Filter>HW %28Flipper/Hollywood%29\DSP Interface + HLE\LLE</Filter>
     </ClInclude>
@@ -1248,9 +1238,6 @@
       <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClInclude>
     <ClInclude Include="HW\EXI\EXI_DeviceMic.h">
-      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="HW\EXI\BBA-TAP\TAP_Win32.h">
       <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClInclude>
     <ClInclude Include="HW\Sram.h">
@@ -1386,15 +1373,6 @@
       <Filter>DSPCore</Filter>
     </ClInclude>
     <ClInclude Include="DSPEmulator.h">
-      <Filter>DSPCore</Filter>
-    </ClInclude>
-    <ClInclude Include="DSP\DSPHWInterface.h">
-      <Filter>DSPCore</Filter>
-    </ClInclude>
-    <ClInclude Include="DSP\DSPMemoryMap.h">
-      <Filter>DSPCore</Filter>
-    </ClInclude>
-    <ClInclude Include="DSP\DSPStacks.h">
       <Filter>DSPCore</Filter>
     </ClInclude>
     <ClInclude Include="DSP\DSPTables.h">
@@ -1764,10 +1742,15 @@
       <Filter>PowerPC\JitArmCommon</Filter>
     </ClInclude>
     <ClInclude Include="HW\EXI\BBA\TAP_Win32.h">
-      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface\BBA</Filter>
+      <Filter>HW %28Flipper/Hollywood%29\EXI - Expansion Interface</Filter>
     </ClInclude>
     <ClInclude Include="SyncIdentifier.h" />
     <ClInclude Include="CheatCodes.h" />
+    <ClInclude Include="Config\FreeLookSettings.h">
+      <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="FreeLookConfig.h" />
+    <ClInclude Include="FreeLookManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
