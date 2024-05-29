@@ -21,6 +21,7 @@
     <ClInclude Include="Common\BitUtils.h" />
     <ClInclude Include="Common\BlockingLoop.h" />
     <ClInclude Include="Common\CDUtils.h" />
+    <ClInclude Include="Common\CRC32.h" />
     <ClInclude Include="Common\ChunkFile.h" />
     <ClInclude Include="Common\CodeBlock.h" />
     <ClInclude Include="Common\ColorUtil.h" />
@@ -643,7 +644,6 @@
     <ClInclude Include="VideoCommon\PostProcessing.h" />
     <ClInclude Include="VideoCommon\RenderBase.h" />
     <ClInclude Include="VideoCommon\RenderState.h" />
-    <ClInclude Include="VideoCommon\SamplerCommon.h" />
     <ClInclude Include="VideoCommon\ShaderCache.h" />
     <ClInclude Include="VideoCommon\ShaderGenCommon.h" />
     <ClInclude Include="VideoCommon\Statistics.h" />
@@ -689,6 +689,7 @@
     <ClCompile Include="AudioCommon\WaveFile.cpp" />
     <ClCompile Include="Common\Analytics.cpp" />
     <ClCompile Include="Common\CDUtils.cpp" />
+    <ClCompile Include="Common\CRC32.cpp" />
     <ClCompile Include="Common\ColorUtil.cpp" />
     <ClCompile Include="Common\CommonFuncs.cpp" />
     <ClCompile Include="Common\CompatPatches.cpp" />
