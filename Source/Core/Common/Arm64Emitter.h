@@ -896,7 +896,15 @@ public:
     CSINV(Rd, zr, zr, (CCFlags)((u32)cond ^ 1));
   }
   void NEG(ARM64Reg Rd, ARM64Reg Rs) { SUB(Rd, Is64Bit(Rd) ? ARM64Reg::ZR : ARM64Reg::WZR, Rs); }
+  void NEG(ARM64Reg Rd, ARM64Reg Rs, ArithOption Option)
+  {
+    SUB(Rd, Is64Bit(Rd) ? ARM64Reg::ZR : ARM64Reg::WZR, Rs, Option);
+  }
   void NEGS(ARM64Reg Rd, ARM64Reg Rs) { SUBS(Rd, Is64Bit(Rd) ? ARM64Reg::ZR : ARM64Reg::WZR, Rs); }
+  void NEGS(ARM64Reg Rd, ARM64Reg Rs, ArithOption Option)
+  {
+    SUBS(Rd, Is64Bit(Rd) ? ARM64Reg::ZR : ARM64Reg::WZR, Rs, Option);
+  }
   // Data-Processing 1 source
   void RBIT(ARM64Reg Rd, ARM64Reg Rn);
   void REV16(ARM64Reg Rd, ARM64Reg Rn);
@@ -1006,6 +1014,7 @@ public:
   void SUB(ARM64Reg Rd, ARM64Reg Rn, u32 imm, bool shift = false);
   void SUBS(ARM64Reg Rd, ARM64Reg Rn, u32 imm, bool shift = false);
   void CMP(ARM64Reg Rn, u32 imm, bool shift = false);
+  void CMN(ARM64Reg Rn, u32 imm, bool shift = false);
 
   // Data Processing (Immediate)
   void MOVZ(ARM64Reg Rd, u32 imm, ShiftAmount pos = ShiftAmount::Shift0);
@@ -1146,6 +1155,8 @@ public:
   bool TryEORI2R(ARM64Reg Rd, ARM64Reg Rn, u64 imm);
 
   // ABI related
+  static constexpr BitSet32 CALLER_SAVED_GPRS = BitSet32(0x4007FFFF);
+  static constexpr BitSet32 CALLER_SAVED_FPRS = BitSet32(0xFFFF00FF);
   void ABI_PushRegisters(BitSet32 registers);
   void ABI_PopRegisters(BitSet32 registers, BitSet32 ignore_mask = BitSet32(0));
 

@@ -17,6 +17,7 @@
 
 #include "Core/Config/FreeLookSettings.h"
 #include "Core/Config/GraphicsSettings.h"
+#include "Core/Config/MainSettings.h"
 #include "Core/Config/UISettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/Core.h"
@@ -88,13 +89,13 @@ static void HandleFrameStepHotkeys()
 
   if (IsHotkey(HK_FRAME_ADVANCE_INCREASE_SPEED))
   {
-    frame_step_delay = std::min(frame_step_delay + 1, MAX_FRAME_STEP_DELAY);
+    frame_step_delay = std::max(frame_step_delay - 1, 0);
     return;
   }
 
   if (IsHotkey(HK_FRAME_ADVANCE_DECREASE_SPEED))
   {
-    frame_step_delay = std::max(frame_step_delay - 1, 0);
+    frame_step_delay = std::min(frame_step_delay + 1, MAX_FRAME_STEP_DELAY);
     return;
   }
 
@@ -169,11 +170,30 @@ void HotkeyScheduler::Run()
 
       HotkeyManagerEmu::GetStatus(true);
 
-      if (!Core::IsRunningAndStarted())
-        continue;
-
+      // Open
       if (IsHotkey(HK_OPEN))
         emit Open();
+
+      // Refresh Game List
+      if (IsHotkey(HK_REFRESH_LIST))
+        emit RefreshGameListHotkey();
+
+      // Recording
+      if (IsHotkey(HK_START_RECORDING))
+        emit StartRecording();
+
+      // Exit
+      if (IsHotkey(HK_EXIT))
+        emit ExitHotkey();
+
+      if (!Core::IsRunningAndStarted())
+      {
+        // Only check for Play Recording hotkey when no game is running
+        if (IsHotkey(HK_PLAY_RECORDING))
+          emit PlayRecording();
+
+        continue;
+      }
 
       // Disc
 
@@ -191,10 +211,6 @@ void HotkeyScheduler::Run()
         // Prevent fullscreen from getting toggled too often
         Common::SleepCurrentThread(100);
       }
-
-      // Refresh Game List
-      if (IsHotkey(HK_REFRESH_LIST))
-        emit RefreshGameListHotkey();
 
       // Pause and Unpause
       if (IsHotkey(HK_PLAY_PAUSE))
@@ -215,10 +231,6 @@ void HotkeyScheduler::Run()
       if (IsHotkey(HK_SCREENSHOT))
         emit ScreenShotHotkey();
 
-      // Exit
-      if (IsHotkey(HK_EXIT))
-        emit ExitHotkey();
-
       // Unlock Cursor
       if (IsHotkey(HK_UNLOCK_CURSOR))
         emit UnlockCursor();
@@ -231,10 +243,6 @@ void HotkeyScheduler::Run()
 
       if (IsHotkey(HK_REQUEST_GOLF_CONTROL))
         emit RequestGolfControl();
-
-      // Recording
-      if (IsHotkey(HK_START_RECORDING))
-        emit StartRecording();
 
       if (IsHotkey(HK_EXPORT_RECORDING))
         emit ExportRecording();
@@ -322,9 +330,9 @@ void HotkeyScheduler::Run()
 
       auto ShowVolume = []() {
         OSD::AddMessage(std::string("Volume: ") +
-                        (SConfig::GetInstance().m_IsMuted ?
+                        (Config::Get(Config::MAIN_AUDIO_MUTED) ?
                              "Muted" :
-                             std::to_string(SConfig::GetInstance().m_Volume) + "%"));
+                             std::to_string(Config::Get(Config::MAIN_AUDIO_VOLUME)) + "%"));
       };
 
       // Volume

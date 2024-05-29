@@ -16,6 +16,10 @@ set(CMAKE_AUTOMOC ON)
 add_executable(dolphin-emu
   AboutDialog.cpp
   AboutDialog.h
+  CheatSearchFactoryWidget.cpp
+  CheatSearchFactoryWidget.h
+  CheatSearchWidget.cpp
+  CheatSearchWidget.h
   CheatsManager.cpp
   CheatsManager.h
   ConvertDialog.cpp
@@ -258,6 +262,8 @@ add_executable(dolphin-emu
   NetPlay/NetPlaySetupDialog.h
   NetPlay/PadMappingDialog.cpp
   NetPlay/PadMappingDialog.h
+  QtUtils/DolphinFileDialog.cpp
+  QtUtils/DolphinFileDialog.h
   QtUtils/DoubleClickEventFilter.cpp
   QtUtils/DoubleClickEventFilter.h
   QtUtils/ElidedButton.cpp
@@ -269,6 +275,8 @@ add_executable(dolphin-emu
   QtUtils/ModalMessageBox.cpp
   QtUtils/ModalMessageBox.h
   QtUtils/ParallelProgressDialog.h
+  QtUtils/PartiallyClosableTabWidget.cpp
+  QtUtils/PartiallyClosableTabWidget.h
   QtUtils/ImageConverter.cpp
   QtUtils/ImageConverter.h
   QtUtils/UTF8CodePointCountValidator.cpp
@@ -283,10 +291,14 @@ add_executable(dolphin-emu
   QtUtils/AspectRatioWidget.h
   ResourcePackManager.cpp
   ResourcePackManager.h
+  RiivolutionBootWidget.cpp
+  RiivolutionBootWidget.h
   Settings/AdvancedPane.cpp
   Settings/AdvancedPane.h
   Settings/AudioPane.cpp
   Settings/AudioPane.h
+  Settings/BroadbandAdapterSettingsDialog.cpp
+  Settings/BroadbandAdapterSettingsDialog.h
   Settings/GameCubePane.cpp
   Settings/GameCubePane.h
   Settings/GeneralPane.cpp

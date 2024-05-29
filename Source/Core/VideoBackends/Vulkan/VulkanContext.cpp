@@ -669,13 +669,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT 
   const std::string log_message =
       fmt::format("Vulkan debug report: ({}) {}", pLayerPrefix ? pLayerPrefix : "", pMessage);
   if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LERROR, "{}", log_message);
+    ERROR_LOG_FMT(HOST_GPU, "{}", log_message);
   else if (flags & (VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
-    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LWARNING, "{}", log_message);
+    WARN_LOG_FMT(HOST_GPU, "{}", log_message);
   else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
-    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LINFO, "{}", log_message);
+    INFO_LOG_FMT(HOST_GPU, "{}", log_message);
   else
-    GENERIC_LOG_FMT(Common::Log::HOST_GPU, Common::Log::LDEBUG, "{}", log_message);
+    DEBUG_LOG_FMT(HOST_GPU, "{}", log_message);
 
   return VK_FALSE;
 }
@@ -867,8 +867,8 @@ void VulkanContext::InitDriverDetails()
   {
 // Apart from the driver version, Intel does not appear to provide a way to
 // differentiate between anv and the binary driver (Skylake+). Assume to be
-// using anv if we not running on Windows.
-#ifdef WIN32
+// using anv if we're not running on Windows or macOS.
+#if defined(WIN32) || defined(__APPLE__)
     vendor = DriverDetails::VENDOR_INTEL;
     driver = DriverDetails::DRIVER_INTEL;
 #else
@@ -948,7 +948,8 @@ void VulkanContext::PopulateShaderSubgroupSupport()
                                                          VK_SUBGROUP_FEATURE_BALLOT_BIT;
   m_supports_shader_subgroup_operations =
       (subgroup_properties.supportedOperations & required_operations) == required_operations &&
-      subgroup_properties.supportedStages & VK_SHADER_STAGE_FRAGMENT_BIT;
+      subgroup_properties.supportedStages & VK_SHADER_STAGE_FRAGMENT_BIT &&
+      !DriverDetails::HasBug(DriverDetails::BUG_BROKEN_SUBGROUP_INVOCATION_ID);
 }
 
 bool VulkanContext::SupportsExclusiveFullscreen(const WindowSystemInfo& wsi, VkSurfaceKHR surface)

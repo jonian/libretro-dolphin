@@ -43,6 +43,7 @@
     <ClInclude Include="Common\DynamicLibrary.h" />
     <ClInclude Include="Common\ENetUtil.h" />
     <ClInclude Include="Common\EnumFormatter.h" />
+    <ClInclude Include="Common\EnumMap.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\FileSearch.h" />
     <ClInclude Include="Common\FileUtil.h" />
@@ -163,6 +164,8 @@
     <ClInclude Include="Core\Boot\ElfTypes.h" />
     <ClInclude Include="Core\BootManager.h" />
     <ClInclude Include="Core\CheatCodes.h" />
+    <ClInclude Include="Core\CheatGeneration.h" />
+    <ClInclude Include="Core\CheatSearch.h" />
     <ClInclude Include="Core\CommonTitles.h" />
     <ClInclude Include="Core\Config\DefaultLocale.h" />
     <ClInclude Include="Core\Config\FreeLookSettings.h" />
@@ -393,6 +396,7 @@
     <ClInclude Include="Core\PowerPC\Interpreter\ExceptionUtils.h" />
     <ClInclude Include="Core\PowerPC\Interpreter\Interpreter_FPUtils.h" />
     <ClInclude Include="Core\PowerPC\Interpreter\Interpreter.h" />
+    <ClInclude Include="Core\PowerPC\JitCommon\DivUtils.h" />
     <ClInclude Include="Core\PowerPC\JitCommon\JitAsmCommon.h" />
     <ClInclude Include="Core\PowerPC\JitCommon\JitBase.h" />
     <ClInclude Include="Core\PowerPC\JitCommon\JitCache.h" />
@@ -427,9 +431,12 @@
     <ClInclude Include="DiscIO\FileBlob.h" />
     <ClInclude Include="DiscIO\Filesystem.h" />
     <ClInclude Include="DiscIO\FileSystemGCWii.h" />
+    <ClInclude Include="DiscIO\GameModDescriptor.h" />
     <ClInclude Include="DiscIO\LaggedFibonacciGenerator.h" />
     <ClInclude Include="DiscIO\MultithreadedCompressor.h" />
     <ClInclude Include="DiscIO\NANDImporter.h" />
+    <ClInclude Include="DiscIO\RiivolutionParser.h" />
+    <ClInclude Include="DiscIO\RiivolutionPatcher.h" />
     <ClInclude Include="DiscIO\ScrubbedBlob.h" />
     <ClInclude Include="DiscIO\TGCBlob.h" />
     <ClInclude Include="DiscIO\Volume.h" />
@@ -536,7 +543,7 @@
     <ClInclude Include="VideoBackends\D3DCommon\D3DCommon.h" />
     <ClInclude Include="VideoBackends\D3DCommon\Shader.h" />
     <ClInclude Include="VideoBackends\D3DCommon\SwapChain.h" />
-    <ClInclude Include="VideoBackends\Null\NullPerfQuery.h" />
+    <ClInclude Include="VideoBackends\Null\NullBoundingBox.h" />
     <ClInclude Include="VideoBackends\Null\NullRender.h" />
     <ClInclude Include="VideoBackends\Null\NullTexture.h" />
     <ClInclude Include="VideoBackends\Null\NullVertexManager.h" />
@@ -563,6 +570,7 @@
     <ClInclude Include="VideoBackends\Software\NativeVertexFormat.h" />
     <ClInclude Include="VideoBackends\Software\Rasterizer.h" />
     <ClInclude Include="VideoBackends\Software\SetupUnit.h" />
+    <ClInclude Include="VideoBackends\Software\SWBoundingBox.h" />
     <ClInclude Include="VideoBackends\Software\SWOGLWindow.h" />
     <ClInclude Include="VideoBackends\Software\SWRenderer.h" />
     <ClInclude Include="VideoBackends\Software\SWTexture.h" />
@@ -646,6 +654,7 @@
     <ClInclude Include="VideoCommon\TextureDecoder_Util.h" />
     <ClInclude Include="VideoCommon\TextureDecoder.h" />
     <ClInclude Include="VideoCommon\TextureInfo.h" />
+    <ClInclude Include="VideoCommon\TMEM.h" />
     <ClInclude Include="VideoCommon\UberShaderCommon.h" />
     <ClInclude Include="VideoCommon\UberShaderPixel.h" />
     <ClInclude Include="VideoCommon\UberShaderVertex.h" />
@@ -742,6 +751,8 @@
     <ClCompile Include="Core\Boot\DolReader.cpp" />
     <ClCompile Include="Core\Boot\ElfReader.cpp" />
     <ClCompile Include="Core\BootManager.cpp" />
+    <ClCompile Include="Core\CheatGeneration.cpp" />
+    <ClCompile Include="Core\CheatSearch.cpp" />
     <ClCompile Include="Core\Config\DefaultLocale.cpp" />
     <ClCompile Include="Core\Config\FreeLookSettings.cpp" />
     <ClCompile Include="Core\Config\GraphicsSettings.cpp" />
@@ -977,6 +988,7 @@
     <ClCompile Include="Core\PowerPC\Interpreter\Interpreter_SystemRegisters.cpp" />
     <ClCompile Include="Core\PowerPC\Interpreter\Interpreter_Tables.cpp" />
     <ClCompile Include="Core\PowerPC\Interpreter\Interpreter.cpp" />
+    <ClCompile Include="Core\PowerPC\JitCommon\DivUtils.cpp" />
     <ClCompile Include="Core\PowerPC\JitCommon\JitAsmCommon.cpp" />
     <ClCompile Include="Core\PowerPC\JitCommon\JitBase.cpp" />
     <ClCompile Include="Core\PowerPC\JitCommon\JitCache.cpp" />
@@ -1009,8 +1021,11 @@
     <ClCompile Include="DiscIO\FileBlob.cpp" />
     <ClCompile Include="DiscIO\Filesystem.cpp" />
     <ClCompile Include="DiscIO\FileSystemGCWii.cpp" />
+    <ClCompile Include="DiscIO\GameModDescriptor.cpp" />
     <ClCompile Include="DiscIO\LaggedFibonacciGenerator.cpp" />
     <ClCompile Include="DiscIO\NANDImporter.cpp" />
+    <ClCompile Include="DiscIO\RiivolutionParser.cpp" />
+    <ClCompile Include="DiscIO\RiivolutionPatcher.cpp" />
     <ClCompile Include="DiscIO\ScrubbedBlob.cpp" />
     <ClCompile Include="DiscIO\TGCBlob.cpp" />
     <ClCompile Include="DiscIO\Volume.cpp" />
@@ -1132,6 +1147,7 @@
     <ClCompile Include="VideoBackends\Software\Rasterizer.cpp" />
     <ClCompile Include="VideoBackends\Software\SetupUnit.cpp" />
     <ClCompile Include="VideoBackends\Software\SWmain.cpp" />
+    <ClCompile Include="VideoBackends\Software\SWBoundingBox.cpp" />
     <ClCompile Include="VideoBackends\Software\SWOGLWindow.cpp" />
     <ClCompile Include="VideoBackends\Software\SWRenderer.cpp" />
     <ClCompile Include="VideoBackends\Software\SWTexture.cpp" />
@@ -1201,6 +1217,7 @@
     <ClCompile Include="VideoCommon\TextureConverterShaderGen.cpp" />
     <ClCompile Include="VideoCommon\TextureDecoder_Common.cpp" />
     <ClCompile Include="VideoCommon\TextureInfo.cpp" />
+    <ClCompile Include="VideoCommon\TMEM.cpp" />
     <ClCompile Include="VideoCommon\UberShaderCommon.cpp" />
     <ClCompile Include="VideoCommon\UberShaderPixel.cpp" />
     <ClCompile Include="VideoCommon\UberShaderVertex.cpp" />

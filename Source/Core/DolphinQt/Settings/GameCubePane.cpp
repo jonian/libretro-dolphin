@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QInputDialog>
@@ -31,8 +32,10 @@
 
 #include "DolphinQt/Config/Mapping/MappingWindow.h"
 #include "DolphinQt/GCMemcardManager.h"
+#include "DolphinQt/QtUtils/DolphinFileDialog.h"
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
 #include "DolphinQt/Settings.h"
+#include "DolphinQt/Settings/BroadbandAdapterSettingsDialog.h"
 
 enum
 {
@@ -55,12 +58,20 @@ void GameCubePane::CreateWidgets()
 
   // IPL Settings
   QGroupBox* ipl_box = new QGroupBox(tr("IPL Settings"), this);
-  QGridLayout* ipl_layout = new QGridLayout(ipl_box);
-  ipl_box->setLayout(ipl_layout);
+  QVBoxLayout* ipl_box_layout = new QVBoxLayout(ipl_box);
+  ipl_box->setLayout(ipl_box_layout);
 
   m_skip_main_menu = new QCheckBox(tr("Skip Main Menu"), ipl_box);
+  ipl_box_layout->addWidget(m_skip_main_menu);
+
+  QFormLayout* ipl_language_layout = new QFormLayout;
+  ipl_language_layout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+  ipl_language_layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+  ipl_box_layout->addLayout(ipl_language_layout);
+
   m_language_combo = new QComboBox(ipl_box);
   m_language_combo->setCurrentIndex(-1);
+  ipl_language_layout->addRow(tr("System Language:"), m_language_combo);
 
   // Add languages
   for (const auto& entry : {std::make_pair(tr("English"), 0), std::make_pair(tr("German"), 1),
@@ -70,10 +81,6 @@ void GameCubePane::CreateWidgets()
     m_language_combo->addItem(entry.first, entry.second);
   }
 
-  ipl_layout->addWidget(m_skip_main_menu, 0, 0);
-  ipl_layout->addWidget(new QLabel(tr("System Language:")), 1, 0);
-  ipl_layout->addWidget(m_language_combo, 1, 1);
-
   // Device Settings
   QGroupBox* device_box = new QGroupBox(tr("Device Settings"), this);
   QGridLayout* device_layout = new QGridLayout(device_box);
@@ -82,12 +89,12 @@ void GameCubePane::CreateWidgets()
   for (int i = 0; i < SLOT_COUNT; i++)
   {
     m_slot_combos[i] = new QComboBox(device_box);
+    m_slot_combos[i]->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     m_slot_buttons[i] = new QPushButton(tr("..."), device_box);
     m_slot_buttons[i]->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   }
 
   // Add slot devices
-
   for (const auto& entry :
        {std::make_pair(tr("<Nothing>"), ExpansionInterface::EXIDEVICE_NONE),
         std::make_pair(tr("Dummy"), ExpansionInterface::EXIDEVICE_DUMMY),
@@ -102,7 +109,6 @@ void GameCubePane::CreateWidgets()
   }
 
   // Add SP1 devices
-
   std::vector<std::pair<QString, ExpansionInterface::TEXIDevices>> sp1Entries{
       std::make_pair(tr("<Nothing>"), ExpansionInterface::EXIDEVICE_NONE),
       std::make_pair(tr("Dummy"), ExpansionInterface::EXIDEVICE_DUMMY),
@@ -275,33 +281,19 @@ void GameCubePane::OnConfigPressed(int slot)
     return;
   case ExpansionInterface::EXIDEVICE_ETH:
   {
-    bool ok;
-    const auto new_mac = QInputDialog::getText(
-        // i18n: MAC stands for Media Access Control. A MAC address uniquely identifies a network
-        // interface (physical) like a serial number. "MAC" should be kept in translations.
-        this, tr("Broadband Adapter MAC address"), tr("Enter new Broadband Adapter MAC address:"),
-        QLineEdit::Normal, QString::fromStdString(SConfig::GetInstance().m_bba_mac), &ok);
-    if (ok)
-      SConfig::GetInstance().m_bba_mac = new_mac.toStdString();
+    BroadbandAdapterSettingsDialog(this, BroadbandAdapterSettingsDialog::Type::Ethernet).exec();
     return;
   }
   case ExpansionInterface::EXIDEVICE_ETHXLINK:
   {
-    bool ok;
-    const auto new_dest = QInputDialog::getText(
-        this, tr("Broadband Adapter (XLink Kai) Destination Address"),
-        tr("Enter IP address of device running the XLink Kai Client.\nFor more information see"
-           " https://www.teamxlink.co.uk/wiki/Dolphin"),
-        QLineEdit::Normal, QString::fromStdString(SConfig::GetInstance().m_bba_xlink_ip), &ok);
-    if (ok)
-      SConfig::GetInstance().m_bba_xlink_ip = new_dest.toStdString();
+    BroadbandAdapterSettingsDialog(this, BroadbandAdapterSettingsDialog::Type::XLinkKai).exec();
     return;
   }
   default:
     qFatal("unknown settings pressed");
   }
 
-  QString filename = QFileDialog::getSaveFileName(
+  QString filename = DolphinFileDialog::getSaveFileName(
       this, tr("Choose a file to open"), QString::fromStdString(File::GetUserPath(D_GCUSER_IDX)),
       filter, 0, QFileDialog::DontConfirmOverwrite);
 
@@ -399,7 +391,7 @@ void GameCubePane::OnConfigPressed(int slot)
 
 void GameCubePane::BrowseGBABios()
 {
-  QString file = QDir::toNativeSeparators(QFileDialog::getOpenFileName(
+  QString file = QDir::toNativeSeparators(DolphinFileDialog::getOpenFileName(
       this, tr("Select GBA BIOS"), QString::fromStdString(File::GetUserPath(F_GBABIOS_IDX)),
       tr("All Files (*)")));
   if (!file.isEmpty())
@@ -428,9 +420,9 @@ void GameCubePane::SaveRomPathChanged()
 
 void GameCubePane::BrowseGBASaves()
 {
-  QString dir = QDir::toNativeSeparators(
-      QFileDialog::getExistingDirectory(this, tr("Select GBA Saves Path"),
-                                        QString::fromStdString(File::GetUserPath(D_GBASAVES_IDX))));
+  QString dir = QDir::toNativeSeparators(DolphinFileDialog::getExistingDirectory(
+      this, tr("Select GBA Saves Path"),
+      QString::fromStdString(File::GetUserPath(D_GBASAVES_IDX))));
   if (!dir.isEmpty())
   {
     m_gba_saves_edit->setText(dir);
@@ -460,11 +452,9 @@ void GameCubePane::LoadSettings()
   }
 
   m_skip_main_menu->setEnabled(have_menu);
-  m_skip_main_menu->setToolTip(have_menu ? QString{} :
-                                           tr("Put Main Menu roms in User/GC/{region}."));
+  m_skip_main_menu->setToolTip(have_menu ? QString{} : tr("Put IPL ROMs in User/GC/<region>."));
 
   // Device Settings
-
   for (int i = 0; i < SLOT_COUNT; i++)
   {
     QSignalBlocker blocker(m_slot_combos[i]);
@@ -558,7 +548,7 @@ std::string GameCubePane::GetOpenGBARom(std::string_view title)
   if (!title.empty())
     caption += QStringLiteral(": %1").arg(QString::fromStdString(std::string(title)));
   return QDir::toNativeSeparators(
-             QFileDialog::getOpenFileName(
+             DolphinFileDialog::getOpenFileName(
                  nullptr, caption, QString(),
                  tr("Game Boy Advance ROMs (*.gba *.gbc *.gb *.7z *.zip *.agb *.mb *.rom *.bin);;"
                     "All Files (*)")))

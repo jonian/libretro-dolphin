@@ -481,8 +481,16 @@ bool CreateEmptyFile(const std::string& filename)
 }
 
 // Recursive or non-recursive list of files and directories under directory.
-FSTEntry ScanDirectoryTree(const std::string& directory, bool recursive)
+FSTEntry ScanDirectoryTree(std::string directory, bool recursive)
 {
+#ifdef _WIN32
+  if (!directory.empty() && (directory.back() == '/' || directory.back() == '\\'))
+    directory.pop_back();
+#else
+  if (!directory.empty() && directory.back() == '/')
+    directory.pop_back();
+#endif
+
   INFO_LOG_FMT(COMMON, "ScanDirectoryTree: directory {}", directory);
   FSTEntry parent_entry;
   parent_entry.physicalName = directory;
@@ -935,6 +943,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[D_SCREENSHOTS_IDX] = s_user_paths[D_USER_IDX] + SCREENSHOTS_DIR DIR_SEP;
     s_user_paths[D_LOAD_IDX] = s_user_paths[D_USER_IDX] + LOAD_DIR DIR_SEP;
     s_user_paths[D_HIRESTEXTURES_IDX] = s_user_paths[D_LOAD_IDX] + HIRES_TEXTURES_DIR DIR_SEP;
+    s_user_paths[D_RIIVOLUTION_IDX] = s_user_paths[D_LOAD_IDX] + RIIVOLUTION_DIR DIR_SEP;
     s_user_paths[D_DUMP_IDX] = s_user_paths[D_USER_IDX] + DUMP_DIR DIR_SEP;
     s_user_paths[D_DUMPFRAMES_IDX] = s_user_paths[D_DUMP_IDX] + DUMP_FRAMES_DIR DIR_SEP;
     s_user_paths[D_DUMPOBJECTS_IDX] = s_user_paths[D_DUMP_IDX] + DUMP_OBJECTS_DIR DIR_SEP;
@@ -1027,6 +1036,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
 
   case D_LOAD_IDX:
     s_user_paths[D_HIRESTEXTURES_IDX] = s_user_paths[D_LOAD_IDX] + HIRES_TEXTURES_DIR DIR_SEP;
+    s_user_paths[D_RIIVOLUTION_IDX] = s_user_paths[D_LOAD_IDX] + RIIVOLUTION_DIR DIR_SEP;
     s_user_paths[D_DYNAMICINPUT_IDX] = s_user_paths[D_LOAD_IDX] + DYNAMICINPUT_DIR DIR_SEP;
     break;
   }
