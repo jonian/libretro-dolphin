@@ -38,6 +38,7 @@
 #include "Common/Thread.h"
 #include "Common/Timer.h"
 
+#include "Core/Config/GraphicsSettings.h"
 #include "Core/Config/NetplaySettings.h"
 #include "Core/Config/SYSCONFSettings.h"
 #include "Core/ConfigManager.h"
@@ -95,7 +96,8 @@ static float AspectToWidescreen(float aspect)
 static bool DumpFrameToPNG(const FrameDump::FrameData& frame, const std::string& file_name)
 {
   return Common::ConvertRGBAToRGBAndSavePNG(file_name, frame.data, frame.width, frame.height,
-                                            frame.stride);
+                                            frame.stride,
+                                            Config::Get(Config::GFX_PNG_COMPRESSION_LEVEL));
 }
 
 Renderer::Renderer(int backbuffer_width, int backbuffer_height, float backbuffer_scale,
@@ -573,8 +575,9 @@ void Renderer::DrawDebugText()
     ImGui::End();
   }
 
-  const bool show_movie_window =
-      config.m_ShowFrameCount | config.m_ShowLag | config.m_ShowInputDisplay | config.m_ShowRTC;
+  const bool show_movie_window = config.m_ShowFrameCount | config.m_ShowLag |
+                                 config.m_ShowInputDisplay | config.m_ShowRTC |
+                                 config.m_ShowRerecord;
   if (show_movie_window)
   {
     // Position under the FPS display.
@@ -604,6 +607,8 @@ void Renderer::DrawDebugText()
         ImGui::TextUnformatted(Movie::GetInputDisplay().c_str());
       if (SConfig::GetInstance().m_ShowRTC)
         ImGui::TextUnformatted(Movie::GetRTCDisplay().c_str());
+      if (SConfig::GetInstance().m_ShowRerecord)
+        ImGui::TextUnformatted(Movie::GetRerecords().c_str());
     }
     ImGui::End();
   }
@@ -958,7 +963,7 @@ void Renderer::RecordVideoMemory()
   const u32* xfregs_ptr = reinterpret_cast<const u32*>(&xfmem) + FifoDataFile::XF_MEM_SIZE;
   u32 xfregs_size = sizeof(XFMemory) / 4 - FifoDataFile::XF_MEM_SIZE;
 
-  FillCPMemoryArray(cpmem);
+  g_main_cp_state.FillCPMemoryArray(cpmem);
 
   FifoRecorder::GetInstance().SetVideoMemory(bpmem_ptr, cpmem, xfmem_ptr, xfregs_ptr, xfregs_size,
                                              texMem);
@@ -981,9 +986,9 @@ bool Renderer::InitializeImGui()
   ImGui::GetStyle().WindowRounding = 7.0f;
 
   PortableVertexDeclaration vdecl = {};
-  vdecl.position = {VAR_FLOAT, 2, offsetof(ImDrawVert, pos), true, false};
-  vdecl.texcoords[0] = {VAR_FLOAT, 2, offsetof(ImDrawVert, uv), true, false};
-  vdecl.colors[0] = {VAR_UNSIGNED_BYTE, 4, offsetof(ImDrawVert, col), true, false};
+  vdecl.position = {ComponentFormat::Float, 2, offsetof(ImDrawVert, pos), true, false};
+  vdecl.texcoords[0] = {ComponentFormat::Float, 2, offsetof(ImDrawVert, uv), true, false};
+  vdecl.colors[0] = {ComponentFormat::UByte, 4, offsetof(ImDrawVert, col), true, false};
   vdecl.stride = sizeof(ImDrawVert);
   m_imgui_vertex_format = CreateNativeVertexFormat(vdecl);
   if (!m_imgui_vertex_format)

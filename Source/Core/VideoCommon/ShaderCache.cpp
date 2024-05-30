@@ -585,7 +585,9 @@ AbstractPipelineConfig ShaderCache::GetGXPipelineConfig(
   config.blending_state = blending_state;
   config.framebuffer_state = g_framebuffer_manager->GetEFBFramebufferState();
 
-  if (config.blending_state.logicopenable && !g_ActiveConfig.backend_info.bSupportsLogicOp)
+  // We can use framebuffer fetch to emulate logic ops in the fragment shader.
+  if (config.blending_state.logicopenable && !g_ActiveConfig.backend_info.bSupportsLogicOp &&
+      !g_ActiveConfig.backend_info.bSupportsFramebufferFetch)
   {
     WARN_LOG_FMT(VIDEO,
                  "Approximating logic op with blending, this will produce incorrect rendering.");
@@ -1095,7 +1097,7 @@ void ShaderCache::QueueUberShaderPipelines()
   // All attributes will be enabled in GetUberVertexFormat.
   PortableVertexDeclaration dummy_vertex_decl = {};
   dummy_vertex_decl.position.components = 4;
-  dummy_vertex_decl.position.type = VAR_FLOAT;
+  dummy_vertex_decl.position.type = ComponentFormat::Float;
   dummy_vertex_decl.position.enable = true;
   dummy_vertex_decl.stride = sizeof(float) * 4;
   NativeVertexFormat* dummy_vertex_format =

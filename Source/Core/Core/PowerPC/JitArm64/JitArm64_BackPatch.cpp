@@ -1,6 +1,8 @@
 // Copyright 2014 Dolphin Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "Core/PowerPC/JitArm64/Jit.h"
+
 #include <cinttypes>
 #include <cstddef>
 #include <optional>
@@ -17,7 +19,6 @@
 
 #include "Core/HW/Memmap.h"
 #include "Core/PowerPC/Gekko.h"
-#include "Core/PowerPC/JitArm64/Jit.h"
 #include "Core/PowerPC/JitArm64/Jit_Util.h"
 #include "Core/PowerPC/JitArmCommon/BackPatch.h"
 #include "Core/PowerPC/MMU.h"
@@ -225,7 +226,8 @@ void JitArm64::EmitBackpatchRoutine(u32 flags, bool fastmem, bool do_farcode, AR
     if (memcheck)
     {
       const ARM64Reg temp_fpr = fprs_to_push[0] ? ARM64Reg::INVALID_REG : ARM64Reg::Q0;
-      const u64 early_push_size = Common::AlignUp(gprs_to_push_early.Count(), 2) * 8;
+      const u64 early_push_count = (gprs_to_push & gprs_to_push_early).Count();
+      const u64 early_push_size = Common::AlignUp(early_push_count, 2) * 8;
 
       WriteConditionalExceptionExit(EXCEPTION_DSI, temp_gpr, temp_fpr, early_push_size);
     }
