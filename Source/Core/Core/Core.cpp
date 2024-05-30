@@ -107,7 +107,6 @@ static Common::Flag s_is_booting;
 static std::thread::id s_gpu_thread_id;
 static std::vector<Common::ScopeGuard> s_emu_thread_scope_guards;
 std::unique_ptr<BootParameters> boot_params;
-static Common::Event s_done_booting;
 static std::thread s_emu_thread;
 static std::vector<StateChangedCallbackFunc> s_on_state_changed_callbacks;
 
@@ -475,63 +474,6 @@ void EmuThread(WindowSystemInfo wsi)
   DeclareAsCPUThread();
   s_frame_step = false;
 
-  Movie::Init(*boot);
-  Common::ScopeGuard movie_guard{&Movie::Shutdown};
-
-  AudioCommon::InitSoundStream();
-  Common::ScopeGuard audio_guard{&AudioCommon::ShutdownSoundStream};
-
-  HW::Init();
-
-  Common::ScopeGuard hw_guard{[] {
-    // We must set up this flag before executing HW::Shutdown()
-    s_hardware_initialized = false;
-    INFO_LOG(CONSOLE, "%s", StopMessage(false, "Shutting down HW").c_str());
-    HW::Shutdown();
-    INFO_LOG(CONSOLE, "%s", StopMessage(false, "HW shutdown").c_str());
-
-    // Clear on screen messages that haven't expired
-    OSD::ClearMessages();
-
-    // The config must be restored only after the whole HW has shut down,
-    // not when it is still running.
-    BootManager::RestoreConfig();
-
-    PatchEngine::Shutdown();
-    HLE::Clear();
-  }};
-
-  bool init_video = !g_renderer;
-  if (init_video)
-  {
-    VideoBackendBase::PopulateBackendInfo();
-    if (!g_video_backend->Initialize(wsi))
-    {
-      PanicAlert("Failed to initialize video backend!");
-      return;
-    }
-  }
-  Common::ScopeGuard video_guard{[init_video] {
-    if (init_video)
-      g_video_backend->Shutdown();
-  }};
-
-  // Render a single frame without anything on it to clear the screen.
-  // This avoids the game list being displayed while the core is finishing initializing.
-  g_renderer->BeginUIFrame();
-  g_renderer->EndUIFrame();
-
-  if (cpu_info.HTT)
-    SConfig::GetInstance().bDSPThread = cpu_info.num_cores > 4;
-  else
-    SConfig::GetInstance().bDSPThread = cpu_info.num_cores > 2;
-
-  if (!DSP::GetDSPEmulator()->Initialize(core_parameter.bWii, core_parameter.bDSPThread))
-  {
-    PanicAlert("Failed to initialize DSP emulation!");
-    return;
-  }
-
   // The frontend will likely have initialized the controller interface, as it needs
   // it to provide the configuration dialogs. In this case, instead of re-initializing
   // entirely, we switch the window used for inputs to the render window. This way, the
@@ -577,6 +519,15 @@ void EmuThread(WindowSystemInfo wsi)
       NetPlay::SetupWiimotes();
   }
 
+  if (init_controllers)
+  {
+    FreeLook::Initialize();
+  }
+  else
+  {
+    FreeLook::LoadInputConfig();
+  }
+
   Common::ScopeGuard controller_guard{[init_controllers, init_wiimotes] {
     if (!init_controllers)
       return;
@@ -587,6 +538,8 @@ void EmuThread(WindowSystemInfo wsi)
       Wiimote::Shutdown();
     }
 
+    FreeLook::Shutdown();
+
     ResetRumble();
 
     Keyboard::Shutdown();
@@ -594,6 +547,70 @@ void EmuThread(WindowSystemInfo wsi)
     Pad::ShutdownGBA();
     g_controller_interface.Shutdown();
   }};
+
+  Movie::Init(*boot);
+  Common::ScopeGuard movie_guard{&Movie::Shutdown};
+
+  AudioCommon::InitSoundStream();
+  Common::ScopeGuard audio_guard{&AudioCommon::ShutdownSoundStream};
+
+  HW::Init();
+
+  Common::ScopeGuard hw_guard{[] {
+    // We must set up this flag before executing HW::Shutdown()
+    s_hardware_initialized = false;
+    INFO_LOG_FMT(CONSOLE, "{}", StopMessage(false, "Shutting down HW"));
+    HW::Shutdown();
+    INFO_LOG_FMT(CONSOLE, "{}", StopMessage(false, "HW shutdown"));
+
+    // Clear on screen messages that haven't expired
+    OSD::ClearMessages();
+
+    // The config must be restored only after the whole HW has shut down,
+    // not when it is still running.
+    BootManager::RestoreConfig();
+
+    PatchEngine::Shutdown();
+    HLE::Clear();
+    PowerPC::debug_interface.Clear();
+  }};
+
+  bool init_video = !g_renderer;
+  if (init_video)
+  {
+    VideoBackendBase::PopulateBackendInfo();
+
+    if (!g_video_backend->Initialize(wsi))
+    {
+      PanicAlertFmt("Failed to initialize video backend!");
+      return;
+    }
+  }
+
+  Common::ScopeGuard video_guard{[init_video] {
+    if (init_video)
+      g_video_backend->Shutdown();
+  }};
+
+  // Render a single frame without anything on it to clear the screen.
+  // This avoids the game list being displayed while the core is finishing initializing.
+  g_renderer->BeginUIFrame();
+  g_renderer->EndUIFrame();
+
+  if (cpu_info.HTT)
+    Config::SetBaseOrCurrent(Config::MAIN_DSP_THREAD, cpu_info.num_cores > 4);
+  else
+    Config::SetBaseOrCurrent(Config::MAIN_DSP_THREAD, cpu_info.num_cores > 2);
+
+  if (!DSP::GetDSPEmulator()->Initialize(core_parameter.bWii, Config::Get(Config::MAIN_DSP_THREAD)))
+  {
+    PanicAlertFmt("Failed to initialize DSP emulation!");
+    return;
+  }
+
+  // Inputs loading may have generated custom dynamic textures
+  // it's now ok to initialize any custom textures
+  HiresTexture::Update();
 
   AudioCommon::PostInitSoundStream();
 
@@ -1041,11 +1058,11 @@ void Shutdown()
   {
     if (SConfig::GetInstance().bCPUThread)
       s_cpu_thread.join();
-    INFO_LOG(CONSOLE, "%s", StopMessage(true, "CPU thread stopped.").c_str());
+    INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
 #ifdef USE_GDBSTUB
-    INFO_LOG(CONSOLE, "%s", StopMessage(true, "Stopping GDB ...").c_str());
+    INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "Stopping GDB ..."));
     gdb_deinit();
-    INFO_LOG(CONSOLE, "%s", StopMessage(true, "GDB stopped.").c_str());
+    INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
 #endif
     s_emu_thread_scope_guards.clear();
   }
