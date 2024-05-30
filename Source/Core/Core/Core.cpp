@@ -626,7 +626,9 @@ void EmuThread(WindowSystemInfo wsi)
   // with the correct title context since save copying requires title directories to exist.
   Common::ScopeGuard wiifs_guard{[&boot_session_data] {
     Core::CleanUpWiiFileSystemContents(boot_session_data);
+#ifndef __LIBRETRO__
     boot_session_data.InvokeWiiSyncCleanup();
+#endif
   }};
   if (SConfig::GetInstance().bWii)
     Core::InitializeWiiFileSystemContents(savegame_redirect, boot_session_data);
