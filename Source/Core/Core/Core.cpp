@@ -131,6 +131,8 @@ static Common::Event s_cpu_thread_job_finished;
 
 static thread_local bool tls_is_cpu_thread = false;
 
+static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi);
+
 bool GetIsThrottlerTempDisabled()
 {
   return s_is_throttler_temp_disabled;
@@ -264,7 +266,7 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   if (!SConfig::GetInstance().bEMUThread)
     return true;
 
-  s_emu_thread = std::thread(EmuThread, prepared_wsi);
+  s_emu_thread = std::thread(EmuThread, std::move(boot), prepared_wsi);
   return true;
 }
 
@@ -450,11 +452,8 @@ static void FifoPlayerThread(const std::optional<std::string>& savestate_path,
 // Initialize and create emulation thread
 // Call browser: Init():s_emu_thread().
 // See the BootManager.cpp file description for a complete call schedule.
-void EmuThread(WindowSystemInfo wsi)
+static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi)
 {
-  std::unique_ptr<BootParameters> boot;
-  boot = std::move(boot_params);
-
   const SConfig& core_parameter = SConfig::GetInstance();
   CallOnStateChangedCallbacks(State::Starting);
   Common::ScopeGuard flag_guard{[] {
@@ -710,6 +709,10 @@ void EmuThread(WindowSystemInfo wsi)
   INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "Stopping GDB ..."));
   GDBStub::Deinit();
   INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
+}
+
+void RunEmuThread(WindowSystemInfo wsi) {
+  EmuThread(std::move(boot_params), wsi);
 }
 
 // Set or get the running state

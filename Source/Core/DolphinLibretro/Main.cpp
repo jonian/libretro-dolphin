@@ -183,7 +183,7 @@ void retro_run(void)
   if (Core::GetState() == Core::State::Starting)
   {
     WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
-    Core::EmuThread(wsi);
+    Core::RunEmuThread(wsi);
     AudioCommon::SetSoundStreamRunning(false);
     g_sound_stream.reset();
     g_sound_stream = std::make_unique<Libretro::Audio::Stream>();
