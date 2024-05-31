@@ -174,8 +174,8 @@ void retro_run(void)
 #else
   Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
 #endif
-  SConfig::GetInstance().m_OCFactor = Libretro::Options::cpuClockRate;
-  SConfig::GetInstance().m_OCEnable = Libretro::Options::cpuClockRate != 1.0;
+  Config::SetCurrent(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
+  Config::SetCurrent(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
   g_Config.bWidescreenHack = Libretro::Options::WidescreenHack;
 
   Libretro::Input::Update();
@@ -241,8 +241,7 @@ void retro_run(void)
 
   if (Libretro::Options::WiimoteContinuousScanning.Updated())
   {
-    SConfig::GetInstance().m_WiimoteContinuousScanning =
-        Libretro::Options::WiimoteContinuousScanning;
+    Config::SetCurrent(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING, Libretro::Options::WiimoteContinuousScanning);
     WiimoteReal::Initialize(Wiimote::InitializeMode::DO_NOT_WAIT_FOR_WIIMOTES);
   }
 
