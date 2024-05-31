@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 
 #include "Common/BitUtils.h"
 #include "Common/CommonTypes.h"

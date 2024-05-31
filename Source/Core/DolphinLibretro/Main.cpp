@@ -138,7 +138,7 @@ void retro_get_system_info(retro_system_info* info)
 {
   info->need_fullpath = true;
   info->valid_extensions = "elf|dol|gcm|iso|tgc|wbfs|ciso|gcz|wad|wia|rvz|m3u";
-  info->library_version = Common::scm_desc_str.c_str();
+  info->library_version = Common::GetScmDescStr().c_str();
   info->library_name = "dolphin-emu";
   info->block_extract = true;
 }
