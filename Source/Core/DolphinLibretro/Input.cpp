@@ -6,6 +6,7 @@
 #include "Common/Common.h"
 #include "Common/CommonTypes.h"
 #include "Common/IniFile.h"
+#include "Core/Config/MainSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/HW/GCKeyboard.h"
 #include "Core/HW/GCPad.h"
@@ -436,7 +437,7 @@ void Init()
       {"GameCube Controller", RETRO_DEVICE_JOYPAD},
   };
 
-  if (SConfig::GetInstance().bWii && !SConfig::GetInstance().m_bt_passthrough_enabled)
+  if (SConfig::GetInstance().bWii && !Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
   {
     init_wiimotes = true;
     Wiimote::Initialize(Wiimote::InitializeMode::DO_NOT_WAIT_FOR_WIIMOTES);
@@ -578,13 +579,13 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
     if (!SConfig::GetInstance().bWii || !Libretro::Options::altGCPorts)
     {
-      SConfig::GetInstance().m_SIDevice[port] = SerialInterface::SIDEVICE_NONE;
-      SerialInterface::ChangeDevice(SConfig::GetInstance().m_SIDevice[port], port);
+      Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(port), SerialInterface::SIDEVICE_NONE);
+      SerialInterface::ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port)), port);
     }
     else if (port > 3)
     {
-      SConfig::GetInstance().m_SIDevice[port - 4] = SerialInterface::SIDEVICE_NONE;
-      SerialInterface::ChangeDevice(SConfig::GetInstance().m_SIDevice[port - 4], port - 4);
+      Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(port - 4), SerialInterface::SIDEVICE_NONE);
+      SerialInterface::ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port - 4)), port - 4);
     }
   }
   else if (!SConfig::GetInstance().bWii || device == RETRO_DEVICE_GC_ON_WII || port > 3)
@@ -592,8 +593,8 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
     if (device == RETRO_DEVICE_GC_ON_WII) // Disconnect Wii device if we're using GC controller as device type to avoid conflict
       WiimoteCommon::SetSource(port, WiimoteSource::None);
 
-    SConfig::GetInstance().m_SIDevice[port > 3 ? port - 4 : port] = SerialInterface::SIDEVICE_GC_CONTROLLER;
-    SerialInterface::ChangeDevice(SConfig::GetInstance().m_SIDevice[port > 3 ? port - 4 : port], port > 3 ? port - 4 : port);
+    Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(port > 3 ? port - 4 : port), SerialInterface::SIDEVICE_GC_CONTROLLER);
+    SerialInterface::ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port > 3 ? port - 4 : port)), port > 3 ? port - 4 : port);
 
     GCPad* gcPad = (GCPad*)Pad::GetConfig()->GetController(port > 3 ? port - 4 : port);
     // load an empty inifile section, clears everything
@@ -645,12 +646,12 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
     gcPad->UpdateReferences(g_controller_interface);
     Pad::GetConfig()->SaveConfig();
   }
-  else if (!SConfig::GetInstance().m_bt_passthrough_enabled)
+  else if (!Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
   {
     if (!Libretro::Options::altGCPorts) // Disconnect GC controller to avoid conflict with Wii device
     {
-      SConfig::GetInstance().m_SIDevice[port] = SerialInterface::SIDEVICE_NONE;
-      SerialInterface::ChangeDevice(SConfig::GetInstance().m_SIDevice[port], port);
+      Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(port), SerialInterface::SIDEVICE_NONE);
+      SerialInterface::ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port)), port);
     }
 
     WiimoteEmu::Wiimote* wm = (WiimoteEmu::Wiimote*)Wiimote::GetConfig()->GetController(port);
