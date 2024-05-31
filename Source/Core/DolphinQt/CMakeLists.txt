@@ -279,6 +279,7 @@ add_executable(dolphin-emu
   QtUtils/PartiallyClosableTabWidget.h
   QtUtils/ImageConverter.cpp
   QtUtils/ImageConverter.h
+  QtUtils/SignalBlocking.h
   QtUtils/UTF8CodePointCountValidator.cpp
   QtUtils/UTF8CodePointCountValidator.h
   QtUtils/WindowActivationEventFilter.cpp
@@ -289,6 +290,8 @@ add_executable(dolphin-emu
   QtUtils/WrapInScrollArea.h
   QtUtils/AspectRatioWidget.cpp
   QtUtils/AspectRatioWidget.h
+  QtUtils/NonDefaultQPushButton.cpp
+  QtUtils/NonDefaultQPushButton.h
   ResourcePackManager.cpp
   ResourcePackManager.h
   RiivolutionBootWidget.cpp
