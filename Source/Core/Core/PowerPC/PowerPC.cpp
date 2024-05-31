@@ -18,6 +18,7 @@
 #include "Common/FloatUtils.h"
 #include "Common/Logging/Log.h"
 
+#include "Core/Config/MainSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/Core.h"
 #include "Core/CoreTiming.h"
@@ -264,7 +265,7 @@ void Init(CPUCore cpu_core)
   InitializeCPUCore(cpu_core);
   ppcState.iCache.Init();
 
-  if (SConfig::GetInstance().bEnableDebugging)
+  if (Config::Get(Config::MAIN_ENABLE_DEBUGGING))
     breakpoints.ClearAllTemporary();
 }
 
@@ -599,7 +600,7 @@ void CheckExternalExceptions()
     }
     else
     {
-      DEBUG_ASSERT_MSG(POWERPC, 0, "Unknown EXT interrupt: Exceptions == %08x", exceptions);
+      DEBUG_ASSERT_MSG(POWERPC, 0, "Unknown EXT interrupt: Exceptions == {:08x}", exceptions);
       ERROR_LOG_FMT(POWERPC, "Unknown EXTERNAL INTERRUPT exception: Exceptions == {:08x}",
                     exceptions);
     }

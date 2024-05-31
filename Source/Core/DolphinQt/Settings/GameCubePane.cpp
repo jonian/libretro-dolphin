@@ -349,9 +349,10 @@ void GameCubePane::OnConfigPressed(int slot)
   }
   else
   {
-    path_old = QFileInfo(QString::fromStdString(slot == 0 ? SConfig::GetInstance().m_strGbaCartA :
-                                                            SConfig::GetInstance().m_strGbaCartB))
-                   .absoluteFilePath();
+    path_old =
+        QFileInfo(QString::fromStdString(slot == 0 ? Config::Get(Config::MAIN_AGP_CART_A_PATH) :
+                                                     Config::Get(Config::MAIN_AGP_CART_B_PATH)))
+            .absoluteFilePath();
   }
 
   if (memcard)
@@ -369,11 +370,11 @@ void GameCubePane::OnConfigPressed(int slot)
   {
     if (slot == SLOT_A_INDEX)
     {
-      SConfig::GetInstance().m_strGbaCartA = path_abs.toStdString();
+      Config::SetBase(Config::MAIN_AGP_CART_A_PATH, path_abs.toStdString());
     }
     else
     {
-      SConfig::GetInstance().m_strGbaCartB = path_abs.toStdString();
+      Config::SetBase(Config::MAIN_AGP_CART_B_PATH, path_abs.toStdString());
     }
   }
 
@@ -432,11 +433,10 @@ void GameCubePane::BrowseGBASaves()
 
 void GameCubePane::LoadSettings()
 {
-  const SConfig& params = SConfig::GetInstance();
-
   // IPL Settings
-  m_skip_main_menu->setChecked(params.bHLE_BS2);
-  m_language_combo->setCurrentIndex(m_language_combo->findData(params.SelectedLanguage));
+  m_skip_main_menu->setChecked(Config::Get(Config::MAIN_SKIP_IPL));
+  m_language_combo->setCurrentIndex(
+      m_language_combo->findData(Config::Get(Config::MAIN_GC_LANGUAGE)));
 
   bool have_menu = false;
 
@@ -458,8 +458,8 @@ void GameCubePane::LoadSettings()
   for (int i = 0; i < SLOT_COUNT; i++)
   {
     QSignalBlocker blocker(m_slot_combos[i]);
-    m_slot_combos[i]->setCurrentIndex(
-        m_slot_combos[i]->findData(SConfig::GetInstance().m_EXIDevice[i]));
+    const ExpansionInterface::TEXIDevices exi_device = Config::Get(Config::GetInfoForEXIDevice(i));
+    m_slot_combos[i]->setCurrentIndex(m_slot_combos[i]->findData(exi_device));
     UpdateButton(i);
   }
 
@@ -478,20 +478,18 @@ void GameCubePane::SaveSettings()
 {
   Config::ConfigChangeCallbackGuard config_guard;
 
-  SConfig& params = SConfig::GetInstance();
-
   // IPL Settings
-  params.bHLE_BS2 = m_skip_main_menu->isChecked();
   Config::SetBaseOrCurrent(Config::MAIN_SKIP_IPL, m_skip_main_menu->isChecked());
-  params.SelectedLanguage = m_language_combo->currentData().toInt();
   Config::SetBaseOrCurrent(Config::MAIN_GC_LANGUAGE, m_language_combo->currentData().toInt());
 
   // Device Settings
   for (int i = 0; i < SLOT_COUNT; i++)
   {
     const auto dev = ExpansionInterface::TEXIDevices(m_slot_combos[i]->currentData().toInt());
+    const ExpansionInterface::TEXIDevices current_exi_device =
+        Config::Get(Config::GetInfoForEXIDevice(i));
 
-    if (Core::IsRunning() && SConfig::GetInstance().m_EXIDevice[i] != dev)
+    if (Core::IsRunning() && current_exi_device != dev)
     {
       ExpansionInterface::ChangeDevice(
           // SlotB is on channel 1, slotA and SP1 are on 0
@@ -502,19 +500,7 @@ void GameCubePane::SaveSettings()
           (i == 2) ? 2 : 0);
     }
 
-    SConfig::GetInstance().m_EXIDevice[i] = dev;
-    switch (i)
-    {
-    case SLOT_A_INDEX:
-      Config::SetBaseOrCurrent(Config::MAIN_SLOT_A, dev);
-      break;
-    case SLOT_B_INDEX:
-      Config::SetBaseOrCurrent(Config::MAIN_SLOT_B, dev);
-      break;
-    case SLOT_SP1_INDEX:
-      Config::SetBaseOrCurrent(Config::MAIN_SERIAL_PORT_1, dev);
-      break;
-    }
+    Config::SetBaseOrCurrent(Config::GetInfoForEXIDevice(i), dev);
   }
 
 #ifdef HAS_LIBMGBA

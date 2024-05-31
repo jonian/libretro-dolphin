@@ -453,9 +453,10 @@ void ChangePads()
 
   for (int i = 0; i < SerialInterface::MAX_SI_CHANNELS; ++i)
   {
-    if (SConfig::GetInstance().m_SIDevice[i] == SerialInterface::SIDEVICE_GC_GBA_EMULATED)
+    const SerialInterface::SIDevices si_device = Config::Get(Config::GetInfoForSIDevice(i));
+    if (si_device == SerialInterface::SIDEVICE_GC_GBA_EMULATED)
       controllers[i] = ControllerType::GBA;
-    else if (SerialInterface::SIDevice_IsGCController(SConfig::GetInstance().m_SIDevice[i]))
+    else if (SerialInterface::SIDevice_IsGCController(si_device))
       controllers[i] = ControllerType::GC;
     else
       controllers[i] = ControllerType::None;
@@ -473,9 +474,10 @@ void ChangePads()
     }
     else if (IsUsingPad(i))
     {
-      if (SerialInterface::SIDevice_IsGCController(SConfig::GetInstance().m_SIDevice[i]))
+      const SerialInterface::SIDevices si_device = Config::Get(Config::GetInfoForSIDevice(i));
+      if (SerialInterface::SIDevice_IsGCController(si_device))
       {
-        device = SConfig::GetInstance().m_SIDevice[i];
+        device = si_device;
       }
       else
       {
@@ -535,9 +537,9 @@ bool BeginRecordingInput(const ControllerTypeArray& controllers,
       s_bNetPlay = true;
       s_recordingStartTime = ExpansionInterface::CEXIIPL::NetPlay_GetEmulatedTime();
     }
-    else if (SConfig::GetInstance().bEnableCustomRTC)
+    else if (Config::Get(Config::MAIN_CUSTOM_RTC_ENABLE))
     {
-      s_recordingStartTime = SConfig::GetInstance().m_customRTCValue;
+      s_recordingStartTime = Config::Get(Config::MAIN_CUSTOM_RTC_VALUE);
     }
     else
     {
@@ -548,7 +550,8 @@ bool BeginRecordingInput(const ControllerTypeArray& controllers,
 
     for (int i = 0; i < SerialInterface::MAX_SI_CHANNELS; ++i)
     {
-      if (SConfig::GetInstance().m_SIDevice[i] == SerialInterface::SIDEVICE_GC_TARUKONGA)
+      const SerialInterface::SIDevices si_device = Config::Get(Config::GetInfoForSIDevice(i));
+      if (si_device == SerialInterface::SIDEVICE_GC_TARUKONGA)
         s_bongos |= (1 << i);
     }
 
@@ -574,7 +577,7 @@ bool BeginRecordingInput(const ControllerTypeArray& controllers,
     }
 
     s_playMode = MODE_RECORDING;
-    s_author = SConfig::GetInstance().m_strMovieAuthor;
+    s_author = Config::Get(Config::MAIN_MOVIE_MOVIE_AUTHOR);
     s_temp_input.clear();
 
     s_currentByte = 0;
@@ -904,7 +907,6 @@ void ReadHeader()
   {
     s_bSaveConfig = true;
     Config::AddLayer(ConfigLoaders::GenerateMovieConfigLoader(&tmpHeader));
-    SConfig::GetInstance().bJITFollowBranch = tmpHeader.bFollowBranch;
     s_bClearSave = tmpHeader.bClearSave;
     s_memcards = tmpHeader.memcards;
     s_bongos = tmpHeader.bongos;
@@ -1328,7 +1330,7 @@ void EndPlayInput(bool cont)
 
     Core::QueueHostJob([=] {
       Core::UpdateWantDeterminism();
-      if (was_running && !SConfig::GetInstance().m_PauseMovie)
+      if (was_running && !Config::Get(Config::MAIN_MOVIE_PAUSE_MOVIE))
         CPU::EnableStepping(false);
     });
   }
@@ -1348,7 +1350,6 @@ void SaveRecording(const std::string& filename)
   header.filetype[3] = 0x1A;
   strncpy(header.gameID.data(), SConfig::GetInstance().GetGameID().c_str(), 6);
   header.bWii = SConfig::GetInstance().bWii;
-  header.bFollowBranch = SConfig::GetInstance().bJITFollowBranch;
   header.controllers = 0;
   header.GBAControllers = 0;
   for (int i = 0; i < 4; ++i)
@@ -1437,14 +1438,12 @@ void SetGraphicsConfig()
 // NOTE: EmuThread / Host Thread
 void GetSettings()
 {
-  const bool slot_a_has_raw_memcard =
-      SConfig::GetInstance().m_EXIDevice[0] == ExpansionInterface::EXIDEVICE_MEMORYCARD;
-  const bool slot_a_has_gci_folder =
-      SConfig::GetInstance().m_EXIDevice[0] == ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER;
-  const bool slot_b_has_raw_memcard =
-      SConfig::GetInstance().m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_MEMORYCARD;
-  const bool slot_b_has_gci_folder =
-      SConfig::GetInstance().m_EXIDevice[1] == ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER;
+  const ExpansionInterface::TEXIDevices slot_a_type = Config::Get(Config::MAIN_SLOT_A);
+  const ExpansionInterface::TEXIDevices slot_b_type = Config::Get(Config::MAIN_SLOT_B);
+  const bool slot_a_has_raw_memcard = slot_a_type == ExpansionInterface::EXIDEVICE_MEMORYCARD;
+  const bool slot_a_has_gci_folder = slot_a_type == ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER;
+  const bool slot_b_has_raw_memcard = slot_b_type == ExpansionInterface::EXIDEVICE_MEMORYCARD;
+  const bool slot_b_has_gci_folder = slot_b_type == ExpansionInterface::EXIDEVICE_MEMORYCARDFOLDER;
 
   s_bSaveConfig = true;
   s_bNetPlay = NetPlay::IsNetPlayRunning();

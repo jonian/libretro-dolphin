@@ -25,8 +25,6 @@ add_library(common
   Config/Layer.cpp
   Config/Layer.h
   CPUDetect.h
-  CRC32.cpp
-  CRC32.h
   Crypto/AES.cpp
   Crypto/AES.h
   Crypto/bn.cpp
@@ -83,8 +81,6 @@ add_library(common
   MathUtil.h
   Matrix.cpp
   Matrix.h
-  MD5.cpp
-  MD5.h
   MemArena.h
   MemoryUtil.cpp
   MemoryUtil.h
@@ -168,7 +164,7 @@ elseif(WIN32)
     winmm.lib
   )
   if (_M_X86_64)
-	  target_link_libraries(common PRIVATE opengl32.lib)
+    target_link_libraries(common PRIVATE opengl32.lib)
   endif()
 elseif (ANDROID)
   target_link_libraries(common
@@ -296,6 +292,10 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(common PUBLIC dl rt)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_sources(common PUBLIC HRWrap.h HRWrap.cpp)
 endif()
 
 if(USE_UPNP)

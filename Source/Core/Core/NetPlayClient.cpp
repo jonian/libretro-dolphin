@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -23,7 +24,6 @@
 #include "Common/ENetUtil.h"
 #include "Common/FileUtil.h"
 #include "Common/Logging/Log.h"
-#include "Common/MD5.h"
 #include "Common/MsgHandler.h"
 #include "Common/NandPaths.h"
 #include "Common/QoSSession.h"
@@ -62,6 +62,7 @@
 #include "Core/NetPlayCommon.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/SyncIdentifier.h"
+#include "DiscIO/Blob.h"
 
 #include "InputCommon/ControllerEmu/ControlGroup/Attachments.h"
 #include "InputCommon/GCAdapter.h"
@@ -148,6 +149,9 @@ NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlay
       m_dialog->OnConnectionError(_trans("Could not create peer."));
       return;
     }
+
+    // Extend reliable traffic timeout
+    enet_peer_timeout(m_server, 0, 30000, 30000);
 
     ENetEvent netEvent;
     int net = enet_host_service(m_client, &netEvent, 5000);
@@ -1834,11 +1838,13 @@ void NetPlayClient::UpdateDevices()
     else if (player_id == m_local_player->pid)
     {
       // Use local controller types for local controllers if they are compatible
-      if (SerialInterface::SIDevice_IsGCController(SConfig::GetInstance().m_SIDevice[local_pad]))
+      const SerialInterface::SIDevices si_device =
+          Config::Get(Config::GetInfoForSIDevice(local_pad));
+      if (SerialInterface::SIDevice_IsGCController(si_device))
       {
-        SerialInterface::ChangeDevice(SConfig::GetInstance().m_SIDevice[local_pad], pad);
+        SerialInterface::ChangeDevice(si_device, pad);
 
-        if (SConfig::GetInstance().m_SIDevice[local_pad] == SerialInterface::SIDEVICE_WIIU_ADAPTER)
+        if (si_device == SerialInterface::SIDEVICE_WIIU_ADAPTER)
         {
           GCAdapter::ResetDeviceType(local_pad);
         }
@@ -2029,13 +2035,13 @@ bool NetPlayClient::GetNetPads(const int pad_nb, const bool batching, GCPadStatu
       if (time_diff.count() >= 1.0 || !buffer_over_target)
       {
         // run fast if the buffer is overfilled, otherwise run normal speed
-        SConfig::GetInstance().m_EmulationSpeed = buffer_over_target ? 0.0f : 1.0f;
+        Config::SetCurrent(Config::MAIN_EMULATION_SPEED, buffer_over_target ? 0.0f : 1.0f);
       }
     }
     else
     {
       // Set normal speed when we're the host, otherwise it can get stuck at unlimited
-      SConfig::GetInstance().m_EmulationSpeed = 1.0f;
+      Config::SetCurrent(Config::MAIN_EMULATION_SPEED, 1.0f);
     }
   }
 
@@ -2157,7 +2163,8 @@ bool NetPlayClient::PollLocalPad(const int local_pad, sf::Packet& packet)
   {
     pad_status = Pad::GetGBAStatus(local_pad);
   }
-  else if (SConfig::GetInstance().m_SIDevice[local_pad] == SerialInterface::SIDEVICE_WIIU_ADAPTER)
+  else if (Config::Get(Config::GetInfoForSIDevice(local_pad)) ==
+           SerialInterface::SIDEVICE_WIIU_ADAPTER)
   {
     pad_status = GCAdapter::Input(local_pad);
   }
@@ -2462,6 +2469,39 @@ bool NetPlayClient::DoAllPlayersHaveGame()
   });
 }
 
+static std::string MD5Sum(const std::string& file_path, std::function<bool(int)> report_progress)
+{
+  std::vector<u8> data(8 * 1024 * 1024);
+  u64 read_offset = 0;
+  mbedtls_md5_context ctx;
+
+  std::unique_ptr<DiscIO::BlobReader> file(DiscIO::CreateBlobReader(file_path));
+  u64 game_size = file->GetDataSize();
+
+  mbedtls_md5_starts_ret(&ctx);
+
+  while (read_offset < game_size)
+  {
+    size_t read_size = std::min(static_cast<u64>(data.size()), game_size - read_offset);
+    if (!file->Read(read_offset, read_size, data.data()))
+      return "";
+
+    mbedtls_md5_update_ret(&ctx, data.data(), read_size);
+    read_offset += read_size;
+
+    int progress =
+        static_cast<int>(static_cast<float>(read_offset) / static_cast<float>(game_size) * 100);
+    if (!report_progress(progress))
+      return "";
+  }
+
+  std::array<u8, 16> output;
+  mbedtls_md5_finish_ret(&ctx, output.data());
+
+  // Convert to hex
+  return fmt::format("{:02x}", fmt::join(output, ""));
+}
+
 void NetPlayClient::ComputeMD5(const SyncIdentifier& sync_identifier)
 {
   if (m_should_compute_MD5)
@@ -2488,7 +2528,7 @@ void NetPlayClient::ComputeMD5(const SyncIdentifier& sync_identifier)
   if (m_MD5_thread.joinable())
     m_MD5_thread.join();
   m_MD5_thread = std::thread([this, file]() {
-    std::string sum = MD5::MD5Sum(file, [&](int progress) {
+    std::string sum = MD5Sum(file, [&](int progress) {
       sf::Packet packet;
       packet << MessageID::MD5Progress;
       packet << progress;

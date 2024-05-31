@@ -39,6 +39,7 @@
 #include "Common/Timer.h"
 
 #include "Core/Config/GraphicsSettings.h"
+#include "Core/Config/MainSettings.h"
 #include "Core/Config/NetplaySettings.h"
 #include "Core/Config/SYSCONFSettings.h"
 #include "Core/ConfigManager.h"
@@ -554,8 +555,6 @@ void Renderer::CheckForConfigChanges()
 // Create On-Screen-Messages
 void Renderer::DrawDebugText()
 {
-  const auto& config = SConfig::GetInstance();
-
   if (g_ActiveConfig.bShowFPS)
   {
     // Position in the top-right corner of the screen.
@@ -575,9 +574,10 @@ void Renderer::DrawDebugText()
     ImGui::End();
   }
 
-  const bool show_movie_window = config.m_ShowFrameCount | config.m_ShowLag |
-                                 config.m_ShowInputDisplay | config.m_ShowRTC |
-                                 config.m_ShowRerecord;
+  const bool show_movie_window =
+      Config::Get(Config::MAIN_SHOW_FRAME_COUNT) || Config::Get(Config::MAIN_SHOW_LAG) ||
+      Config::Get(Config::MAIN_MOVIE_SHOW_INPUT_DISPLAY) ||
+      Config::Get(Config::MAIN_MOVIE_SHOW_RTC) || Config::Get(Config::MAIN_MOVIE_SHOW_RERECORD);
   if (show_movie_window)
   {
     // Position under the FPS display.
@@ -596,18 +596,18 @@ void Renderer::DrawDebugText()
         ImGui::Text("Input: %" PRIu64 " / %" PRIu64, Movie::GetCurrentInputCount(),
                     Movie::GetTotalInputCount());
       }
-      else if (config.m_ShowFrameCount)
+      else if (Config::Get(Config::MAIN_SHOW_FRAME_COUNT))
       {
         ImGui::Text("Frame: %" PRIu64, Movie::GetCurrentFrame());
         ImGui::Text("Input: %" PRIu64, Movie::GetCurrentInputCount());
       }
-      if (SConfig::GetInstance().m_ShowLag)
+      if (Config::Get(Config::MAIN_SHOW_LAG))
         ImGui::Text("Lag: %" PRIu64 "\n", Movie::GetCurrentLagCount());
-      if (SConfig::GetInstance().m_ShowInputDisplay)
+      if (Config::Get(Config::MAIN_MOVIE_SHOW_INPUT_DISPLAY))
         ImGui::TextUnformatted(Movie::GetInputDisplay().c_str());
-      if (SConfig::GetInstance().m_ShowRTC)
+      if (Config::Get(Config::MAIN_MOVIE_SHOW_RTC))
         ImGui::TextUnformatted(Movie::GetRTCDisplay().c_str());
-      if (SConfig::GetInstance().m_ShowRerecord)
+      if (Config::Get(Config::MAIN_MOVIE_SHOW_RERECORD))
         ImGui::TextUnformatted(Movie::GetRerecords().c_str());
     }
     ImGui::End();
@@ -993,7 +993,7 @@ bool Renderer::InitializeImGui()
   m_imgui_vertex_format = CreateNativeVertexFormat(vdecl);
   if (!m_imgui_vertex_format)
   {
-    PanicAlertFmt("Failed to create imgui vertex format");
+    PanicAlertFmt("Failed to create ImGui vertex format");
     return false;
   }
 
@@ -1006,10 +1006,11 @@ bool Renderer::InitializeImGui()
 
     TextureConfig font_tex_config(font_tex_width, font_tex_height, 1, 1, 1,
                                   AbstractTextureFormat::RGBA8, 0);
-    std::unique_ptr<AbstractTexture> font_tex = CreateTexture(font_tex_config);
+    std::unique_ptr<AbstractTexture> font_tex =
+        CreateTexture(font_tex_config, "ImGui font texture");
     if (!font_tex)
     {
-      PanicAlertFmt("Failed to create imgui texture");
+      PanicAlertFmt("Failed to create ImGui texture");
       return false;
     }
     font_tex->Load(0, font_tex_width, font_tex_height, font_tex_width, font_tex_pixels,
@@ -1030,13 +1031,14 @@ bool Renderer::InitializeImGui()
 
 bool Renderer::RecompileImGuiPipeline()
 {
-  std::unique_ptr<AbstractShader> vertex_shader = CreateShaderFromSource(
-      ShaderStage::Vertex, FramebufferShaderGen::GenerateImGuiVertexShader());
-  std::unique_ptr<AbstractShader> pixel_shader =
-      CreateShaderFromSource(ShaderStage::Pixel, FramebufferShaderGen::GenerateImGuiPixelShader());
+  std::unique_ptr<AbstractShader> vertex_shader =
+      CreateShaderFromSource(ShaderStage::Vertex, FramebufferShaderGen::GenerateImGuiVertexShader(),
+                             "ImGui vertex shader");
+  std::unique_ptr<AbstractShader> pixel_shader = CreateShaderFromSource(
+      ShaderStage::Pixel, FramebufferShaderGen::GenerateImGuiPixelShader(), "ImGui pixel shader");
   if (!vertex_shader || !pixel_shader)
   {
-    PanicAlertFmt("Failed to compile imgui shaders");
+    PanicAlertFmt("Failed to compile ImGui shaders");
     return false;
   }
 
@@ -1045,10 +1047,11 @@ bool Renderer::RecompileImGuiPipeline()
   if (UseGeometryShaderForUI())
   {
     geometry_shader = CreateShaderFromSource(
-        ShaderStage::Geometry, FramebufferShaderGen::GeneratePassthroughGeometryShader(1, 1));
+        ShaderStage::Geometry, FramebufferShaderGen::GeneratePassthroughGeometryShader(1, 1),
+        "ImGui passthrough geometry shader");
     if (!geometry_shader)
     {
-      PanicAlertFmt("Failed to compile imgui geometry shader");
+      PanicAlertFmt("Failed to compile ImGui geometry shader");
       return false;
     }
   }
@@ -1452,7 +1455,7 @@ bool Renderer::IsFrameDumping() const
   if (m_screenshot_request.IsSet())
     return true;
 
-  if (SConfig::GetInstance().m_DumpFrames)
+  if (Config::Get(Config::MAIN_MOVIE_DUMP_FRAMES))
     return true;
 
   return false;
@@ -1513,7 +1516,8 @@ bool Renderer::CheckFrameDumpRenderTexture(u32 target_width, u32 target_height)
   m_frame_dump_render_texture.reset();
   m_frame_dump_render_texture =
       CreateTexture(TextureConfig(target_width, target_height, 1, 1, 1,
-                                  AbstractTextureFormat::RGBA8, AbstractTextureFlag_RenderTarget));
+                                  AbstractTextureFormat::RGBA8, AbstractTextureFlag_RenderTarget),
+                    "Frame dump render texture");
   if (!m_frame_dump_render_texture)
   {
     PanicAlertFmt("Failed to allocate frame dump render texture");
@@ -1659,7 +1663,7 @@ void Renderer::FrameDumpThreadFunc()
       m_screenshot_completed.Set();
     }
 
-    if (SConfig::GetInstance().m_DumpFrames)
+    if (Config::Get(Config::MAIN_MOVIE_DUMP_FRAMES))
     {
       if (!frame_dump_started)
       {
@@ -1670,7 +1674,7 @@ void Renderer::FrameDumpThreadFunc()
 
         // Stop frame dumping if we fail to start.
         if (!frame_dump_started)
-          SConfig::GetInstance().m_DumpFrames = false;
+          Config::SetCurrent(Config::MAIN_MOVIE_DUMP_FRAMES, false);
       }
 
       // If we failed to start frame dumping, don't write a frame.
@@ -1741,7 +1745,7 @@ std::string Renderer::GetFrameDumpNextImageFileName() const
 bool Renderer::StartFrameDumpToImage(const FrameDump::FrameData&)
 {
   m_frame_dump_image_counter = 1;
-  if (!SConfig::GetInstance().m_DumpFramesSilent)
+  if (!Config::Get(Config::MAIN_MOVIE_DUMP_FRAMES_SILENT))
   {
     // Only check for the presence of the first image to confirm overwriting.
     // A previous run will always have at least one image, and it's safe to assume that if the user

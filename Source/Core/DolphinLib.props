@@ -21,7 +21,6 @@
     <ClInclude Include="Common\BitUtils.h" />
     <ClInclude Include="Common\BlockingLoop.h" />
     <ClInclude Include="Common\CDUtils.h" />
-    <ClInclude Include="Common\CRC32.h" />
     <ClInclude Include="Common\ChunkFile.h" />
     <ClInclude Include="Common\CodeBlock.h" />
     <ClInclude Include="Common\ColorUtil.h" />
@@ -108,6 +107,7 @@
     <ClInclude Include="Common\GL\GLUtil.h" />
     <ClInclude Include="Common\GL\GLX11Window.h" />
     <ClInclude Include="Common\Hash.h" />
+    <ClInclude Include="Common\HRWrap.h" />
     <ClInclude Include="Common\HttpRequest.h" />
     <ClInclude Include="Common\Image.h" />
     <ClInclude Include="Common\ImageC.h" />
@@ -124,7 +124,6 @@
     <ClInclude Include="Common\Logging\LogManager.h" />
     <ClInclude Include="Common\MathUtil.h" />
     <ClInclude Include="Common\Matrix.h" />
-    <ClInclude Include="Common\MD5.h" />
     <ClInclude Include="Common\MemArena.h" />
     <ClInclude Include="Common\MemoryUtil.h" />
     <ClInclude Include="Common\MinizipUtil.h" />
@@ -687,7 +686,6 @@
     <ClCompile Include="AudioCommon\WaveFile.cpp" />
     <ClCompile Include="Common\Analytics.cpp" />
     <ClCompile Include="Common\CDUtils.cpp" />
-    <ClCompile Include="Common\CRC32.cpp" />
     <ClCompile Include="Common\ColorUtil.cpp" />
     <ClCompile Include="Common\CommonFuncs.cpp" />
     <ClCompile Include="Common\CompatPatches.cpp" />
@@ -710,6 +708,7 @@
     <ClCompile Include="Common\GL\GLInterface\WGL.cpp" />
     <ClCompile Include="Common\GL\GLUtil.cpp" />
     <ClCompile Include="Common\Hash.cpp" />
+    <ClCompile Include="Common\HRWrap.cpp" />
     <ClCompile Include="Common\HttpRequest.cpp" />
     <ClCompile Include="Common\Image.cpp" />
     <ClCompile Include="Common\ImageC.c">
@@ -725,7 +724,6 @@
     <ClCompile Include="Common\Logging\LogManager.cpp" />
     <ClCompile Include="Common\MathUtil.cpp" />
     <ClCompile Include="Common\Matrix.cpp" />
-    <ClCompile Include="Common\MD5.cpp" />
     <ClCompile Include="Common\MemArenaWin.cpp" />
     <ClCompile Include="Common\MemoryUtil.cpp" />
     <ClCompile Include="Common\MsgHandler.cpp" />
@@ -1240,5 +1238,6 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Common\BitField.natvis" />
+    <Natvis Include="Common\EnumMap.natvis" />
   </ItemGroup>
 </Project>
