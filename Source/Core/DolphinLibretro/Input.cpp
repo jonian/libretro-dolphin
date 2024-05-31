@@ -426,6 +426,7 @@ void Init()
 
   g_controller_interface.AddDevice(std::make_shared<Device>(RETRO_DEVICE_KEYBOARD, 0));
 
+  GCAdapter::Init();
   Pad::Initialize();
   Keyboard::Initialize();
 
