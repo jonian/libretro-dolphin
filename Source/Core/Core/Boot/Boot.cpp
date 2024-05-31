@@ -216,7 +216,7 @@ std::unique_ptr<BootParameters> BootParameters::GenerateFromFile(std::vector<std
     nullptr,
 #endif
     nullptr, &extension);
-  std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+  Common::ToLower(&extension);
 
 #ifndef __LIBRETRO__
   if (extension == ".m3u" || extension == ".m3u8")
@@ -226,7 +226,7 @@ std::unique_ptr<BootParameters> BootParameters::GenerateFromFile(std::vector<std
       return {};
 
     SplitPath(paths.front(), nullptr, nullptr, &extension);
-    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    Common::ToLower(&extension);
   }
 #endif
 
@@ -239,7 +239,7 @@ std::unique_ptr<BootParameters> BootParameters::GenerateFromFile(std::vector<std
   {
     const std::string display_name = GetAndroidContentDisplayName(path);
     SplitPath(display_name, nullptr, nullptr, &extension);
-    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    Common::ToLower(&extension);
   }
 #endif
 
@@ -663,7 +663,7 @@ BootExecutableReader::BootExecutableReader(const std::string& file_name)
 
 BootExecutableReader::BootExecutableReader(File::IOFile file)
 {
-  file.Seek(0, SEEK_SET);
+  file.Seek(0, File::SeekOrigin::Begin);
   m_bytes.resize(file.GetSize());
   file.ReadBytes(m_bytes.data(), m_bytes.size());
 }

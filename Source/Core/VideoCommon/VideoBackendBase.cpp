@@ -323,7 +323,6 @@ void VideoBackendBase::InitializeShared()
 
   CommandProcessor::Init();
   Fifo::Init();
-  OpcodeDecoder::Init();
   PixelEngine::Init();
   BPInit();
   VertexLoaderManager::Init();

@@ -39,6 +39,7 @@
 #include "Core/Config/SessionSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/GeckoCode.h"
+#include "Core/HW/EXI/EXI.h"
 #include "Core/HW/EXI/EXI_DeviceIPL.h"
 #ifdef HAS_LIBMGBA
 #include "Core/HW/GBACore.h"
@@ -229,8 +230,8 @@ bool NetPlayClient::Connect()
 {
   // send connect message
   sf::Packet packet;
-  packet << Common::scm_rev_git_str;
-  packet << Common::netplay_dolphin_ver;
+  packet << Common::GetScmRevGitStr();
+  packet << Common::GetNetplayDolphinVer();
   packet << m_player_name;
   Send(packet);
   enet_host_flush(m_client);
@@ -283,7 +284,7 @@ bool NetPlayClient::Connect()
     Player player;
     player.name = m_player_name;
     player.pid = m_pid;
-    player.revision = Common::netplay_dolphin_ver;
+    player.revision = Common::GetNetplayDolphinVer();
 
     // add self to player list
     m_players[m_pid] = player;
@@ -319,7 +320,7 @@ void NetPlayClient::OnData(sf::Packet& packet)
   MessageID mid;
   packet >> mid;
 
-  INFO_LOG_FMT(NETPLAY, "Got server message: {:x}", mid);
+  INFO_LOG_FMT(NETPLAY, "Got server message: {:x}", static_cast<u8>(mid));
 
   switch (mid)
   {
@@ -457,7 +458,7 @@ void NetPlayClient::OnData(sf::Packet& packet)
     break;
 
   default:
-    PanicAlertFmtT("Unknown message received with id : {0}", mid);
+    PanicAlertFmtT("Unknown message received with id : {0}", static_cast<u8>(mid));
     break;
   }
 }
@@ -818,8 +819,10 @@ void NetPlayClient::OnStartGame(sf::Packet& packet)
     packet >> m_net_settings.m_OCEnable;
     packet >> m_net_settings.m_OCFactor;
 
-    for (auto& device : m_net_settings.m_EXIDevice)
-      packet >> device;
+    for (auto slot : ExpansionInterface::SLOTS)
+      packet >> m_net_settings.m_EXIDevice[slot];
+
+    packet >> m_net_settings.m_MemcardSizeOverride;
 
     for (u32& value : m_net_settings.m_SYSCONFSettings)
       packet >> value;
@@ -995,7 +998,7 @@ void NetPlayClient::OnSyncSaveData(sf::Packet& packet)
     break;
 
   default:
-    PanicAlertFmtT("Unknown SYNC_SAVE_DATA message received with id: {0}", sub_id);
+    PanicAlertFmtT("Unknown SYNC_SAVE_DATA message received with id: {0}", static_cast<u8>(sub_id));
     break;
   }
 }
@@ -1266,7 +1269,7 @@ void NetPlayClient::OnSyncCodes(sf::Packet& packet)
     break;
 
   default:
-    PanicAlertFmtT("Unknown SYNC_CODES message received with id: {0}", sub_id);
+    PanicAlertFmtT("Unknown SYNC_CODES message received with id: {0}", static_cast<u8>(sub_id));
     break;
   }
 }
@@ -1928,7 +1931,7 @@ void NetPlayClient::OnConnectFailed(TraversalConnectFailedReason reason)
     PanicAlertFmtT("Invalid host");
     break;
   default:
-    PanicAlertFmtT("Unknown error {0:x}", reason);
+    PanicAlertFmtT("Unknown error {0:x}", static_cast<int>(reason));
     break;
   }
 }
