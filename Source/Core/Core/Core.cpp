@@ -131,6 +131,7 @@ static std::queue<HostJob> s_host_jobs_queue;
 static Common::Event s_cpu_thread_job_finished;
 
 static thread_local bool tls_is_cpu_thread = false;
+static thread_local bool tls_is_gpu_thread = false;
 
 static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi);
 
@@ -211,13 +212,9 @@ bool IsGPUThread()
   {
     if (!SConfig::GetInstance().bEMUThread)
       return s_gpu_thread_id == std::this_thread::get_id();
+  }
 
-    return (s_emu_thread.joinable() && (s_emu_thread.get_id() == std::this_thread::get_id()));
-  }
-  else
-  {
-    return IsCPUThread();
-  }
+  return tls_is_gpu_thread;
 }
 
 bool WantsDeterminism()
@@ -326,6 +323,16 @@ void DeclareAsCPUThread()
 void UndeclareAsCPUThread()
 {
   tls_is_cpu_thread = false;
+}
+
+void DeclareAsGPUThread()
+{
+  tls_is_gpu_thread = true;
+}
+
+void UndeclareAsGPUThread()
+{
+  tls_is_gpu_thread = false;
 }
 
 // For the CPU Thread only.
@@ -473,6 +480,8 @@ static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi
   }};
 
   Common::SetCurrentThreadName("Emuthread - Starting");
+
+  DeclareAsGPUThread();
 
   // For a time this acts as the CPU thread...
   DeclareAsCPUThread();

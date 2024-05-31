@@ -295,7 +295,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  target_sources(common PUBLIC HRWrap.h HRWrap.cpp)
+  target_sources(common PRIVATE HRWrap.h HRWrap.cpp)
 endif()
 
 if(USE_UPNP)
@@ -321,4 +321,14 @@ elseif(WIN32)
   if(MINGW)
     target_link_libraries(common PRIVATE comctl32 comdlg32 winmm shlwapi)
   endif()
+endif()
+
+if(MSVC)
+  # Add precompiled header
+  target_link_libraries(common PRIVATE use_pch)
+
+  # We need to disable PCH for this one file, because it's C and our PCH is C++
+  set_source_files_properties(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImageC.c
+    PROPERTIES COMPILE_FLAGS "/Y- /I${CMAKE_SOURCE_DIR}/Source/PCH/nopch")
 endif()
