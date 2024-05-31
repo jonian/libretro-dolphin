@@ -305,12 +305,12 @@ void Init()
   }
 
   m_TotalMemorySize = mem_size;
-  single_physical_base = Common::MemArena::GetMemoryBase(m_TotalMemorySize);
-  m_pContiguousRAM = (u8*)g_arena.CreateView(0, m_TotalMemorySize, single_physical_base);
+  single_physical_base = (u8*)g_arena.ReserveMemoryRegion(m_TotalMemorySize);
+  m_pContiguousRAM = (u8*)g_arena.MapInMemoryRegion(0, m_TotalMemorySize, single_physical_base);
 
   if (!m_pContiguousRAM)
   {
-    PanicAlert("MemoryMap_Setup: Failed finding a single memory base.");
+    PanicAlertFmt("MemoryMap_Setup: Failed finding a single memory base.");
     exit(0);
   }
 
