@@ -266,7 +266,7 @@ size_t retro_serialize_size(void)
   size_t size = 0;
 
   Core::RunAsCPUThread([&] {
-    PointerWrap p((u8**)&size, PointerWrap::MODE_MEASURE);
+    PointerWrap p((u8**)&size, sizeof(size_t), PointerWrap::MODE_MEASURE);
     State::DoState(p);
   });
 
@@ -276,7 +276,7 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void* data, size_t size)
 {
   Core::RunAsCPUThread([&] {
-    PointerWrap p((u8**)&data, PointerWrap::MODE_WRITE);
+    PointerWrap p((u8**)&data, size, PointerWrap::MODE_WRITE);
     State::DoState(p);
   });
 
@@ -285,7 +285,7 @@ bool retro_serialize(void* data, size_t size)
 bool retro_unserialize(const void* data, size_t size)
 {
   Core::RunAsCPUThread([&] {
-    PointerWrap p((u8**)&data, PointerWrap::MODE_READ);
+    PointerWrap p((u8**)&data, size, PointerWrap::MODE_READ);
     State::DoState(p);
   });
 
