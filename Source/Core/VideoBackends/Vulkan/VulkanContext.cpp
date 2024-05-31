@@ -20,9 +20,8 @@ namespace Vulkan
 {
 std::unique_ptr<VulkanContext> g_vulkan_context;
 
-VulkanContext::VulkanContext(VkInstance instance, VkPhysicalDevice physical_device,
-                             VkSurfaceKHR surface)
-    : m_instance(instance), m_physical_device(physical_device), m_surface(surface)
+VulkanContext::VulkanContext(VkInstance instance, VkPhysicalDevice physical_device)
+    : m_instance(instance), m_physical_device(physical_device)
 {
   // Read device physical memory properties, we need it for allocating buffers
   vkGetPhysicalDeviceProperties(physical_device, &m_device_properties);
@@ -43,9 +42,6 @@ VulkanContext::~VulkanContext()
 {
   if (m_device != VK_NULL_HANDLE)
     vkDestroyDevice(m_device, nullptr);
-
-  if (m_surface != VK_NULL_HANDLE)
-    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
   if (m_debug_report_callback != VK_NULL_HANDLE)
     DisableDebugReports();
@@ -264,7 +260,6 @@ void VulkanContext::PopulateBackendInfo(VideoConfig* config)
 {
   config->backend_info.api_type = APIType::Vulkan;
   config->backend_info.bSupports3DVision = false;                  // D3D-exclusive.
-  config->backend_info.bSupportsOversizedViewports = true;         // Assumed support.
   config->backend_info.bSupportsEarlyZ = true;                     // Assumed support.
   config->backend_info.bSupportsPrimitiveRestart = true;           // Assumed support.
   config->backend_info.bSupportsBindingLayout = false;             // Assumed support.
@@ -375,6 +370,13 @@ void VulkanContext::PopulateBackendInfoFeatures(VideoConfig* config, VkPhysicalD
   // with depth clamping. Fall back to inverted depth range for these.
   if (DriverDetails::HasBug(DriverDetails::BUG_BROKEN_REVERSED_DEPTH_RANGE))
     config->backend_info.bSupportsReversedDepthRange = false;
+
+  // Calling discard when early depth test is enabled can break on some Apple Silicon GPU drivers.
+  if (DriverDetails::HasBug(DriverDetails::BUG_BROKEN_DISCARD_WITH_EARLY_Z))
+  {
+    // We will use shader blending, so disable hardware dual source blending.
+    config->backend_info.bSupportsDualSourceBlend = false;
+  }
 }
 
 void VulkanContext::PopulateBackendInfoMultisampleModes(
@@ -430,7 +432,7 @@ std::unique_ptr<VulkanContext> VulkanContext::Create(VkInstance instance, VkPhys
                                                      bool enable_debug_reports,
                                                      bool enable_validation_layer)
 {
-  std::unique_ptr<VulkanContext> context = std::make_unique<VulkanContext>(instance, gpu, surface);
+  std::unique_ptr<VulkanContext> context = std::make_unique<VulkanContext>(instance, gpu);
 
   // Initialize DriverDetails so that we can check for bugs to disable features if needed.
   context->InitDriverDetails();
@@ -441,8 +443,14 @@ std::unique_ptr<VulkanContext> VulkanContext::Create(VkInstance instance, VkPhys
     context->EnableDebugReports();
 
   // Attempt to create the device.
-  if (!context->CreateDevice(enable_validation_layer))
+  if (!context->CreateDevice(surface, enable_validation_layer))
+  {
+    // Since we are destroying the instance, we're also responsible for destroying the surface.
+    if (surface != VK_NULL_HANDLE)
+      vkDestroySurfaceKHR(instance, surface, nullptr);
+
     return nullptr;
+  }
 
   return context;
 }
@@ -538,7 +546,7 @@ bool VulkanContext::SelectDeviceFeatures()
   return true;
 }
 
-bool VulkanContext::CreateDevice(bool enable_validation_layer)
+bool VulkanContext::CreateDevice(VkSurfaceKHR surface, bool enable_validation_layer)
 {
   u32 queue_family_count;
   vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count, nullptr);
@@ -563,17 +571,17 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
     {
       m_graphics_queue_family_index = i;
       // Quit now, no need for a present queue.
-      if (!m_surface)
+      if (!surface)
       {
         break;
       }
     }
 
-    if (m_surface)
+    if (surface)
     {
       VkBool32 present_supported;
       VkResult res =
-          vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, i, m_surface, &present_supported);
+          vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, i, surface, &present_supported);
       if (res != VK_SUCCESS)
       {
         LOG_VULKAN_ERROR(res, "vkGetPhysicalDeviceSurfaceSupportKHR failed: ");
@@ -597,7 +605,7 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
     ERROR_LOG_FMT(VIDEO, "Vulkan: Failed to find an acceptable graphics queue.");
     return false;
   }
-  if (m_surface && m_present_queue_family_index == queue_family_count)
+  if (surface && m_present_queue_family_index == queue_family_count)
   {
     ERROR_LOG_FMT(VIDEO, "Vulkan: Failed to find an acceptable present queue.");
     return false;
@@ -638,7 +646,7 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
   }
   device_info.pQueueCreateInfos = queue_infos.data();
 
-  if (!SelectDeviceExtensions(m_surface != VK_NULL_HANDLE))
+  if (!SelectDeviceExtensions(surface != VK_NULL_HANDLE))
     return false;
 
   // convert std::string list to a char pointer list which we can feed in
@@ -678,7 +686,7 @@ bool VulkanContext::CreateDevice(bool enable_validation_layer)
 
   // Grab the graphics and present queues.
   vkGetDeviceQueue(m_device, m_graphics_queue_family_index, 0, &m_graphics_queue);
-  if (m_surface)
+  if (surface)
   {
     vkGetDeviceQueue(m_device, m_present_queue_family_index, 0, &m_present_queue);
   }
@@ -920,11 +928,10 @@ void VulkanContext::InitDriverDetails()
     vendor = DriverDetails::VENDOR_IMGTEC;
     driver = DriverDetails::DRIVER_IMGTEC;
   }
-    else if (vendor_id == 0x14E4 || device_name.find("V3D 4.2") != std::string::npos)
+  else if (device_name.find("Apple") != std::string::npos)
   {
-    // Supported by the videocore IV found in the RPI4 and upwards.
-    vendor = DriverDetails::VENDOR_MESA;
-    driver = DriverDetails::DRIVER_V3D;
+    vendor = DriverDetails::VENDOR_APPLE;
+    driver = DriverDetails::DRIVER_PORTABILITY;
   }
   else
   {

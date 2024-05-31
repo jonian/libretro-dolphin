@@ -18,7 +18,7 @@ namespace Vulkan
 class VulkanContext
 {
 public:
-  VulkanContext(VkInstance instance, VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+  VulkanContext(VkInstance instance, VkPhysicalDevice physical_device);
   ~VulkanContext();
 
   // Determines if the Vulkan validation layer is available on the system.
@@ -57,7 +57,6 @@ public:
   VkInstance GetVulkanInstance() const { return m_instance; }
   VkPhysicalDevice GetPhysicalDevice() const { return m_physical_device; }
   VkDevice GetDevice() const { return m_device; }
-  VkSurfaceKHR GetSurface() const { return m_surface; }
   VkQueue GetGraphicsQueue() const { return m_graphics_queue; }
   u32 GetGraphicsQueueFamilyIndex() const { return m_graphics_queue_family_index; }
   VkQueue GetPresentQueue() const { return m_present_queue; }
@@ -125,14 +124,13 @@ private:
                                        WindowSystemType wstype, bool enable_debug_report);
   bool SelectDeviceExtensions(bool enable_surface);
   bool SelectDeviceFeatures();
-  bool CreateDevice(bool enable_validation_layer);
+  bool CreateDevice(VkSurfaceKHR surface, bool enable_validation_layer);
   void InitDriverDetails();
   void PopulateShaderSubgroupSupport();
 
   VkInstance m_instance = VK_NULL_HANDLE;
   VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
   VkDevice m_device = VK_NULL_HANDLE;
-  VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
   VkQueue m_graphics_queue = VK_NULL_HANDLE;
   u32 m_graphics_queue_family_index = 0;
