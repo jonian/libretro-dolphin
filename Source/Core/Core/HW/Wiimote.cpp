@@ -62,6 +62,10 @@ void RefreshConfig()
 
 namespace WiimoteCommon
 {
+void SetSource(unsigned int index, WiimoteSource source)
+{
+  OnSourceChanged(index, source);
+}
 void UpdateSource(unsigned int index)
 {
   const auto bluetooth = WiiUtils::GetBluetoothEmuDevice();
