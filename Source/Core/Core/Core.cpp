@@ -209,7 +209,7 @@ bool IsGPUThread()
 {
   if (Core::System::GetInstance().IsDualCoreMode())
   {
-    if (!_CoreParameter.bEMUThread)
+    if (!SConfig::GetInstance().bEMUThread)
       return s_gpu_thread_id == std::this_thread::get_id();
 
     return (s_emu_thread.joinable() && (s_emu_thread.get_id() == std::this_thread::get_id()));
@@ -261,7 +261,7 @@ bool Init(std::unique_ptr<BootParameters> boot, const WindowSystemInfo& wsi)
   s_is_booting.Set();
   boot_params = std::move(boot);
 
-  if (!SConfig::GetInstance().bCPUThread)
+  if (!Core::System::GetInstance().IsDualCoreMode())
     SConfig::GetInstance().bEMUThread = true;
 
   if (!SConfig::GetInstance().bEMUThread)
@@ -1062,7 +1062,7 @@ void Shutdown()
   }
   else
   {
-    if (SConfig::GetInstance().bCPUThread)
+    if (Core::System::GetInstance().IsDualCoreMode())
       s_cpu_thread.join();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
 #ifdef USE_GDBSTUB
