@@ -16,11 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include <mbedtls/aes.h>
-
 #include "Common/Align.h"
 #include "Common/Assert.h"
 #include "Common/CommonTypes.h"
+#include "Common/Crypto/AES.h"
 #include "Common/Crypto/SHA1.h"
 #include "Common/Logging/Log.h"
 #include "Common/Swap.h"
@@ -42,7 +41,11 @@ VolumeWii::VolumeWii(std::unique_ptr<BlobReader> reader)
 {
   ASSERT(m_reader);
 
-  m_encrypted = m_reader->ReadSwapped<u32>(0x60) == u32(0);
+  m_has_hashes = m_reader->ReadSwapped<u8>(0x60) == u8(0);
+  m_has_encryption = m_reader->ReadSwapped<u8>(0x61) == u8(0);
+
+  if (m_has_encryption && !m_has_hashes)
+    ERROR_LOG_FMT(DISCIO, "Wii disc has encryption but no hashes! This probably won't work well");
 
   for (u32 partition_group = 0; partition_group < 4; ++partition_group)
   {
@@ -115,7 +118,7 @@ VolumeWii::VolumeWii(std::unique_ptr<BlobReader> reader)
       };
 
       auto get_h3_table = [this, partition]() -> std::vector<u8> {
-        if (!m_encrypted)
+        if (!m_has_hashes)
           return {};
         const std::optional<u64> h3_table_offset = ReadSwappedAndShifted(
             partition.offset + WII_PARTITION_H3_OFFSET_ADDRESS, PARTITION_NONE);
@@ -128,14 +131,11 @@ VolumeWii::VolumeWii(std::unique_ptr<BlobReader> reader)
         return h3_table;
       };
 
-      auto get_key = [this, partition]() -> std::unique_ptr<mbedtls_aes_context> {
+      auto get_key = [this, partition]() -> std::unique_ptr<Common::AES::Context> {
         const IOS::ES::TicketReader& ticket = *m_partitions[partition].ticket;
         if (!ticket.IsValid())
           return nullptr;
-        const std::array<u8, AES_KEY_SIZE> key = ticket.GetTitleKey();
-        std::unique_ptr<mbedtls_aes_context> aes_context = std::make_unique<mbedtls_aes_context>();
-        mbedtls_aes_setkey_dec(aes_context.get(), key.data(), 128);
-        return aes_context;
+        return Common::AES::CreateContextDecrypt(ticket.GetTitleKey().data());
       };
 
       auto get_file_system = [this, partition]() -> std::unique_ptr<FileSystem> {
@@ -148,7 +148,7 @@ VolumeWii::VolumeWii(std::unique_ptr<BlobReader> reader)
       };
 
       m_partitions.emplace(
-          partition, PartitionDetails{Common::Lazy<std::unique_ptr<mbedtls_aes_context>>(get_key),
+          partition, PartitionDetails{Common::Lazy<std::unique_ptr<Common::AES::Context>>(get_key),
                                       Common::Lazy<IOS::ES::TicketReader>(get_ticket),
                                       Common::Lazy<IOS::ES::TMDReader>(get_tmd),
                                       Common::Lazy<std::vector<u8>>(get_cert_chain),
@@ -174,35 +174,55 @@ bool VolumeWii::Read(u64 offset, u64 length, u8* buffer, const Partition& partit
   const PartitionDetails& partition_details = it->second;
 
   const u64 partition_data_offset = partition.offset + *partition_details.data_offset;
-  if (m_reader->SupportsReadWiiDecrypted(offset, length, partition_data_offset))
-    return m_reader->ReadWiiDecrypted(offset, length, buffer, partition_data_offset);
-
-  if (!m_encrypted)
+  if (m_has_hashes && m_has_encryption &&
+      m_reader->SupportsReadWiiDecrypted(offset, length, partition_data_offset))
   {
-    return m_reader->Read(partition.offset + *partition_details.data_offset + offset, length,
-                          buffer);
+    return m_reader->ReadWiiDecrypted(offset, length, buffer, partition_data_offset);
   }
 
-  mbedtls_aes_context* aes_context = partition_details.key->get();
-  if (!aes_context)
-    return false;
+  if (!m_has_hashes)
+  {
+    return m_reader->Read(partition_data_offset + offset, length, buffer);
+  }
 
-  std::vector<u8> read_buffer(BLOCK_TOTAL_SIZE);
+  Common::AES::Context* aes_context = nullptr;
+  std::unique_ptr<u8[]> read_buffer = nullptr;
+  if (m_has_encryption)
+  {
+    aes_context = partition_details.key->get();
+    if (!aes_context)
+      return false;
+
+    read_buffer = std::make_unique<u8[]>(BLOCK_TOTAL_SIZE);
+  }
+
   while (length > 0)
   {
     // Calculate offsets
-    u64 block_offset_on_disc = partition.offset + *partition_details.data_offset +
-                               offset / BLOCK_DATA_SIZE * BLOCK_TOTAL_SIZE;
+    u64 block_offset_on_disc = partition_data_offset + offset / BLOCK_DATA_SIZE * BLOCK_TOTAL_SIZE;
     u64 data_offset_in_block = offset % BLOCK_DATA_SIZE;
 
     if (m_last_decrypted_block != block_offset_on_disc)
     {
-      // Read the current block
-      if (!m_reader->Read(block_offset_on_disc, BLOCK_TOTAL_SIZE, read_buffer.data()))
-        return false;
+      if (m_has_encryption)
+      {
+        // Read the current block
+        if (!m_reader->Read(block_offset_on_disc, BLOCK_TOTAL_SIZE, read_buffer.get()))
+          return false;
 
-      // Decrypt the block's data
-      DecryptBlockData(read_buffer.data(), m_last_decrypted_block_data, aes_context);
+        // Decrypt the block's data
+        DecryptBlockData(read_buffer.get(), m_last_decrypted_block_data, aes_context);
+      }
+      else
+      {
+        // Read the current block
+        if (!m_reader->Read(block_offset_on_disc + BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE,
+                            m_last_decrypted_block_data))
+        {
+          return false;
+        }
+      }
+
       m_last_decrypted_block = block_offset_on_disc;
     }
 
@@ -220,9 +240,14 @@ bool VolumeWii::Read(u64 offset, u64 length, u8* buffer, const Partition& partit
   return true;
 }
 
-bool VolumeWii::IsEncryptedAndHashed() const
+bool VolumeWii::HasWiiHashes() const
 {
-  return m_encrypted;
+  return m_has_hashes;
+}
+
+bool VolumeWii::HasWiiEncryption() const
+{
+  return m_has_encryption;
 }
 
 std::vector<Partition> VolumeWii::GetPartitions() const
@@ -276,8 +301,8 @@ const FileSystem* VolumeWii::GetFileSystem(const Partition& partition) const
   return it != m_partitions.end() ? it->second.file_system->get() : nullptr;
 }
 
-u64 VolumeWii::EncryptedPartitionOffsetToRawOffset(u64 offset, const Partition& partition,
-                                                   u64 partition_data_offset)
+u64 VolumeWii::OffsetInHashedPartitionToRawOffset(u64 offset, const Partition& partition,
+                                                  u64 partition_data_offset)
 {
   if (partition == PARTITION_NONE)
     return offset;
@@ -293,10 +318,10 @@ u64 VolumeWii::PartitionOffsetToRawOffset(u64 offset, const Partition& partition
     return offset;
   const u64 data_offset = *it->second.data_offset;
 
-  if (!m_encrypted)
+  if (!m_has_hashes)
     return partition.offset + data_offset + offset;
 
-  return EncryptedPartitionOffsetToRawOffset(offset, partition, data_offset);
+  return OffsetInHashedPartitionToRawOffset(offset, partition, data_offset);
 }
 
 std::string VolumeWii::GetGameTDBID(const Partition& partition) const
@@ -344,14 +369,14 @@ BlobType VolumeWii::GetBlobType() const
   return m_reader->GetBlobType();
 }
 
-u64 VolumeWii::GetSize() const
+u64 VolumeWii::GetDataSize() const
 {
   return m_reader->GetDataSize();
 }
 
-bool VolumeWii::IsSizeAccurate() const
+DataSizeType VolumeWii::GetDataSizeType() const
 {
-  return m_reader->IsDataSizeAccurate();
+  return m_reader->GetDataSizeType();
 }
 
 u64 VolumeWii::GetRawSize() const
@@ -419,23 +444,37 @@ bool VolumeWii::CheckBlockIntegrity(u64 block_index, const u8* encrypted_data,
 
   if (block_index / BLOCKS_PER_GROUP * Common::SHA1::DIGEST_LEN >=
       partition_details.h3_table->size())
+  {
     return false;
-
-  mbedtls_aes_context* aes_context = partition_details.key->get();
-  if (!aes_context)
-    return false;
+  }
 
   HashBlock hashes;
-  DecryptBlockHashes(encrypted_data, &hashes, aes_context);
+  u8 cluster_data_buffer[BLOCK_DATA_SIZE];
+  const u8* cluster_data;
 
-  u8 cluster_data[BLOCK_DATA_SIZE];
-  DecryptBlockData(encrypted_data, cluster_data, aes_context);
+  if (m_has_encryption)
+  {
+    Common::AES::Context* aes_context = partition_details.key->get();
+    if (!aes_context)
+      return false;
+
+    DecryptBlockHashes(encrypted_data, &hashes, aes_context);
+    DecryptBlockData(encrypted_data, cluster_data_buffer, aes_context);
+    cluster_data = cluster_data_buffer;
+  }
+  else
+  {
+    std::memcpy(&hashes, encrypted_data, BLOCK_HEADER_SIZE);
+    cluster_data = encrypted_data + BLOCK_HEADER_SIZE;
+  }
 
   for (u32 hash_index = 0; hash_index < 31; ++hash_index)
   {
-    if (Common::SHA1::CalculateDigest(cluster_data + hash_index * 0x400, 0x400) !=
+    if (Common::SHA1::CalculateDigest(&cluster_data[hash_index * 0x400], 0x400) !=
         hashes.h0[hash_index])
+    {
       return false;
+    }
   }
 
   if (Common::SHA1::CalculateDigest(hashes.h0) != hashes.h1[block_index % 8])
@@ -577,8 +616,7 @@ bool VolumeWii::EncryptGroup(
 
   std::vector<std::future<void>> encryption_futures(threads);
 
-  mbedtls_aes_context aes_context;
-  mbedtls_aes_setkey_enc(&aes_context, key.data(), 128);
+  auto aes_context = Common::AES::CreateContextEncrypt(key.data());
 
   for (size_t i = 0; i < threads; ++i)
   {
@@ -589,13 +627,11 @@ bool VolumeWii::EncryptGroup(
           {
             u8* out_ptr = out->data() + j * BLOCK_TOTAL_SIZE;
 
-            u8 iv[16] = {};
-            mbedtls_aes_crypt_cbc(&aes_context, MBEDTLS_AES_ENCRYPT, BLOCK_HEADER_SIZE, iv,
-                                  reinterpret_cast<u8*>(&unencrypted_hashes[j]), out_ptr);
+            aes_context->CryptIvZero(reinterpret_cast<u8*>(&unencrypted_hashes[j]), out_ptr,
+                                     BLOCK_HEADER_SIZE);
 
-            std::memcpy(iv, out_ptr + 0x3D0, sizeof(iv));
-            mbedtls_aes_crypt_cbc(&aes_context, MBEDTLS_AES_ENCRYPT, BLOCK_DATA_SIZE, iv,
-                                  unencrypted_data[j].data(), out_ptr + BLOCK_HEADER_SIZE);
+            aes_context->Crypt(out_ptr + 0x3D0, unencrypted_data[j].data(),
+                               out_ptr + BLOCK_HEADER_SIZE, BLOCK_DATA_SIZE);
           }
         },
         i * BLOCKS_PER_GROUP / threads, (i + 1) * BLOCKS_PER_GROUP / threads);
@@ -607,20 +643,14 @@ bool VolumeWii::EncryptGroup(
   return true;
 }
 
-void VolumeWii::DecryptBlockHashes(const u8* in, HashBlock* out, mbedtls_aes_context* aes_context)
+void VolumeWii::DecryptBlockHashes(const u8* in, HashBlock* out, Common::AES::Context* aes_context)
 {
-  std::array<u8, 16> iv;
-  iv.fill(0);
-  mbedtls_aes_crypt_cbc(aes_context, MBEDTLS_AES_DECRYPT, sizeof(HashBlock), iv.data(), in,
-                        reinterpret_cast<u8*>(out));
+  aes_context->CryptIvZero(in, reinterpret_cast<u8*>(out), sizeof(HashBlock));
 }
 
-void VolumeWii::DecryptBlockData(const u8* in, u8* out, mbedtls_aes_context* aes_context)
+void VolumeWii::DecryptBlockData(const u8* in, u8* out, Common::AES::Context* aes_context)
 {
-  std::array<u8, 16> iv;
-  std::copy(&in[0x3d0], &in[0x3e0], iv.data());
-  mbedtls_aes_crypt_cbc(aes_context, MBEDTLS_AES_DECRYPT, BLOCK_DATA_SIZE, iv.data(),
-                        &in[BLOCK_HEADER_SIZE], out);
+  aes_context->Crypt(&in[0x3d0], &in[sizeof(HashBlock)], out, BLOCK_DATA_SIZE);
 }
 
 }  // namespace DiscIO

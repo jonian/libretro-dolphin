@@ -925,7 +925,7 @@ ConversionResultCode WIARVZFileReader<RVZ>::SetUpDataEntriesForWriting(
     std::vector<DataEntry>* data_entries, std::vector<const FileSystem*>* partition_file_systems)
 {
   std::vector<Partition> partitions;
-  if (volume && volume->IsEncryptedAndHashed())
+  if (volume && volume->HasWiiHashes() && volume->HasWiiEncryption())
     partitions = volume->GetPartitions();
 
   std::sort(partitions.begin(), partitions.end(),
@@ -1318,8 +1318,7 @@ WIARVZFileReader<RVZ>::ProcessAndCompress(CompressThreadState* state, CompressPa
   {
     const PartitionEntry& partition_entry = partition_entries[parameters.data_entry->index];
 
-    mbedtls_aes_context aes_context;
-    mbedtls_aes_setkey_dec(&aes_context, partition_entry.partition_key.data(), 128);
+    auto aes_context = Common::AES::CreateContextDecrypt(partition_entry.partition_key.data());
 
     const u64 groups = Common::AlignUp(parameters.data.size(), VolumeWii::GROUP_TOTAL_SIZE) /
                        VolumeWii::GROUP_TOTAL_SIZE;
@@ -1388,7 +1387,7 @@ WIARVZFileReader<RVZ>::ProcessAndCompress(CompressThreadState* state, CompressPa
           {
             const u64 offset_of_block = offset_of_group + j * VolumeWii::BLOCK_TOTAL_SIZE;
             VolumeWii::DecryptBlockData(parameters.data.data() + offset_of_block,
-                                        state->decryption_buffer[j].data(), &aes_context);
+                                        state->decryption_buffer[j].data(), aes_context.get());
           }
           else
           {
@@ -1413,7 +1412,7 @@ WIARVZFileReader<RVZ>::ProcessAndCompress(CompressThreadState* state, CompressPa
 
           VolumeWii::HashBlock hashes;
           VolumeWii::DecryptBlockHashes(parameters.data.data() + offset_of_block, &hashes,
-                                        &aes_context);
+                                        aes_context.get());
 
           const auto compare_hash = [&](size_t offset_in_block) {
             ASSERT(offset_in_block + Common::SHA1::DIGEST_LEN <= VolumeWii::BLOCK_HEADER_SIZE);
@@ -1732,7 +1731,7 @@ WIARVZFileReader<RVZ>::Convert(BlobReader* infile, const VolumeDisc* infile_volu
                                File::IOFile* outfile, WIARVZCompressionType compression_type,
                                int compression_level, int chunk_size, CompressCB callback)
 {
-  ASSERT(infile->IsDataSizeAccurate());
+  ASSERT(infile->GetDataSizeType() == DataSizeType::Accurate);
   ASSERT(chunk_size > 0);
 
   const u64 iso_size = infile->GetDataSize();

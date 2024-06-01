@@ -127,6 +127,7 @@ public:
   VolumeVerifier(const Volume& volume, bool redump_verification, Hashes<bool> hashes_to_calculate);
   ~VolumeVerifier();
 
+  static Hashes<bool> GetDefaultHashesToCalculate();
   void Start();
   void Process();
   u64 GetBytesProcessed() const;
@@ -201,6 +202,7 @@ private:
   bool m_done = false;
   u64 m_progress = 0;
   u64 m_max_progress = 0;
+  DataSizeType m_data_size_type;
 };
 
 }  // namespace DiscIO

@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#include <mbedtls/aes.h>
-
 #include "Common/CommonTypes.h"
 #include "Common/Crypto/SHA1.h"
 #include "Common/Lazy.h"
@@ -20,6 +18,8 @@
 #include "DiscIO/Filesystem.h"
 #include "DiscIO/Volume.h"
 #include "DiscIO/VolumeDisc.h"
+
+#include "Common/Crypto/AES.h"
 
 namespace DiscIO
 {
@@ -34,7 +34,7 @@ enum class Platform;
 class VolumeWii : public VolumeDisc
 {
 public:
-  static constexpr size_t AES_KEY_SIZE = 16;
+  static constexpr size_t AES_KEY_SIZE = Common::AES::Context::KEY_SIZE;
 
   static constexpr u32 BLOCKS_PER_GROUP = 0x40;
 
@@ -60,7 +60,8 @@ public:
   VolumeWii(std::unique_ptr<BlobReader> reader);
   ~VolumeWii();
   bool Read(u64 offset, u64 length, u8* buffer, const Partition& partition) const override;
-  bool IsEncryptedAndHashed() const override;
+  bool HasWiiHashes() const override;
+  bool HasWiiEncryption() const override;
   std::vector<Partition> GetPartitions() const override;
   Partition GetGamePartition() const override;
   std::optional<u32> GetPartitionType(const Partition& partition) const override;
@@ -69,8 +70,8 @@ public:
   const IOS::ES::TMDReader& GetTMD(const Partition& partition) const override;
   const std::vector<u8>& GetCertificateChain(const Partition& partition) const override;
   const FileSystem* GetFileSystem(const Partition& partition) const override;
-  static u64 EncryptedPartitionOffsetToRawOffset(u64 offset, const Partition& partition,
-                                                 u64 partition_data_offset);
+  static u64 OffsetInHashedPartitionToRawOffset(u64 offset, const Partition& partition,
+                                                u64 partition_data_offset);
   u64 PartitionOffsetToRawOffset(u64 offset, const Partition& partition) const override;
   std::string GetGameTDBID(const Partition& partition = PARTITION_NONE) const override;
   std::map<Language, std::string> GetLongNames() const override;
@@ -78,7 +79,6 @@ public:
 
   Platform GetVolumeType() const override;
   bool IsDatelDisc() const override;
-  bool SupportsIntegrityCheck() const override { return m_encrypted; }
   bool CheckH3TableIntegrity(const Partition& partition) const override;
   bool CheckBlockIntegrity(u64 block_index, const u8* encrypted_data,
                            const Partition& partition) const override;
@@ -86,8 +86,8 @@ public:
 
   Region GetRegion() const override;
   BlobType GetBlobType() const override;
-  u64 GetSize() const override;
-  bool IsSizeAccurate() const override;
+  u64 GetDataSize() const override;
+  DataSizeType GetDataSizeType() const override;
   u64 GetRawSize() const override;
   const BlobReader& GetBlobReader() const override;
   std::array<u8, 20> GetSyncHash() const override;
@@ -106,8 +106,8 @@ public:
                            const std::function<void(HashBlock hash_blocks[BLOCKS_PER_GROUP])>&
                                hash_exception_callback = {});
 
-  static void DecryptBlockHashes(const u8* in, HashBlock* out, mbedtls_aes_context* aes_context);
-  static void DecryptBlockData(const u8* in, u8* out, mbedtls_aes_context* aes_context);
+  static void DecryptBlockHashes(const u8* in, HashBlock* out, Common::AES::Context* aes_context);
+  static void DecryptBlockData(const u8* in, u8* out, Common::AES::Context* aes_context);
 
 protected:
   u32 GetOffsetShift() const override { return 2; }
@@ -115,7 +115,7 @@ protected:
 private:
   struct PartitionDetails
   {
-    Common::Lazy<std::unique_ptr<mbedtls_aes_context>> key;
+    Common::Lazy<std::unique_ptr<Common::AES::Context>> key;
     Common::Lazy<IOS::ES::TicketReader> ticket;
     Common::Lazy<IOS::ES::TMDReader> tmd;
     Common::Lazy<std::vector<u8>> cert_chain;
@@ -128,7 +128,8 @@ private:
   std::unique_ptr<BlobReader> m_reader;
   std::map<Partition, PartitionDetails> m_partitions;
   Partition m_game_partition;
-  bool m_encrypted;
+  bool m_has_hashes;
+  bool m_has_encryption;
 
   mutable u64 m_last_decrypted_block;
   mutable u8 m_last_decrypted_block_data[BLOCK_DATA_SIZE]{};

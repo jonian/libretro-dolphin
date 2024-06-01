@@ -204,6 +204,7 @@ public:
 
   bool IsWii() const { return m_is_wii; }
   u64 GetDataSize() const { return m_data_size; }
+  void SetDataSize(u64 size) { m_data_size = size; }
   const std::string& GetRootDirectory() const { return m_root_directory; }
   const std::vector<u8>& GetHeader() const { return m_disc_header; }
   const DiscContentContainer& GetContents() const { return m_contents; }
@@ -284,7 +285,7 @@ public:
 
   u64 GetRawSize() const override;
   u64 GetDataSize() const override;
-  bool IsDataSizeAccurate() const override { return true; }
+  DataSizeType GetDataSizeType() const override { return DataSizeType::Accurate; }
 
   u64 GetBlockSize() const override { return 0; }
   bool HasFastRandomAccessInBlock() const override { return true; }
