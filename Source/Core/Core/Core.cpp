@@ -660,7 +660,6 @@ static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi
       s_emu_thread_scope_guards.push_back(std::move(movie_guard));
       s_emu_thread_scope_guards.push_back(std::move(hw_guard));
       s_emu_thread_scope_guards.push_back(std::move(video_guard));
-      s_emu_thread_scope_guards.push_back(std::move(controller_guard));
       s_emu_thread_scope_guards.push_back(std::move(audio_guard));
       s_emu_thread_scope_guards.push_back(std::move(wiifs_guard));
       return;
