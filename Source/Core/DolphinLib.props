@@ -36,6 +36,7 @@
     <ClInclude Include="Common\Crypto\AES.h" />
     <ClInclude Include="Common\Crypto\bn.h" />
     <ClInclude Include="Common\Crypto\ec.h" />
+    <ClInclude Include="Common\Crypto\SHA1.h" />
     <ClInclude Include="Common\Debug\MemoryPatches.h" />
     <ClInclude Include="Common\Debug\Threads.h" />
     <ClInclude Include="Common\Debug\Watches.h" />
@@ -45,6 +46,7 @@
     <ClInclude Include="Common\EnumFormatter.h" />
     <ClInclude Include="Common\EnumMap.h" />
     <ClInclude Include="Common\Event.h" />
+    <ClInclude Include="Common\FatFsUtil.h" />
     <ClInclude Include="Common\FileSearch.h" />
     <ClInclude Include="Common\FileUtil.h" />
     <ClInclude Include="Common\FixedSizeQueue.h" />
@@ -110,7 +112,6 @@
     <ClInclude Include="Common\HRWrap.h" />
     <ClInclude Include="Common\HttpRequest.h" />
     <ClInclude Include="Common\Image.h" />
-    <ClInclude Include="Common\ImageC.h" />
     <ClInclude Include="Common\IniFile.h" />
     <ClInclude Include="Common\Inline.h" />
     <ClInclude Include="Common\Intrinsics.h" />
@@ -237,6 +238,7 @@
     <ClInclude Include="Core\HW\DSPHLE\DSPHLE.h" />
     <ClInclude Include="Core\HW\DSPHLE\MailHandler.h" />
     <ClInclude Include="Core\HW\DSPHLE\UCodes\ASnd.h" />
+    <ClInclude Include="Core\HW\DSPHLE\UCodes\AESnd.h" />
     <ClInclude Include="Core\HW\DSPHLE\UCodes\AX.h" />
     <ClInclude Include="Core\HW\DSPHLE\UCodes\AXStructs.h" />
     <ClInclude Include="Core\HW\DSPHLE\UCodes\AXVoice.h" />
@@ -254,6 +256,7 @@
     <ClInclude Include="Core\HW\DVD\DVDMath.h" />
     <ClInclude Include="Core\HW\DVD\DVDThread.h" />
     <ClInclude Include="Core\HW\DVD\FileMonitor.h" />
+    <ClInclude Include="Core\HW\EXI\BBA\BuiltIn.h" />
     <ClInclude Include="Core\HW\EXI\BBA\TAP_Win32.h" />
     <ClInclude Include="Core\HW\EXI\EXI_Channel.h" />
     <ClInclude Include="Core\HW\EXI\EXI_Device.h" />
@@ -492,6 +495,7 @@
     <ClInclude Include="InputCommon\ControllerInterface\Wiimote\WiimoteController.h" />
     <ClInclude Include="InputCommon\ControllerInterface\Win32\Win32.h" />
     <ClInclude Include="InputCommon\ControllerInterface\XInput\XInput.h" />
+    <ClInclude Include="InputCommon\ControllerInterface\SDL\SDL.h" />
     <ClInclude Include="InputCommon\ControlReference\ControlReference.h" />
     <ClInclude Include="InputCommon\ControlReference\ExpressionParser.h" />
     <ClInclude Include="InputCommon\ControlReference\FunctionExpression.h" />
@@ -666,6 +670,7 @@
     <ClInclude Include="VideoCommon\RenderState.h" />
     <ClInclude Include="VideoCommon\ShaderCache.h" />
     <ClInclude Include="VideoCommon\ShaderGenCommon.h" />
+    <ClInclude Include="VideoCommon\Spirv.h" />
     <ClInclude Include="VideoCommon\Statistics.h" />
     <ClInclude Include="VideoCommon\TextureCacheBase.h" />
     <ClInclude Include="VideoCommon\TextureConfig.h" />
@@ -718,10 +723,12 @@
     <ClCompile Include="Common\Crypto\AES.cpp" />
     <ClCompile Include="Common\Crypto\bn.cpp" />
     <ClCompile Include="Common\Crypto\ec.cpp" />
+    <ClCompile Include="Common\Crypto\SHA1.cpp" />
     <ClCompile Include="Common\Debug\MemoryPatches.cpp" />
     <ClCompile Include="Common\Debug\Watches.cpp" />
     <ClCompile Include="Common\DynamicLibrary.cpp" />
     <ClCompile Include="Common\ENetUtil.cpp" />
+    <ClCompile Include="Common\FatFsUtil.cpp" />
     <ClCompile Include="Common\FileSearch.cpp" />
     <ClCompile Include="Common\FileUtil.cpp" />
     <ClCompile Include="Common\FloatUtils.cpp" />
@@ -734,11 +741,6 @@
     <ClCompile Include="Common\HRWrap.cpp" />
     <ClCompile Include="Common\HttpRequest.cpp" />
     <ClCompile Include="Common\Image.cpp" />
-    <ClCompile Include="Common\ImageC.c">
-      <!-- This is a C file, not a C++ file, so we can't use the C++ pre-compiled header -->
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ForcedIncludeFiles />
-    </ClCompile>
     <ClCompile Include="Common\IniFile.cpp" />
     <ClCompile Include="Common\IOFile.cpp" />
     <ClCompile Include="Common\JitRegister.cpp" />
@@ -853,6 +855,7 @@
     <ClCompile Include="Core\HW\DSPHLE\DSPHLE.cpp" />
     <ClCompile Include="Core\HW\DSPHLE\MailHandler.cpp" />
     <ClCompile Include="Core\HW\DSPHLE\UCodes\ASnd.cpp" />
+    <ClCompile Include="Core\HW\DSPHLE\UCodes\AESnd.cpp" />
     <ClCompile Include="Core\HW\DSPHLE\UCodes\AX.cpp" />
     <ClCompile Include="Core\HW\DSPHLE\UCodes\AXWii.cpp" />
     <ClCompile Include="Core\HW\DSPHLE\UCodes\CARD.cpp" />
@@ -868,6 +871,7 @@
     <ClCompile Include="Core\HW\DVD\DVDMath.cpp" />
     <ClCompile Include="Core\HW\DVD\DVDThread.cpp" />
     <ClCompile Include="Core\HW\DVD\FileMonitor.cpp" />
+    <ClCompile Include="Core\HW\EXI\BBA\BuiltIn.cpp" />
     <ClCompile Include="Core\HW\EXI\BBA\TAP_Win32.cpp" />
     <ClCompile Include="Core\HW\EXI\BBA\XLINK_KAI_BBA.cpp" />
     <ClCompile Include="Core\HW\EXI\EXI_Channel.cpp" />
@@ -1101,6 +1105,7 @@
     <ClCompile Include="InputCommon\ControllerInterface\Wiimote\WiimoteController.cpp" />
     <ClCompile Include="InputCommon\ControllerInterface\Win32\Win32.cpp" />
     <ClCompile Include="InputCommon\ControllerInterface\XInput\XInput.cpp" />
+    <ClCompile Include="InputCommon\ControllerInterface\SDL\SDL.cpp" />
     <ClCompile Include="InputCommon\ControlReference\ControlReference.cpp" />
     <ClCompile Include="InputCommon\ControlReference\ExpressionParser.cpp" />
     <ClCompile Include="InputCommon\ControlReference\FunctionExpression.cpp" />
@@ -1253,6 +1258,7 @@
     <ClCompile Include="VideoCommon\RenderState.cpp" />
     <ClCompile Include="VideoCommon\ShaderCache.cpp" />
     <ClCompile Include="VideoCommon\ShaderGenCommon.cpp" />
+    <ClCompile Include="VideoCommon\Spirv.cpp" />
     <ClCompile Include="VideoCommon\Statistics.cpp" />
     <ClCompile Include="VideoCommon\TextureCacheBase.cpp" />
     <ClCompile Include="VideoCommon\TextureConfig.cpp" />

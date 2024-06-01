@@ -74,7 +74,7 @@ static std::recursive_mutex g_save_thread_mutex;
 static std::thread g_save_thread;
 
 // Don't forget to increase this after doing changes on the savestate system
-constexpr u32 STATE_VERSION = 143;  // Last changed in PR 10784
+constexpr u32 STATE_VERSION = 146;  // Last changed in PR 10883
 
 // Maps savestate versions to Dolphin versions.
 // Versions after 42 don't need to be added to this list,
@@ -419,7 +419,7 @@ void SaveAs(const std::string& filename, bool wait)
         // Then actually do the write.
         bool is_write_mode;
         {
-          std::lock_guard lk(g_cs_current_buffer);
+          std::lock_guard lk2(g_cs_current_buffer);
           g_current_buffer.resize(buffer_size);
           ptr = g_current_buffer.data();
           PointerWrap p(&ptr, buffer_size, PointerWrap::Mode::Write);
@@ -438,7 +438,7 @@ void SaveAs(const std::string& filename, bool wait)
           save_args.wait = wait;
 
           {
-            std::lock_guard lk(g_save_thread_mutex);
+            std::lock_guard lk3(g_save_thread_mutex);
             Flush();
             g_save_thread = std::thread(CompressAndDumpState, save_args);
           }
@@ -572,7 +572,7 @@ void LoadAs(const std::string& filename)
         // Save temp buffer for undo load state
         if (!Movie::IsJustStartingRecordingInputFromSaveState())
         {
-          std::lock_guard lk(g_cs_undo_load_buffer);
+          std::lock_guard lk2(g_cs_undo_load_buffer);
           SaveToBuffer(g_undo_load_buffer);
           if (Movie::IsMovieActive())
             Movie::SaveRecording(File::GetUserPath(D_STATESAVES_IDX) + "undo.dtm");
