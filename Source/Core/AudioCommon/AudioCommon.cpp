@@ -213,7 +213,7 @@ void SendAIBuffer(const short* samples, unsigned int num_samples)
     mixer->PushSamples(samples, num_samples);
   }
 
-  g_sound_stream->Update();
+  sound_stream->Update();
 }
 
 void StartAudioDump()
