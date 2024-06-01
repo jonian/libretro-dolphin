@@ -8,6 +8,8 @@
 #include "Common/IniFile.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/ConfigManager.h"
+#include "Core/FreeLookManager.h"
+#include "Core/HW/GBAPad.h"
 #include "Core/HW/GCKeyboard.h"
 #include "Core/HW/GCPad.h"
 #include "Core/HW/GCPadEmu.h"
@@ -428,7 +430,9 @@ void Init()
 
   GCAdapter::Init();
   Pad::Initialize();
+  Pad::InitializeGBA();
   Keyboard::Initialize();
+  FreeLook::Initialize();
 
   int port_max = (SConfig::GetInstance().bWii && Libretro::Options::altGCPorts) ? 8 : 4;
   for (int i = 0; i < port_max; i++)
@@ -522,6 +526,9 @@ void Shutdown()
 
   Keyboard::Shutdown();
   Pad::Shutdown();
+  Pad::ShutdownGBA();
+  FreeLook::Shutdown();
+
   g_controller_interface.Shutdown();
 
   rumble.set_rumble_state = nullptr;
