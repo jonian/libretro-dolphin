@@ -885,6 +885,11 @@ std::string GetExeDirectory()
 
 static std::string CreateSysDirectoryPath()
 {
+  if (!s_sys_directory.empty()) {
+    const std::string sys_directory = s_sys_directory;
+    INFO_LOG_FMT(COMMON, "CreateSysDirectoryPath: Setting to {}", sys_directory);
+    return sys_directory;
+  }
 #if defined(_WIN32) || defined(LINUX_LOCAL_DEV)
 #define SYSDATA_DIR "Sys"
 #elif defined __APPLE__
@@ -897,7 +902,6 @@ static std::string CreateSysDirectoryPath()
 #endif
 #endif
 
-if (s_sys_directory.empty()) {
 #if defined(__APPLE__)
   const std::string sys_directory = GetBundleDirectory() + DIR_SEP SYSDATA_DIR DIR_SEP;
 #elif defined(_WIN32) || defined(LINUX_LOCAL_DEV)
@@ -908,9 +912,6 @@ if (s_sys_directory.empty()) {
 #else
   const std::string sys_directory = SYSDATA_DIR DIR_SEP;
 #endif
-} else {
-  const std::string sys_directory = s_sys_directory;
-}
 
   INFO_LOG_FMT(COMMON, "CreateSysDirectoryPath: Setting to {}", sys_directory);
   return sys_directory;
