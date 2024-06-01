@@ -883,10 +883,8 @@ std::string GetExeDirectory()
 #endif
 }
 
-std::string GetSysDirectory()
+static std::string CreateSysDirectoryPath()
 {
-  std::string sysDir;
-
 #if defined(_WIN32) || defined(LINUX_LOCAL_DEV)
 #define SYSDATA_DIR "Sys"
 #elif defined __APPLE__
@@ -901,27 +899,34 @@ std::string GetSysDirectory()
 
 if (s_sys_directory.empty()) {
 #if defined(__APPLE__)
-  sysDir = GetBundleDirectory() + DIR_SEP + SYSDATA_DIR;
+  const std::string sys_directory = GetBundleDirectory() + DIR_SEP SYSDATA_DIR DIR_SEP;
 #elif defined(_WIN32) || defined(LINUX_LOCAL_DEV)
-  sysDir = GetExeDirectory() + DIR_SEP + SYSDATA_DIR;
+  const std::string sys_directory = GetExeDirectory() + DIR_SEP SYSDATA_DIR DIR_SEP;
 #elif defined ANDROID
-  sysDir = s_sys_directory;
-  ASSERT_MSG(COMMON, !sysDir.empty(), "Sys directory has not been set");
+  const std::string sys_directory = s_sys_directory + DIR_SEP;
+  ASSERT_MSG(COMMON, !s_sys_directory.empty(), "Sys directory has not been set");
 #else
-  sysDir = SYSDATA_DIR;
+  const std::string sys_directory = SYSDATA_DIR DIR_SEP;
 #endif
-  sysDir += DIR_SEP;
 } else {
-  sysDir = s_sys_directory;
+  const std::string sys_directory = s_sys_directory;
 }
 
-  INFO_LOG_FMT(COMMON, "GetSysDirectory: Setting to {}:", sysDir);
-  return sysDir;
+  INFO_LOG_FMT(COMMON, "CreateSysDirectoryPath: Setting to {}", sys_directory);
+  return sys_directory;
+}
+
+const std::string& GetSysDirectory()
+{
+  static const std::string sys_directory = CreateSysDirectoryPath();
+  return sys_directory;
 }
 
 void SetSysDirectory(const std::string& path)
 {
   INFO_LOG_FMT(COMMON, "Setting Sys directory to {}", path);
+  ASSERT_MSG(COMMON, s_sys_directory.empty(), "Sys directory already set to {}",
+             s_sys_directory);
   s_sys_directory = path + DIR_SEP;
 }
 
@@ -962,6 +967,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[D_BACKUP_IDX] = s_user_paths[D_USER_IDX] + BACKUP_DIR DIR_SEP;
     s_user_paths[D_RESOURCEPACK_IDX] = s_user_paths[D_USER_IDX] + RESOURCEPACK_DIR DIR_SEP;
     s_user_paths[D_DYNAMICINPUT_IDX] = s_user_paths[D_LOAD_IDX] + DYNAMICINPUT_DIR DIR_SEP;
+    s_user_paths[D_GRAPHICSMOD_IDX] = s_user_paths[D_LOAD_IDX] + GRAPHICSMOD_DIR DIR_SEP;
     s_user_paths[F_DOLPHINCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + DOLPHIN_CONFIG;
     s_user_paths[F_GCPADCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + GCPAD_CONFIG;
     s_user_paths[F_WIIPADCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + WIIPAD_CONFIG;
@@ -1040,6 +1046,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[D_HIRESTEXTURES_IDX] = s_user_paths[D_LOAD_IDX] + HIRES_TEXTURES_DIR DIR_SEP;
     s_user_paths[D_RIIVOLUTION_IDX] = s_user_paths[D_LOAD_IDX] + RIIVOLUTION_DIR DIR_SEP;
     s_user_paths[D_DYNAMICINPUT_IDX] = s_user_paths[D_LOAD_IDX] + DYNAMICINPUT_DIR DIR_SEP;
+    s_user_paths[D_GRAPHICSMOD_IDX] = s_user_paths[D_LOAD_IDX] + GRAPHICSMOD_DIR DIR_SEP;
     break;
   }
 }

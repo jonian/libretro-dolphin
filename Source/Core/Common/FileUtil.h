@@ -60,6 +60,7 @@ enum
   D_BACKUP_IDX,
   D_RESOURCEPACK_IDX,
   D_DYNAMICINPUT_IDX,
+  D_GRAPHICSMOD_IDX,
   D_GBAUSER_IDX,
   D_GBASAVES_IDX,
   FIRST_FILE_USER_PATH_IDX,
@@ -215,7 +216,7 @@ void SetUserPath(unsigned int dir_index, std::string path);
 std::string GetThemeDir(const std::string& theme_name);
 
 // Returns the path to where the sys file are
-std::string GetSysDirectory();
+const std::string& GetSysDirectory();
 
 void SetSysDirectory(const std::string& path);
 

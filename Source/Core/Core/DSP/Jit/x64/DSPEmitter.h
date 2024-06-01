@@ -257,8 +257,8 @@ private:
   {
     UpdateSR64AddSub(val1, val2, result, scratch, true);
   }
-  void Update_SR_Register16(Gen::X64Reg val = Gen::EAX);
-  void Update_SR_Register16_OverS32(Gen::X64Reg val = Gen::EAX);
+  void Update_SR_Register16(Gen::X64Reg val);
+  void Update_SR_Register16_OverS32(Gen::X64Reg val, Gen::X64Reg full_val, Gen::X64Reg scratch);
 
   // Register helpers
   void setCompileSR(u16 bit);
@@ -286,15 +286,13 @@ private:
   void dsp_op_write_reg_imm(int reg, u16 val);
   void dsp_conditional_extend_accum(int reg);
   void dsp_conditional_extend_accum_imm(int reg, u16 val);
-  void dsp_op_read_reg_dont_saturate(int reg, Gen::X64Reg host_dreg,
-                                     RegisterExtension extend = RegisterExtension::None);
   void dsp_op_read_reg(int reg, Gen::X64Reg host_dreg,
                        RegisterExtension extend = RegisterExtension::None);
 
   // SDSP memory offset helpers
   Gen::OpArg M_SDSP_pc();
   Gen::OpArg M_SDSP_exceptions();
-  Gen::OpArg M_SDSP_cr();
+  Gen::OpArg M_SDSP_control_reg();
   Gen::OpArg M_SDSP_external_interrupt_waiting();
   Gen::OpArg M_SDSP_r_st(size_t index);
   Gen::OpArg M_SDSP_reg_stack_ptrs(size_t index);
