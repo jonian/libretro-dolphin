@@ -22,6 +22,7 @@
 #include "Core/HW/VideoInterface.h"
 #include "Core/HW/WiimoteReal/WiimoteReal.h"
 #include "Core/State.h"
+#include "Core/System.h"
 #include "DolphinLibretro/Input.h"
 #include "DolphinLibretro/Options.h"
 #include "DolphinLibretro/Video.h"
@@ -52,6 +53,8 @@ static struct retro_perf_callback perf_cb;
 #define RETRO_PERFORMANCE_START(name)
 #define RETRO_PERFORMANCE_STOP(name)
 #endif
+
+SoundStream* g_sound_stream;
 
 namespace Libretro
 {
@@ -182,11 +185,12 @@ void retro_run(void)
 
   if (Core::GetState() == Core::State::Starting)
   {
+    auto& system = Core::System::GetInstance();
     WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
     Core::RunEmuThread(wsi);
     AudioCommon::SetSoundStreamRunning(false);
-    g_sound_stream.reset();
-    g_sound_stream = std::make_unique<Libretro::Audio::Stream>();
+    system.SetSoundStream(std::make_unique<Libretro::Audio::Stream>());
+    g_sound_stream = system.GetSoundStream();
     AudioCommon::SetSoundStreamRunning(true);
 
     if (Config::Get(Config::MAIN_GFX_BACKEND) == "Software Renderer")
