@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <stdio.h>
+
 #define VK_NO_PROTOTYPES
 
 #if defined(_WIN32)

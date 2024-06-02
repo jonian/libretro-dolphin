@@ -274,7 +274,7 @@ static bool CreateDevice(retro_vulkan_context* context, VkInstance instance, VkP
   if (gpu == VK_NULL_HANDLE)
     gpu = gpu_list[0];
 
-  Vulkan::g_vulkan_context = Vulkan::VulkanContext::Create(instance, gpu, surface, false, false);
+  Vulkan::g_vulkan_context = Vulkan::VulkanContext::Create(instance, gpu, surface, false, false, VK_API_VERSION_1_0);
   if (!Vulkan::g_vulkan_context)
   {
     ERROR_LOG_FMT(VIDEO, "Failed to create Vulkan device");

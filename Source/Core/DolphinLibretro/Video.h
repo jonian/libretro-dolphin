@@ -61,7 +61,7 @@ public:
 
   void PresentBackbuffer() override
   {
-    video_cb(m_texture->GetData(), m_rc.GetWidth(), m_rc.GetHeight(), m_texture->GetWidth() * 4);
+    video_cb(m_texture->GetData(0, 0), m_rc.GetWidth(), m_rc.GetHeight(), m_texture->GetWidth() * 4);
     UpdateActiveConfig();
   }
 
