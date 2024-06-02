@@ -40,3 +40,11 @@
 [submodule "Externals/VulkanMemoryAllocator"]
 	path = Externals/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "Externals/cubeb/cubeb"]
+	path = Externals/cubeb/cubeb
+	url = https://github.com/mozilla/cubeb.git
+	branch = master
+	shallow = true
+[submodule "Externals/implot/implot"]
+	path = Externals/implot/implot
+	url = https://github.com/epezent/implot.git

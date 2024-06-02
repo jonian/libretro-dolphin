@@ -20,6 +20,7 @@
 #include "Common/Version.h"
 
 #include "Core/ConfigManager.h"
+#include "Core/System.h"
 
 #include "VideoBackends/OGL/OGLRender.h"
 #include "VideoBackends/OGL/OGLShader.h"
@@ -133,23 +134,24 @@ void SHADER::SetProgramBindings(bool is_compute)
       glBindFragDataLocationIndexed(glprogid, 0, 1, "ocol1");
     }
     // Need to set some attribute locations
-    glBindAttribLocation(glprogid, SHADER_POSITION_ATTRIB, "rawpos");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Position), "rawpos");
 
-    glBindAttribLocation(glprogid, SHADER_POSMTX_ATTRIB, "posmtx");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::PositionMatrix), "posmtx");
 
-    glBindAttribLocation(glprogid, SHADER_COLOR0_ATTRIB, "rawcolor0");
-    glBindAttribLocation(glprogid, SHADER_COLOR1_ATTRIB, "rawcolor1");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Color0), "rawcolor0");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Color1), "rawcolor1");
 
-    glBindAttribLocation(glprogid, SHADER_NORMAL_ATTRIB, "rawnormal");
-    glBindAttribLocation(glprogid, SHADER_TANGENT_ATTRIB, "rawtangent");
-    glBindAttribLocation(glprogid, SHADER_BINORMAL_ATTRIB, "rawbinormal");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Normal), "rawnormal");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Tangent), "rawtangent");
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::Binormal), "rawbinormal");
   }
 
   for (int i = 0; i < 8; i++)
   {
     // Per documentation: OpenGL copies the name string when glBindAttribLocation is called, so an
     // application may free its copy of the name string immediately after the function returns.
-    glBindAttribLocation(glprogid, SHADER_TEXTURE0_ATTRIB + i, fmt::format("rawtex{}", i).c_str());
+    glBindAttribLocation(glprogid, static_cast<GLuint>(ShaderAttrib::TexCoord0 + i),
+                         fmt::format("rawtex{}", i).c_str());
   }
 }
 
@@ -219,18 +221,22 @@ u32 ProgramShaderCache::GetUniformBufferAlignment()
 
 void ProgramShaderCache::UploadConstants()
 {
-  if (PixelShaderManager::dirty || VertexShaderManager::dirty || GeometryShaderManager::dirty)
+  auto& system = Core::System::GetInstance();
+  auto& pixel_shader_manager = system.GetPixelShaderManager();
+  auto& vertex_shader_manager = system.GetVertexShaderManager();
+  auto& geometry_shader_manager = system.GetGeometryShaderManager();
+  if (pixel_shader_manager.dirty || vertex_shader_manager.dirty || geometry_shader_manager.dirty)
   {
     auto buffer = s_buffer->Map(s_ubo_buffer_size, s_ubo_align);
 
-    memcpy(buffer.first, &PixelShaderManager::constants, sizeof(PixelShaderConstants));
+    memcpy(buffer.first, &pixel_shader_manager.constants, sizeof(PixelShaderConstants));
 
     memcpy(buffer.first + Common::AlignUp(sizeof(PixelShaderConstants), s_ubo_align),
-           &VertexShaderManager::constants, sizeof(VertexShaderConstants));
+           &vertex_shader_manager.constants, sizeof(VertexShaderConstants));
 
     memcpy(buffer.first + Common::AlignUp(sizeof(PixelShaderConstants), s_ubo_align) +
                Common::AlignUp(sizeof(VertexShaderConstants), s_ubo_align),
-           &GeometryShaderManager::constants, sizeof(GeometryShaderConstants));
+           &geometry_shader_manager.constants, sizeof(GeometryShaderConstants));
 
     s_buffer->Unmap(s_ubo_buffer_size);
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, s_buffer->m_buffer, buffer.second,
@@ -243,9 +249,9 @@ void ProgramShaderCache::UploadConstants()
                           Common::AlignUp(sizeof(VertexShaderConstants), s_ubo_align),
                       sizeof(GeometryShaderConstants));
 
-    PixelShaderManager::dirty = false;
-    VertexShaderManager::dirty = false;
-    GeometryShaderManager::dirty = false;
+    pixel_shader_manager.dirty = false;
+    vertex_shader_manager.dirty = false;
+    geometry_shader_manager.dirty = false;
 
     ADDSTAT(g_stats.this_frame.bytes_uniform_streamed, s_ubo_buffer_size);
   }
@@ -493,6 +499,12 @@ void ProgramShaderCache::BindVertexFormat(const GLVertexFormat* vertex_format)
 
   glBindVertexArray(new_VAO);
   s_last_VAO = new_VAO;
+}
+
+void ProgramShaderCache::ReBindVertexFormat()
+{
+  if (s_last_VAO)
+    glBindVertexArray(s_last_VAO);
 }
 
 bool ProgramShaderCache::IsValidVertexFormatBound()

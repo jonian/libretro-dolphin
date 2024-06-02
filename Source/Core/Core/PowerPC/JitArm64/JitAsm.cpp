@@ -8,10 +8,12 @@
 #include "Common/Arm64Emitter.h"
 #include "Common/BitUtils.h"
 #include "Common/CommonTypes.h"
+#include "Common/Config/Config.h"
 #include "Common/FloatUtils.h"
 #include "Common/JitRegister.h"
 #include "Common/MathUtil.h"
 
+#include "Core/Config/MainSettings.h"
 #include "Core/CoreTiming.h"
 #include "Core/HW/CPU.h"
 #include "Core/HW/Memmap.h"
@@ -20,12 +22,15 @@
 #include "Core/PowerPC/JitCommon/JitCache.h"
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
+#include "Core/System.h"
 
 using namespace Arm64Gen;
 
 void JitArm64::GenerateAsm()
 {
   const Common::ScopedJITPageWriteAndNoExecute enable_jit_page_writes;
+
+  const bool enable_debugging = Config::Get(Config::MAIN_ENABLE_DEBUGGING);
 
   // This value is all of the callee saved registers that we are required to save.
   // According to the AACPS64 we need to save R19 ~ R30 and Q8 ~ Q15.
@@ -42,10 +47,9 @@ void JitArm64::GenerateAsm()
 
   // Swap the stack pointer, so we have proper guard pages.
   ADD(ARM64Reg::X0, ARM64Reg::SP, 0);
-  MOVP2R(ARM64Reg::X1, &m_saved_stack_pointer);
-  STR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1, 0);
-  MOVP2R(ARM64Reg::X1, &m_stack_pointer);
-  LDR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1, 0);
+  STR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1,
+      MOVPage2R(ARM64Reg::X1, &m_saved_stack_pointer));
+  LDR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1, MOVPage2R(ARM64Reg::X1, &m_stack_pointer));
   FixupBranch no_fake_stack = CBZ(ARM64Reg::X0);
   ADD(ARM64Reg::SP, ARM64Reg::X0, 0);
   SetJumpTarget(no_fake_stack);
@@ -85,19 +89,33 @@ void JitArm64::GenerateAsm()
   FixupBranch bail = B(CC_LE);
 
   dispatcher_no_timing_check = GetCodePtr();
+
+  FixupBranch debug_exit;
+  if (enable_debugging)
+  {
+    LDR(IndexType::Unsigned, ARM64Reg::W0, ARM64Reg::X0,
+        MOVPage2R(ARM64Reg::X0, CPU::GetStatePtr()));
+    debug_exit = CBNZ(ARM64Reg::W0);
+  }
+
   dispatcher_no_check = GetCodePtr();
 
   bool assembly_dispatcher = true;
+
+  auto& system = Core::System::GetInstance();
+  auto& memory = system.GetMemory();
 
   if (assembly_dispatcher)
   {
     // set the mem_base based on MSR flags
     LDR(IndexType::Unsigned, ARM64Reg::W28, PPC_REG, PPCSTATE_OFF(msr));
     FixupBranch physmem = TBNZ(ARM64Reg::W28, 31 - 27);
-    MOVP2R(MEM_REG, jo.fastmem_arena ? Memory::physical_base : Memory::physical_page_mappings_base);
+    MOVP2R(MEM_REG,
+           jo.fastmem_arena ? memory.GetPhysicalBase() : memory.GetPhysicalPageMappingsBase());
     FixupBranch membaseend = B();
     SetJumpTarget(physmem);
-    MOVP2R(MEM_REG, jo.fastmem_arena ? Memory::logical_base : Memory::logical_page_mappings_base);
+    MOVP2R(MEM_REG,
+           jo.fastmem_arena ? memory.GetLogicalBase() : memory.GetLogicalPageMappingsBase());
     SetJumpTarget(membaseend);
 
     // iCache[(address >> 2) & iCache_Mask];
@@ -142,10 +160,11 @@ void JitArm64::GenerateAsm()
   // set the mem_base based on MSR flags and jump to next block.
   LDR(IndexType::Unsigned, ARM64Reg::W28, PPC_REG, PPCSTATE_OFF(msr));
   FixupBranch physmem = TBNZ(ARM64Reg::W28, 31 - 27);
-  MOVP2R(MEM_REG, jo.fastmem_arena ? Memory::physical_base : Memory::physical_page_mappings_base);
+  MOVP2R(MEM_REG,
+         jo.fastmem_arena ? memory.GetPhysicalBase() : memory.GetPhysicalPageMappingsBase());
   BR(ARM64Reg::X0);
   SetJumpTarget(physmem);
-  MOVP2R(MEM_REG, jo.fastmem_arena ? Memory::logical_base : Memory::logical_page_mappings_base);
+  MOVP2R(MEM_REG, jo.fastmem_arena ? memory.GetLogicalBase() : memory.GetLogicalPageMappingsBase());
   BR(ARM64Reg::X0);
 
   // Call JIT
@@ -167,14 +186,11 @@ void JitArm64::GenerateAsm()
 
   // Check the state pointer to see if we are exiting
   // Gets checked on at the end of every slice
-  MOVP2R(ARM64Reg::X0, CPU::GetStatePtr());
-  LDR(IndexType::Unsigned, ARM64Reg::W0, ARM64Reg::X0, 0);
-
-  CMP(ARM64Reg::W0, 0);
-  FixupBranch Exit = B(CC_NEQ);
+  LDR(IndexType::Unsigned, ARM64Reg::W0, ARM64Reg::X0, MOVPage2R(ARM64Reg::X0, CPU::GetStatePtr()));
+  FixupBranch exit = CBNZ(ARM64Reg::W0);
 
   SetJumpTarget(to_start_of_timing_slice);
-  MOVP2R(ARM64Reg::X8, &CoreTiming::Advance);
+  MOVP2R(ARM64Reg::X8, &CoreTiming::GlobalAdvance);
   BLR(ARM64Reg::X8);
 
   // Load the PC back into DISPATCHER_PC (the exception handler might have changed it)
@@ -183,11 +199,14 @@ void JitArm64::GenerateAsm()
   // We can safely assume that downcount >= 1
   B(dispatcher_no_check);
 
-  SetJumpTarget(Exit);
+  dispatcher_exit = GetCodePtr();
+  SetJumpTarget(exit);
+  if (enable_debugging)
+    SetJumpTarget(debug_exit);
 
   // Reset the stack pointer, as the BLR optimization have touched it.
-  MOVP2R(ARM64Reg::X1, &m_saved_stack_pointer);
-  LDR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1, 0);
+  LDR(IndexType::Unsigned, ARM64Reg::X0, ARM64Reg::X1,
+      MOVPage2R(ARM64Reg::X1, &m_saved_stack_pointer));
   ADD(ARM64Reg::SP, ARM64Reg::X0, 0);
 
   m_float_emit.ABI_PopRegisters(regs_to_save_fpr, ARM64Reg::X30);
@@ -526,9 +545,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.UXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.UCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -544,9 +563,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.SXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.SCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -561,9 +580,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.UXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.UCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -578,9 +597,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.SXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.SCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -607,9 +626,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.UXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.UCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -625,9 +644,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.SXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.SCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -642,9 +661,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.UXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.UCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -659,9 +678,9 @@ void JitArm64::GenerateQuantizedLoads()
     float_emit.SXTL(16, ARM64Reg::D0, ARM64Reg::D0);
     float_emit.SCVTF(32, ARM64Reg::D0, ARM64Reg::D0);
 
-    MOVP2R(ARM64Reg::X2, &m_dequantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_dequantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
     RET(ARM64Reg::X30);
   }
@@ -727,9 +746,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storePairedU8 = GetCodePtr();
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
 
     float_emit.FCVTZU(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -746,9 +765,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storePairedS8 = GetCodePtr();
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
 
     float_emit.FCVTZS(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -765,9 +784,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storePairedU16 = GetCodePtr();
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
 
     float_emit.FCVTZU(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -783,9 +802,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storePairedS16 = GetCodePtr();  // Used by Viewtiful Joe's intro movie
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1, 0);
 
     float_emit.FCVTZS(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -812,9 +831,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storeSingleU8 = GetCodePtr();  // Used by MKWii
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1);
 
     float_emit.FCVTZU(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -831,9 +850,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storeSingleS8 = GetCodePtr();
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1);
 
     float_emit.FCVTZS(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -850,9 +869,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storeSingleU16 = GetCodePtr();  // Used by MKWii
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1);
 
     float_emit.FCVTZU(32, ARM64Reg::D0, ARM64Reg::D0);
@@ -868,9 +887,9 @@ void JitArm64::GenerateQuantizedStores()
   }
   const u8* storeSingleS16 = GetCodePtr();
   {
-    MOVP2R(ARM64Reg::X2, &m_quantizeTableS);
+    const s32 load_offset = MOVPage2R(ARM64Reg::X2, &m_quantizeTableS);
     ADD(scale_reg, ARM64Reg::X2, scale_reg, ArithOption(scale_reg, ShiftType::LSL, 3));
-    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, 0);
+    float_emit.LDR(32, IndexType::Unsigned, ARM64Reg::D1, scale_reg, load_offset);
     float_emit.FMUL(32, ARM64Reg::D0, ARM64Reg::D0, ARM64Reg::D1);
 
     float_emit.FCVTZS(32, ARM64Reg::D0, ARM64Reg::D0);

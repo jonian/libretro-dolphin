@@ -31,6 +31,7 @@
 #include "Core/FifoPlayer/FifoPlayer.h"
 #include "Core/FifoPlayer/FifoRecorder.h"
 #include "Core/HW/Memmap.h"
+#include "Core/System.h"
 
 #include "VideoCommon/AbstractFramebuffer.h"
 #include "VideoCommon/AbstractStagingTexture.h"
@@ -1000,7 +1001,13 @@ static void SetSamplerState(u32 index, float custom_tex_scale, bool custom_tex,
   state.Generate(bpmem, index);
 
   // Force texture filtering config option.
-  if (g_ActiveConfig.bForceFiltering)
+  if (g_ActiveConfig.texture_filtering_mode == TextureFilteringMode::Nearest)
+  {
+    state.tm0.min_filter = FilterMode::Near;
+    state.tm0.mag_filter = FilterMode::Near;
+    state.tm0.mipmap_filter = FilterMode::Near;
+  }
+  else if (g_ActiveConfig.texture_filtering_mode == TextureFilteringMode::Linear)
   {
     state.tm0.min_filter = FilterMode::Linear;
     state.tm0.mag_filter = FilterMode::Linear;
@@ -1047,18 +1054,22 @@ static void SetSamplerState(u32 index, float custom_tex_scale, bool custom_tex,
   }
 
   g_renderer->SetSamplerState(index, state);
-  PixelShaderManager::SetSamplerState(index, state.tm0.hex, state.tm1.hex);
+  auto& system = Core::System::GetInstance();
+  auto& pixel_shader_manager = system.GetPixelShaderManager();
+  pixel_shader_manager.SetSamplerState(index, state.tm0.hex, state.tm1.hex);
 }
 
 void TextureCacheBase::BindTextures(BitSet32 used_textures)
 {
+  auto& system = Core::System::GetInstance();
+  auto& pixel_shader_manager = system.GetPixelShaderManager();
   for (u32 i = 0; i < bound_textures.size(); i++)
   {
     const TCacheEntry* tentry = bound_textures[i];
     if (used_textures[i] && tentry)
     {
       g_renderer->SetTexture(i, tentry->texture.get());
-      PixelShaderManager::SetTexDims(i, tentry->native_width, tentry->native_height);
+      pixel_shader_manager.SetTexDims(i, tentry->native_width, tentry->native_height);
 
       const float custom_tex_scale = tentry->GetWidth() / float(tentry->native_width);
       SetSamplerState(i, custom_tex_scale, tentry->is_custom_tex, tentry->has_arbitrary_mips);
@@ -1243,6 +1254,13 @@ TextureCacheBase::TCacheEntry* TextureCacheBase::Load(const TextureInfo& texture
   if (entry->texture_info_name.empty() && g_ActiveConfig.bGraphicMods)
   {
     entry->texture_info_name = texture_info.CalculateTextureName().GetFullName();
+
+    GraphicsModActionData::TextureLoad texture_load{entry->texture_info_name};
+    for (const auto action :
+         g_renderer->GetGraphicsModManager().GetTextureLoadActions(entry->texture_info_name))
+    {
+      action->OnTextureLoad(&texture_load);
+    }
   }
   bound_textures[texture_info.GetStage()] = entry;
 
@@ -1537,8 +1555,15 @@ TextureCacheBase::GetTexture(const int textureCacheSafetyColorSampleSize,
     }
   }
 
+#ifdef __APPLE__
+  const bool no_mips = g_ActiveConfig.bNoMipmapping;
+#else
+  const bool no_mips = false;
+#endif
   // how many levels the allocated texture shall have
-  const u32 texLevels = hires_tex ? (u32)hires_tex->m_levels.size() : texture_info.GetLevelCount();
+  const u32 texLevels = no_mips   ? 1 :
+                        hires_tex ? (u32)hires_tex->m_levels.size() :
+                                    texture_info.GetLevelCount();
 
   // We can decode on the GPU if it is a supported format and the flag is enabled.
   // Currently we don't decode RGBA8 textures from TMEM, as that would require copying from both
@@ -1718,7 +1743,9 @@ TextureCacheBase::TCacheEntry*
 TextureCacheBase::GetXFBTexture(u32 address, u32 width, u32 height, u32 stride,
                                 MathUtil::Rectangle<int>* display_rect)
 {
-  const u8* src_data = Memory::GetPointer(address);
+  auto& system = Core::System::GetInstance();
+  auto& memory = system.GetMemory();
+  const u8* src_data = memory.GetPointer(address);
   if (!src_data)
   {
     ERROR_LOG_FMT(VIDEO, "Trying to load XFB texture from invalid address {:#010x}", address);
@@ -2093,7 +2120,9 @@ void TextureCacheBase::CopyRenderTargetToTexture(
       !(is_xfb_copy ? g_ActiveConfig.bSkipXFBCopyToRam : g_ActiveConfig.bSkipEFBCopyToRam) ||
       !copy_to_vram;
 
-  u8* dst = Memory::GetPointer(dstAddr);
+  auto& system = Core::System::GetInstance();
+  auto& memory = system.GetMemory();
+  u8* dst = memory.GetPointer(dstAddr);
   if (dst == nullptr)
   {
     ERROR_LOG_FMT(VIDEO, "Trying to copy from EFB to invalid address {:#010x}", dstAddr);
@@ -2408,7 +2437,9 @@ void TextureCacheBase::WriteEFBCopyToRAM(u8* dst_ptr, u32 width, u32 height, u32
 void TextureCacheBase::FlushEFBCopy(TCacheEntry* entry)
 {
   // Copy from texture -> guest memory.
-  u8* const dst = Memory::GetPointer(entry->addr);
+  auto& system = Core::System::GetInstance();
+  auto& memory = system.GetMemory();
+  u8* const dst = memory.GetPointer(entry->addr);
   WriteEFBCopyToRAM(dst, entry->pending_efb_copy_width, entry->pending_efb_copy_height,
                     entry->memory_stride, std::move(entry->pending_efb_copy));
 
@@ -3010,7 +3041,9 @@ u64 TextureCacheBase::TCacheEntry::CalculateHash() const
   const u32 hash_sample_size = HashSampleSize();
 
   // FIXME: textures from tmem won't get the correct hash.
-  u8* ptr = Memory::GetPointer(addr);
+  auto& system = Core::System::GetInstance();
+  auto& memory = system.GetMemory();
+  u8* ptr = memory.GetPointer(addr);
   if (memory_stride == bytes_per_row)
   {
     return Common::GetHash64(ptr, size_in_bytes, hash_sample_size);

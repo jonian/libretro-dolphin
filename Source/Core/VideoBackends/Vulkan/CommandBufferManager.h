@@ -83,6 +83,7 @@ public:
   // Was the last present submitted to the queue a failure? If so, we must recreate our swapchain.
   bool CheckLastPresentFail() { return m_last_present_failed.TestAndClear(); }
   VkResult GetLastPresentResult() const { return m_last_present_result; }
+  bool CheckLastPresentDone() { return m_last_present_done.TestAndClear(); }
 
   // Schedule a vulkan resource for destruction later on. This will occur when the command buffer
   // is next re-used, and the GPU has finished working with the specified resource.
@@ -159,9 +160,10 @@ private:
   std::condition_variable m_submit_worker_condvar;
   bool m_submit_worker_idle = true;
   Common::Flag m_last_present_failed;
+  Common::Flag m_last_present_done;
   VkResult m_last_present_result = VK_SUCCESS;
   bool m_use_threaded_submission = false;
-  u32 m_descriptor_set_count = 0;
+  u32 m_descriptor_set_count = DESCRIPTOR_SETS_PER_POOL;
 };
 
 extern std::unique_ptr<CommandBufferManager> g_command_buffer_mgr;
