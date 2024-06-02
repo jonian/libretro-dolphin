@@ -17,6 +17,7 @@
 #include "DolphinLibretro/Input.h"
 #include "DolphinLibretro/Log.h"
 #include "DolphinLibretro/Options.h"
+#include "DolphinLibretro/Audio.h"
 #include "DolphinLibretro/Video.h"
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 #include "UICommon/DiscordPresence.h"
@@ -221,6 +222,7 @@ void retro_unload_game(void)
   Core::Shutdown();
   g_video_backend->ShutdownShared();
   Libretro::Input::Shutdown();
+  Libretro::Audio::Shutdown();
   Libretro::Log::Shutdown();
   UICommon::Shutdown();
 }

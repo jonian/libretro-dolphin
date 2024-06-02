@@ -4,7 +4,6 @@
 #include <string>
 #include <thread>
 
-#include "AudioCommon/AudioCommon.h"
 #include "Common/ChunkFile.h"
 #include "Common/Event.h"
 #include "Common/GL/GLContext.h"
@@ -25,6 +24,7 @@
 #include "Core/System.h"
 #include "DolphinLibretro/Input.h"
 #include "DolphinLibretro/Options.h"
+#include "DolphinLibretro/Audio.h"
 #include "DolphinLibretro/Video.h"
 #include "VideoBackends/OGL/OGLTexture.h"
 #include "VideoBackends/OGL/OGLRender.h"
@@ -54,56 +54,10 @@ static struct retro_perf_callback perf_cb;
 #define RETRO_PERFORMANCE_STOP(name)
 #endif
 
-SoundStream* g_sound_stream;
-
 namespace Libretro
 {
 retro_environment_t environ_cb;
 static bool widescreen;
-
-namespace Audio
-{
-static retro_audio_sample_batch_t batch_cb;
-
-static unsigned int GetSampleRate()
-{
-  if (g_sound_stream)
-    return g_sound_stream->GetMixer()->GetSampleRate();
-  else if (SConfig::GetInstance().bWii)
-    return Options::audioMixerRate;
-  else if (Options::audioMixerRate == 32000u)
-    return 32029;
-
-  return 48043;
-}
-
-class Stream final : public SoundStream
-{
-public:
-  Stream() : SoundStream(GetSampleRate()) {}
-  bool SetRunning(bool running) override { return running; }
-  void Update() override
-  {
-    unsigned int available = m_mixer->AvailableSamples();
-    while (available > MAX_SAMPLES)
-    {
-      m_mixer->Mix(m_buffer, MAX_SAMPLES);
-      batch_cb(m_buffer, MAX_SAMPLES);
-      available -= MAX_SAMPLES;
-    }
-    if (available)
-    {
-      m_mixer->Mix(m_buffer, available);
-      batch_cb(m_buffer, available);
-    }
-  }
-
-private:
-  static constexpr unsigned int MAX_SAMPLES = 512;
-  s16 m_buffer[MAX_SAMPLES * 2];
-};
-
-}  // namespace Audio
 }  // namespace Libretro
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
@@ -185,13 +139,9 @@ void retro_run(void)
 
   if (Core::GetState() == Core::State::Starting)
   {
-    auto& system = Core::System::GetInstance();
     WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
     Core::RunEmuThread(wsi);
-    AudioCommon::SetSoundStreamRunning(system, false);
-    system.SetSoundStream(std::make_unique<Libretro::Audio::Stream>());
-    g_sound_stream = system.GetSoundStream();
-    AudioCommon::SetSoundStreamRunning(system, true);
+    Libretro::Audio::Init();
 
     if (Config::Get(Config::MAIN_GFX_BACKEND) == "Software Renderer")
     {
