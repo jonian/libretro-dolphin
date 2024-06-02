@@ -42,8 +42,6 @@ struct SConfig
   bool bJITNoBlockLinking = false;
 
   bool bEMUThread = true;
-  bool bDSPThread = false;
-  bool bDSPHLE = true;
   bool bCopyWiiSaveNetplay = true;
 
   bool bWii = false;
