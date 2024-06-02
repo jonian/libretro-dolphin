@@ -188,10 +188,10 @@ void retro_run(void)
     auto& system = Core::System::GetInstance();
     WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
     Core::RunEmuThread(wsi);
-    AudioCommon::SetSoundStreamRunning(false);
+    AudioCommon::SetSoundStreamRunning(system, false);
     system.SetSoundStream(std::make_unique<Libretro::Audio::Stream>());
     g_sound_stream = system.GetSoundStream();
-    AudioCommon::SetSoundStreamRunning(true);
+    AudioCommon::SetSoundStreamRunning(system, true);
 
     if (Config::Get(Config::MAIN_GFX_BACKEND) == "Software Renderer")
     {
@@ -255,8 +255,10 @@ void retro_run(void)
   AsyncRequests::GetInstance()->SetEnable(true);
   AsyncRequests::GetInstance()->SetPassthrough(false);
   Core::DoFrameStep();
-  Fifo::RunGpuLoop();
-  if (!Fifo::UseDeterministicGPUThread())
+  Core::System& system = Core::System::GetInstance();
+  Fifo::FifoManager& fifo = system.GetFifo();
+  fifo.RunGpuLoop(system);
+  if (!fifo.UseDeterministicGPUThread())
   {
     AsyncRequests::GetInstance()->SetEnable(false);
     AsyncRequests::GetInstance()->SetPassthrough(true);
@@ -314,7 +316,7 @@ size_t retro_get_memory_size(unsigned id)
 {
   if (id == RETRO_MEMORY_SYSTEM_RAM)
   {
-    return Memory::m_TotalMemorySize;
+    return Core::System::GetInstance().GetMemory().GetRamSize();
   }
   return 0;
 }
@@ -323,7 +325,7 @@ void* retro_get_memory_data(unsigned id)
 {
   if (id == RETRO_MEMORY_SYSTEM_RAM)
   {
-    return Memory::m_pContiguousRAM;
+    return Core::System::GetInstance().GetMemory().GetPointer(0);
   }
   return NULL;
 }

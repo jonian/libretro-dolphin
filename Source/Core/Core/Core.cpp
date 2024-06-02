@@ -935,7 +935,7 @@ void Callback_NewField()
   }
 
   if (!SConfig::GetInstance().bEMUThread)
-    Fifo::StopGpuLoop();
+    Core::System::GetInstance().GetFifo().StopGpuLoop();
 }
 
 void UpdateTitle()

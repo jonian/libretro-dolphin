@@ -70,6 +70,7 @@ public:
   void GpuMaySleep();
   void RunGpuLoop(Core::System& system);
   void ExitGpuLoop(Core::System& system);
+  void StopGpuLoop();
   void EmulatorState(bool running);
   void ResetVideoBuffer();
 

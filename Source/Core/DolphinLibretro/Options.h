@@ -102,7 +102,7 @@ extern Option<int> maxAnisotropy;
 extern Option<bool> skipDupeFrames;
 extern Option<bool> immediatexfb;
 extern Option<bool> efbScaledCopy;
-extern Option<bool> forceTextureFiltering;
+extern Option<TextureFilteringMode> forceTextureFilteringMode;
 extern Option<bool> efbToTexture;
 extern Option<int> textureCacheAccuracy;
 extern Option<bool> gpuTextureDecoding;
