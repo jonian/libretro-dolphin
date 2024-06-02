@@ -5,6 +5,8 @@
 
 #include <chrono>
 
+#include <fmt/format.h>
+
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -16,7 +18,6 @@
 #include <QWidget>
 
 #include "Common/Event.h"
-#include "Common/StringUtil.h"
 #include "Core/Core.h"
 #include "Core/Debugger/Debugger_SymbolMap.h"
 #include "Core/HW/CPU.h"
@@ -176,7 +177,16 @@ void CodeWidget::ConnectWidgets()
   connect(m_function_callers_list, &QListWidget::itemPressed, this,
           &CodeWidget::OnSelectFunctionCallers);
 
-  connect(m_code_view, &CodeViewWidget::SymbolsChanged, this, &CodeWidget::UpdateSymbols);
+  connect(m_code_view, &CodeViewWidget::SymbolsChanged, this, [this]() {
+    UpdateCallstack();
+    UpdateSymbols();
+    const Common::Symbol* symbol = g_symbolDB.GetSymbolFromAddr(m_code_view->GetAddress());
+    if (symbol)
+    {
+      UpdateFunctionCalls(symbol);
+      UpdateFunctionCallers(symbol);
+    }
+  });
   connect(m_code_view, &CodeViewWidget::BreakpointsChanged, this,
           [this] { emit BreakpointsChanged(); });
   connect(m_code_view, &CodeViewWidget::UpdateCodeWidget, this, &CodeWidget::Update);
@@ -380,7 +390,7 @@ void CodeWidget::UpdateFunctionCalls(const Common::Symbol* symbol)
     if (call_symbol)
     {
       const QString name =
-          QString::fromStdString(StringFromFormat("> %s (%08x)", call_symbol->name.c_str(), addr));
+          QString::fromStdString(fmt::format("> {} ({:08x})", call_symbol->name, addr));
 
       if (name.toUpper().indexOf(filter.toUpper()) == -1)
         continue;
@@ -404,8 +414,8 @@ void CodeWidget::UpdateFunctionCallers(const Common::Symbol* symbol)
 
     if (caller_symbol)
     {
-      const QString name = QString::fromStdString(
-          StringFromFormat("< %s (%08x)", caller_symbol->name.c_str(), addr));
+      const QString name =
+          QString::fromStdString(fmt::format("< {} ({:08x})", caller_symbol->name, addr));
 
       if (name.toUpper().indexOf(filter.toUpper()) == -1)
         continue;

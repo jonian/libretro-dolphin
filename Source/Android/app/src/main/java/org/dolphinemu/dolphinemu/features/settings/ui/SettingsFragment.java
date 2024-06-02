@@ -14,10 +14,14 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.divider.MaterialDividerItemDecoration;
+
 import org.dolphinemu.dolphinemu.R;
+import org.dolphinemu.dolphinemu.databinding.FragmentSettingsBinding;
 import org.dolphinemu.dolphinemu.features.settings.model.Settings;
 import org.dolphinemu.dolphinemu.features.settings.model.view.SettingsItem;
-import org.dolphinemu.dolphinemu.ui.DividerItemDecoration;
+import org.dolphinemu.dolphinemu.utils.InsetsHelper;
+import org.dolphinemu.dolphinemu.utils.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,6 +75,8 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
     titles.put(MenuTag.WIIMOTE_EXTENSION_4, R.string.wiimote_extension_7);
   }
 
+  private FragmentSettingsBinding mBinding;
+
   public static Fragment newInstance(MenuTag menuTag, String gameId, Bundle extras)
   {
     SettingsFragment fragment = new SettingsFragment();
@@ -111,12 +117,13 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
     mPresenter.onCreate(menuTag, gameId, args);
   }
 
-  @Nullable
+  @NonNull
   @Override
-  public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+  public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
           @Nullable Bundle savedInstanceState)
   {
-    return inflater.inflate(R.layout.fragment_settings, container, false);
+    mBinding = FragmentSettingsBinding.inflate(inflater, container, false);
+    return mBinding.getRoot();
   }
 
   @Override
@@ -132,14 +139,27 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
 
     LinearLayoutManager manager = new LinearLayoutManager(getActivity());
 
-    RecyclerView recyclerView = view.findViewById(R.id.list_settings);
+    RecyclerView recyclerView = mBinding.listSettings;
 
     recyclerView.setAdapter(mAdapter);
     recyclerView.setLayoutManager(manager);
-    recyclerView.addItemDecoration(new DividerItemDecoration(requireActivity(), null));
+
+    MaterialDividerItemDecoration divider =
+            new MaterialDividerItemDecoration(requireActivity(), LinearLayoutManager.VERTICAL);
+    divider.setLastItemDecorated(false);
+    recyclerView.addItemDecoration(divider);
+
+    InsetsHelper.setUpList(getContext(), recyclerView);
 
     SettingsActivityView activity = (SettingsActivityView) getActivity();
     mPresenter.onViewCreated(menuTag, activity.getSettings());
+  }
+
+  @Override
+  public void onDestroyView()
+  {
+    super.onDestroyView();
+    mBinding = null;
   }
 
   @Override

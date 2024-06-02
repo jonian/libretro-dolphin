@@ -9,22 +9,29 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.dolphinemu.dolphinemu.NativeLibrary;
 import org.dolphinemu.dolphinemu.R;
+import org.dolphinemu.dolphinemu.databinding.ActivitySettingsBinding;
 import org.dolphinemu.dolphinemu.ui.main.MainPresenter;
 import org.dolphinemu.dolphinemu.utils.FileBrowserHelper;
+import org.dolphinemu.dolphinemu.utils.InsetsHelper;
 import org.dolphinemu.dolphinemu.utils.ThemeHelper;
 
 import java.util.Set;
@@ -75,7 +82,10 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
       MainPresenter.skipRescanningLibrary();
     }
 
-    setContentView(R.layout.activity_settings);
+    ActivitySettingsBinding binding = ActivitySettingsBinding.inflate(getLayoutInflater());
+    setContentView(binding.getRoot());
+
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
     Intent launcher = getIntent();
     String gameID = launcher.getStringExtra(ARG_GAME_ID);
@@ -88,10 +98,17 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
     mPresenter = new SettingsActivityPresenter(this, getSettings());
     mPresenter.onCreate(savedInstanceState, menuTag, gameID, revision, isWii, this);
 
-    Toolbar tb = findViewById(R.id.toolbar_settings);
-    mToolbarLayout = findViewById(R.id.toolbar_settings_layout);
-    setSupportActionBar(tb);
+    mToolbarLayout = binding.toolbarSettingsLayout;
+    setSupportActionBar(binding.toolbarSettings);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+    // TODO: Remove this when CollapsingToolbarLayouts are fixed by Google
+    // https://github.com/material-components/material-components-android/issues/1310
+    ViewCompat.setOnApplyWindowInsetsListener(mToolbarLayout, null);
+
+    InsetsHelper.setUpSettingsLayout(this, binding.appbarSettings, binding.frameContentSettings,
+            binding.workaroundView);
+    ThemeHelper.enableScrollTint(this, binding.toolbarSettings, binding.appbarSettings);
   }
 
   @Override
@@ -158,8 +175,8 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
 
       transaction.addToBackStack(null);
     }
-    transaction.replace(R.id.frame_content, SettingsFragment.newInstance(menuTag, gameID, extras),
-            FRAGMENT_TAG);
+    transaction.replace(R.id.frame_content_settings,
+            SettingsFragment.newInstance(menuTag, gameID, extras), FRAGMENT_TAG);
 
     transaction.commit();
   }

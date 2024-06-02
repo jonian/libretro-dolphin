@@ -96,7 +96,7 @@ public final class MainPresenter
 
       case R.id.menu_refresh:
         mView.setRefreshing(true);
-        GameFileCacheManager.startRescan(activity);
+        GameFileCacheManager.startRescan();
         return true;
 
       case R.id.button_add_directory:
@@ -146,7 +146,7 @@ public final class MainPresenter
 
     if (sShouldRescanLibrary)
     {
-      GameFileCacheManager.startRescan(mActivity);
+      GameFileCacheManager.startRescan();
     }
 
     sShouldRescanLibrary = true;
@@ -317,20 +317,20 @@ public final class MainPresenter
 
   private void launchWiiSystemMenu()
   {
-    if (WiiUtils.isSystemMenuInstalled())
+    new AfterDirectoryInitializationRunner().runWithLifecycle(mActivity, () ->
     {
-      EmulationActivity.launchSystemMenu(mActivity);
-    }
-    else
-    {
-      new AfterDirectoryInitializationRunner().runWithLifecycle(mActivity, () ->
+      if (WiiUtils.isSystemMenuInstalled())
+      {
+        EmulationActivity.launchSystemMenu(mActivity);
+      }
+      else
       {
         SystemMenuNotInstalledDialogFragment dialogFragment =
                 new SystemMenuNotInstalledDialogFragment();
         dialogFragment
                 .show(mActivity.getSupportFragmentManager(),
                         "SystemMenuNotInstalledDialogFragment");
-      });
-    }
+      }
+    });
   }
 }

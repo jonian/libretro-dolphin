@@ -13,17 +13,16 @@ import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.WindowCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.viewpager.widget.ViewPager;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import org.dolphinemu.dolphinemu.R;
 import org.dolphinemu.dolphinemu.activities.EmulationActivity;
 import org.dolphinemu.dolphinemu.adapters.PlatformPagerAdapter;
+import org.dolphinemu.dolphinemu.databinding.ActivityMainBinding;
 import org.dolphinemu.dolphinemu.features.settings.model.IntSetting;
 import org.dolphinemu.dolphinemu.features.settings.model.NativeConfig;
 import org.dolphinemu.dolphinemu.features.settings.ui.MenuTag;
@@ -35,6 +34,7 @@ import org.dolphinemu.dolphinemu.utils.Action1;
 import org.dolphinemu.dolphinemu.utils.AfterDirectoryInitializationRunner;
 import org.dolphinemu.dolphinemu.utils.DirectoryInitialization;
 import org.dolphinemu.dolphinemu.utils.FileBrowserHelper;
+import org.dolphinemu.dolphinemu.utils.InsetsHelper;
 import org.dolphinemu.dolphinemu.utils.PermissionsHandler;
 import org.dolphinemu.dolphinemu.utils.StartupHandler;
 import org.dolphinemu.dolphinemu.utils.ThemeHelper;
@@ -47,14 +47,11 @@ import org.dolphinemu.dolphinemu.utils.WiiUtils;
 public final class MainActivity extends AppCompatActivity
         implements MainView, SwipeRefreshLayout.OnRefreshListener, ThemeProvider
 {
-  private ViewPager mViewPager;
-  private Toolbar mToolbar;
-  private TabLayout mTabLayout;
-  private FloatingActionButton mFab;
-
   private int mThemeId;
 
   private final MainPresenter mPresenter = new MainPresenter(this, this);
+
+  private ActivityMainBinding mBinding;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -66,14 +63,19 @@ public final class MainActivity extends AppCompatActivity
     ThemeHelper.setTheme(this);
 
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
 
-    findViews();
+    mBinding = ActivityMainBinding.inflate(getLayoutInflater());
+    setContentView(mBinding.getRoot());
 
-    setSupportActionBar(mToolbar);
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    InsetsHelper.setUpMainLayout(this, mBinding.appbarMain, mBinding.buttonAddDirectory,
+            mBinding.pagerPlatforms, mBinding.workaroundView);
+    ThemeHelper.enableStatusBarScrollTint(this, mBinding.appbarMain);
+
+    setSupportActionBar(mBinding.toolbarMain);
 
     // Set up the FAB.
-    mFab.setOnClickListener(view -> mPresenter.onFabClick());
+    mBinding.buttonAddDirectory.setOnClickListener(view -> mPresenter.onFabClick());
 
     mPresenter.onCreate();
 
@@ -144,15 +146,6 @@ public final class MainActivity extends AppCompatActivity
     StartupHandler.setSessionTime(this);
   }
 
-  // TODO: Replace with a ButterKnife injection.
-  private void findViews()
-  {
-    mToolbar = findViewById(R.id.toolbar_main);
-    mViewPager = findViewById(R.id.pager_platforms);
-    mTabLayout = findViewById(R.id.tabs_platforms);
-    mFab = findViewById(R.id.button_add_directory);
-  }
-
   @Override
   public boolean onCreateOptionsMenu(Menu menu)
   {
@@ -161,9 +154,12 @@ public final class MainActivity extends AppCompatActivity
 
     if (WiiUtils.isSystemMenuInstalled())
     {
+      int resId = WiiUtils.isSystemMenuvWii() ?
+              R.string.grid_menu_load_vwii_system_menu_installed :
+              R.string.grid_menu_load_wii_system_menu_installed;
+
       menu.findItem(R.id.menu_load_wii_system_menu).setTitle(
-              getString(R.string.grid_menu_load_wii_system_menu_installed,
-                      WiiUtils.getSystemMenuVersion()));
+              getString(resId, WiiUtils.getSystemMenuVersion()));
     }
 
     return true;
@@ -176,7 +172,7 @@ public final class MainActivity extends AppCompatActivity
   @Override
   public void setVersionString(String version)
   {
-    mToolbar.setSubtitle(version);
+    mBinding.toolbarMain.setSubtitle(version);
   }
 
   @Override
@@ -301,7 +297,7 @@ public final class MainActivity extends AppCompatActivity
   public void onRefresh()
   {
     setRefreshing(true);
-    GameFileCacheManager.startRescan(this);
+    GameFileCacheManager.startRescan();
   }
 
   /**
@@ -337,7 +333,8 @@ public final class MainActivity extends AppCompatActivity
   @Nullable
   private PlatformGamesView getPlatformGamesView(Platform platform)
   {
-    String fragmentTag = "android:switcher:" + mViewPager.getId() + ":" + platform.toInt();
+    String fragmentTag =
+            "android:switcher:" + mBinding.pagerPlatforms.getId() + ":" + platform.toInt();
 
     return (PlatformGamesView) getSupportFragmentManager().findFragmentByTag(fragmentTag);
   }
@@ -346,24 +343,31 @@ public final class MainActivity extends AppCompatActivity
   private void setPlatformTabsAndStartGameFileCacheService()
   {
     PlatformPagerAdapter platformPagerAdapter = new PlatformPagerAdapter(
-            getSupportFragmentManager(), this, this);
-    mViewPager.setAdapter(platformPagerAdapter);
-    mViewPager.setOffscreenPageLimit(platformPagerAdapter.getCount());
-    mTabLayout.setupWithViewPager(mViewPager);
-    mTabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager)
-    {
-      @Override
-      public void onTabSelected(@NonNull TabLayout.Tab tab)
-      {
-        super.onTabSelected(tab);
-        IntSetting.MAIN_LAST_PLATFORM_TAB.setIntGlobal(NativeConfig.LAYER_BASE, tab.getPosition());
-      }
-    });
+            getSupportFragmentManager(), this);
+    mBinding.pagerPlatforms.setAdapter(platformPagerAdapter);
+    mBinding.pagerPlatforms.setOffscreenPageLimit(platformPagerAdapter.getCount());
+    mBinding.tabsPlatforms.setupWithViewPager(mBinding.pagerPlatforms);
+    mBinding.tabsPlatforms.addOnTabSelectedListener(
+            new TabLayout.ViewPagerOnTabSelectedListener(mBinding.pagerPlatforms)
+            {
+              @Override
+              public void onTabSelected(@NonNull TabLayout.Tab tab)
+              {
+                super.onTabSelected(tab);
+                IntSetting.MAIN_LAST_PLATFORM_TAB.setIntGlobal(NativeConfig.LAYER_BASE,
+                        tab.getPosition());
+              }
+            });
 
-    mViewPager.setCurrentItem(IntSetting.MAIN_LAST_PLATFORM_TAB.getIntGlobal());
+    for (int i = 0; i < PlatformPagerAdapter.TAB_ICONS.length; i++)
+    {
+      mBinding.tabsPlatforms.getTabAt(i).setIcon(PlatformPagerAdapter.TAB_ICONS[i]);
+    }
+
+    mBinding.pagerPlatforms.setCurrentItem(IntSetting.MAIN_LAST_PLATFORM_TAB.getIntGlobal());
 
     showGames();
-    GameFileCacheManager.startLoad(this);
+    GameFileCacheManager.startLoad();
   }
 
   @Override

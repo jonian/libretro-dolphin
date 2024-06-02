@@ -4,6 +4,8 @@ android {
     compileSdkVersion 33
     ndkVersion "25.0.8775105"
 
+    viewBinding.enabled = true
+
     compileOptions {
         // Flag to enable support for the new language APIs
         coreLibraryDesugaringEnabled true
@@ -104,6 +106,10 @@ dependencies {
     implementation 'androidx.slidingpanelayout:slidingpanelayout:1.2.0'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.core:core-splashscreen:1.0.0'
+    implementation 'androidx.preference:preference:1.2.0'
+
+    // Force dependency version to solve build conflict with androidx preferences
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
 
     // Android TV UI libraries.
     implementation 'androidx.leanback:leanback:1.0.0'

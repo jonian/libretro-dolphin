@@ -10,17 +10,17 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.WindowCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.dolphinemu.dolphinemu.R;
+import org.dolphinemu.dolphinemu.databinding.ActivityUserDataBinding;
 import org.dolphinemu.dolphinemu.utils.DirectoryInitialization;
+import org.dolphinemu.dolphinemu.utils.InsetsHelper;
 import org.dolphinemu.dolphinemu.utils.Log;
 import org.dolphinemu.dolphinemu.utils.ThemeHelper;
 import org.dolphinemu.dolphinemu.utils.ThreadUtil;
@@ -57,14 +57,10 @@ public class UserDataActivity extends AppCompatActivity
 
     super.onCreate(savedInstanceState);
 
-    setContentView(R.layout.activity_user_data);
+    ActivityUserDataBinding binding = ActivityUserDataBinding.inflate(getLayoutInflater());
+    setContentView(binding.getRoot());
 
-    TextView textType = findViewById(R.id.text_type);
-    TextView textPath = findViewById(R.id.text_path);
-    TextView textAndroid11 = findViewById(R.id.text_android_11);
-    Button buttonOpenSystemFileManager = findViewById(R.id.button_open_system_file_manager);
-    Button buttonImportUserData = findViewById(R.id.button_import_user_data);
-    Button buttonExportUserData = findViewById(R.id.button_export_user_data);
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
     boolean android_10 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
     boolean android_11 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
@@ -72,22 +68,25 @@ public class UserDataActivity extends AppCompatActivity
 
     int user_data_new_location = android_10 ?
             R.string.user_data_new_location_android_10 : R.string.user_data_new_location;
-    textType.setText(legacy ? R.string.user_data_old_location : user_data_new_location);
+    binding.textType.setText(legacy ? R.string.user_data_old_location : user_data_new_location);
 
-    textPath.setText(DirectoryInitialization.getUserDirectory());
+    binding.textPath.setText(DirectoryInitialization.getUserDirectory());
 
-    textAndroid11.setVisibility(android_11 && !legacy ? View.VISIBLE : View.GONE);
+    binding.textAndroid11.setVisibility(android_11 && !legacy ? View.VISIBLE : View.GONE);
 
-    buttonOpenSystemFileManager.setVisibility(android_11 ? View.VISIBLE : View.GONE);
-    buttonOpenSystemFileManager.setOnClickListener(view -> openFileManager());
+    binding.buttonOpenSystemFileManager.setVisibility(android_11 ? View.VISIBLE : View.GONE);
+    binding.buttonOpenSystemFileManager.setOnClickListener(view -> openFileManager());
 
-    buttonImportUserData.setOnClickListener(view -> importUserData());
+    binding.buttonImportUserData.setOnClickListener(view -> importUserData());
 
-    buttonExportUserData.setOnClickListener(view -> exportUserData());
+    binding.buttonExportUserData.setOnClickListener(view -> exportUserData());
 
-    Toolbar tb = findViewById(R.id.toolbar_user_data);
-    setSupportActionBar(tb);
+    setSupportActionBar(binding.toolbarUserData);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+    InsetsHelper.setUpAppBarWithScrollView(this, binding.appbarUserData,
+            binding.scrollViewUserData, binding.workaroundView);
+    ThemeHelper.enableScrollTint(this, binding.toolbarUserData, binding.appbarUserData);
   }
 
   @Override
