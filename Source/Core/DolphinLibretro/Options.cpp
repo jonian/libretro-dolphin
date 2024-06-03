@@ -137,7 +137,7 @@ Option<int> maxAnisotropy("dolphin_max_anisotropy", "Max Anisotropy", {"1x", "2x
 Option<bool> skipDupeFrames("dolphin_skip_dupe_frames", "Skip Presenting Duplicate Frames", true);
 Option<bool> immediatexfb("dolphin_immediate_xfb", "Immediate XFB", false);
 Option<bool> efbScaledCopy("dolphin_efb_scaled_copy", "Scaled EFB Copy", true);
-Option<TextureFilteringMode> forceTextureFilteringMode("dolphin_force_texture_filtering_mode", "Force Texture Filtering Mode", {
+Option<TextureFilteringMode> forceTextureFilteringMode("dolphin_force_texture_filtering_mode", "Force Texture Filtering", {
                                                       {"Disabled", TextureFilteringMode::Default},
                                                       {"Nearest", TextureFilteringMode::Nearest},
                                                       {"Linear", TextureFilteringMode::Linear},
