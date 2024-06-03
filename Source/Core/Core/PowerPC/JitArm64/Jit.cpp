@@ -281,18 +281,20 @@ void JitArm64::Cleanup()
     SUB(ARM64Reg::X0, ARM64Reg::X0, ARM64Reg::X1);
     CMP(ARM64Reg::X0, GPFifo::GATHER_PIPE_SIZE);
     FixupBranch exit = B(CC_LT);
-    MOVP2R(ARM64Reg::X0, &GPFifo::UpdateGatherPipe);
-    BLR(ARM64Reg::X0);
+    MOVP2R(ARM64Reg::X1, &GPFifo::UpdateGatherPipe);
+    MOVP2R(ARM64Reg::X0, &Core::System::GetInstance().GetGPFifo());
+    BLR(ARM64Reg::X1);
     SetJumpTarget(exit);
   }
 
   // SPEED HACK: MMCR0/MMCR1 should be checked at run-time, not at compile time.
-  if (MMCR0.Hex || MMCR1.Hex)
+  if (MMCR0(PowerPC::ppcState).Hex || MMCR1(PowerPC::ppcState).Hex)
   {
     MOVP2R(ARM64Reg::X8, &PowerPC::UpdatePerformanceMonitor);
     MOVI2R(ARM64Reg::X0, js.downcountAmount);
     MOVI2R(ARM64Reg::X1, js.numLoadStoreInst);
     MOVI2R(ARM64Reg::X2, js.numFloatingPointInst);
+    MOVP2R(ARM64Reg::X3, &PowerPC::ppcState);
     BLR(ARM64Reg::X8);
   }
 }
@@ -704,7 +706,9 @@ void JitArm64::Trace()
   DEBUG_LOG_FMT(DYNA_REC,
                 "JitArm64 PC: {:08x} SRR0: {:08x} SRR1: {:08x} FPSCR: {:08x} "
                 "MSR: {:08x} LR: {:08x} {} {}",
-                PC, SRR0, SRR1, FPSCR.Hex, MSR.Hex, PowerPC::ppcState.spr[8], regs, fregs);
+                PowerPC::ppcState.pc, SRR0(PowerPC::ppcState), SRR1(PowerPC::ppcState),
+                PowerPC::ppcState.fpscr.Hex, PowerPC::ppcState.msr.Hex, PowerPC::ppcState.spr[8],
+                regs, fregs);
 }
 
 void JitArm64::Jit(u32 em_address)
@@ -778,7 +782,7 @@ void JitArm64::Jit(u32 em_address, bool clear_cache_and_retry_on_failure)
   if (code_block.m_memory_exception)
   {
     // Address of instruction could not be translated
-    NPC = nextPC;
+    PowerPC::ppcState.npc = nextPC;
     PowerPC::ppcState.Exceptions |= EXCEPTION_ISI;
     PowerPC::CheckExceptions();
     WARN_LOG_FMT(POWERPC, "ISI exception at {:#010x}", nextPC);
@@ -894,7 +898,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       js.pairedQuantizeAddresses.find(js.blockStart) == js.pairedQuantizeAddresses.end())
   {
     int gqr = *code_block.m_gqr_used.begin();
-    if (!code_block.m_gqr_modified[gqr] && !GQR(gqr))
+    if (!code_block.m_gqr_modified[gqr] && !GQR(PowerPC::ppcState, gqr))
     {
       LDR(IndexType::Unsigned, ARM64Reg::W0, PPC_REG, PPCSTATE_OFF_SPR(SPR_GQR0 + gqr));
       FixupBranch no_fail = CBZ(ARM64Reg::W0);
@@ -965,6 +969,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       ABI_PushRegisters(regs_in_use);
       m_float_emit.ABI_PushRegisters(fprs_in_use, ARM64Reg::X30);
       MOVP2R(ARM64Reg::X8, &GPFifo::FastCheckGatherPipe);
+      MOVP2R(ARM64Reg::X0, &Core::System::GetInstance().GetGPFifo());
       BLR(ARM64Reg::X8);
       m_float_emit.ABI_PopRegisters(fprs_in_use, ARM64Reg::X30);
       ABI_PopRegisters(regs_in_use);
@@ -979,8 +984,9 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       SetJumpTarget(exception);
       LDR(IndexType::Unsigned, ARM64Reg::W30, PPC_REG, PPCSTATE_OFF(msr));
       TBZ(ARM64Reg::W30, 15, done_here);  // MSR.EE
+      auto& system = Core::System::GetInstance();
       LDR(IndexType::Unsigned, ARM64Reg::W30, ARM64Reg::X30,
-          MOVPage2R(ARM64Reg::X30, &ProcessorInterface::m_InterruptCause));
+          MOVPage2R(ARM64Reg::X30, &system.GetProcessorInterface().m_interrupt_cause));
       constexpr u32 cause_mask = ProcessorInterface::INT_CAUSE_CP |
                                  ProcessorInterface::INT_CAUSE_PE_TOKEN |
                                  ProcessorInterface::INT_CAUSE_PE_FINISH;
@@ -1015,7 +1021,9 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       SetJumpTarget(exception);
       LDR(IndexType::Unsigned, WA, PPC_REG, PPCSTATE_OFF(msr));
       TBZ(WA, 15, done_here);  // MSR.EE
-      LDR(IndexType::Unsigned, WA, XA, MOVPage2R(XA, &ProcessorInterface::m_InterruptCause));
+      auto& system = Core::System::GetInstance();
+      LDR(IndexType::Unsigned, WA, XA,
+          MOVPage2R(XA, &system.GetProcessorInterface().m_interrupt_cause));
       constexpr u32 cause_mask = ProcessorInterface::INT_CAUSE_CP |
                                  ProcessorInterface::INT_CAUSE_PE_TOKEN |
                                  ProcessorInterface::INT_CAUSE_PE_FINISH;

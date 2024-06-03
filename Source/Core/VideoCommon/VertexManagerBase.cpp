@@ -104,6 +104,7 @@ VertexManagerBase::~VertexManagerBase() = default;
 bool VertexManagerBase::Initialize()
 {
   m_index_generator.Init();
+  m_cpu_cull.Init();
   return true;
 }
 
@@ -115,6 +116,13 @@ u32 VertexManagerBase::GetRemainingSize() const
 void VertexManagerBase::AddIndices(OpcodeDecoder::Primitive primitive, u32 num_vertices)
 {
   m_index_generator.AddIndices(primitive, num_vertices);
+}
+
+bool VertexManagerBase::AreAllVerticesCulled(VertexLoaderBase* loader,
+                                             OpcodeDecoder::Primitive primitive, const u8* src,
+                                             u32 count)
+{
+  return m_cpu_cull.AreAllVerticesCulled(loader, primitive, src, count);
 }
 
 DataReader VertexManagerBase::PrepareForAdditionalData(OpcodeDecoder::Primitive primitive,
@@ -140,26 +148,11 @@ DataReader VertexManagerBase::PrepareForAdditionalData(OpcodeDecoder::Primitive 
   }
 
   // Check for size in buffer, if the buffer gets full, call Flush()
-  if (!m_is_flushed &&
-      (count > m_index_generator.GetRemainingIndices(primitive) ||
-       count > GetRemainingIndices(primitive) || needed_vertex_bytes > GetRemainingSize()))
+  if (!m_is_flushed && (count > m_index_generator.GetRemainingIndices(primitive) ||
+                        count > GetRemainingIndices(primitive) ||
+                        needed_vertex_bytes > GetRemainingSize())) [[unlikely]]
   {
     Flush();
-
-    if (count > m_index_generator.GetRemainingIndices(primitive))
-    {
-      ERROR_LOG_FMT(VIDEO, "Too little remaining index values. Use 32-bit or reset them on flush.");
-    }
-    if (count > GetRemainingIndices(primitive))
-    {
-      ERROR_LOG_FMT(VIDEO, "VertexManager: Buffer not large enough for all indices! "
-                           "Increase MAXIBUFFERSIZE or we need primitive breaking after all.");
-    }
-    if (needed_vertex_bytes > GetRemainingSize())
-    {
-      ERROR_LOG_FMT(VIDEO, "VertexManager: Buffer not large enough for all vertices! "
-                           "Increase MAXVBUFFERSIZE or we need primitive breaking after all.");
-    }
   }
 
   m_cull_all = cullall;
@@ -182,6 +175,33 @@ DataReader VertexManagerBase::PrepareForAdditionalData(OpcodeDecoder::Primitive 
     m_is_flushed = false;
   }
 
+  // Now that we've reset the buffer, there should be enough space. It's possible that we still
+  // won't have enough space in a few rare cases, such as vertex shader line/point expansion with a
+  // ton of lines in one draw command, in which case we will either need to add support for
+  // splitting a single draw command into multiple draws or using bigger indices.
+  ASSERT_MSG(VIDEO, count <= m_index_generator.GetRemainingIndices(primitive),
+             "VertexManager: Too few remaining index values ({} > {}). "
+             "32-bit indices or primitive breaking needed.",
+             count, m_index_generator.GetRemainingIndices(primitive));
+  ASSERT_MSG(VIDEO, count <= GetRemainingIndices(primitive),
+             "VertexManager: Buffer not large enough for all indices! ({} > {}) "
+             "Increase MAXIBUFFERSIZE or we need primitive breaking after all.",
+             count, GetRemainingIndices(primitive));
+  ASSERT_MSG(VIDEO, needed_vertex_bytes <= GetRemainingSize(),
+             "VertexManager: Buffer not large enough for all vertices! ({} > {}) "
+             "Increase MAXVBUFFERSIZE or we need primitive breaking after all.",
+             needed_vertex_bytes, GetRemainingSize());
+
+  return DataReader(m_cur_buffer_pointer, m_end_buffer_pointer);
+}
+
+DataReader VertexManagerBase::DisableCullAll(u32 stride)
+{
+  if (m_cull_all)
+  {
+    m_cull_all = false;
+    ResetBuffer(stride);
+  }
   return DataReader(m_cur_buffer_pointer, m_end_buffer_pointer);
 }
 
@@ -546,6 +566,8 @@ void VertexManagerBase::Flush()
     // Now the vertices can be flushed to the GPU. Everything following the CommitBuffer() call
     // must be careful to not upload any utility vertices, as the binding will be lost otherwise.
     const u32 num_indices = m_index_generator.GetIndexLen();
+    if (num_indices == 0)
+      return;
     u32 base_vertex, base_index;
     CommitBuffer(m_index_generator.GetNumVerts(),
                  VertexLoaderManager::GetCurrentVertexFormat()->GetVertexStride(), num_indices,

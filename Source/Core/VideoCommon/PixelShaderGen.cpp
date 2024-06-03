@@ -615,6 +615,7 @@ uint WrapCoord(int coord, uint wrap, int size) {{
   int3 size = textureSize(tex, 0);
   int size_s = size.x;
   int size_t = size.y;
+  int num_layers = size.z;
 )");
       if (g_ActiveConfig.backend_info.bSupportsTextureQueryLevels)
       {
@@ -633,6 +634,8 @@ uint WrapCoord(int coord, uint wrap, int size) {{
   // Rescale uv to account for the new texture size
   uv.x = (uv.x * size_s) / native_size_s;
   uv.y = (uv.y * size_t) / native_size_t;
+  // Clamp layer as well (texture() automatically clamps, but texelFetch() doesn't)
+  layer = clamp(layer, 0, num_layers - 1);
 )");
     }
     else
@@ -741,6 +744,7 @@ static void WriteAlphaTest(ShaderCode& out, const pixel_shader_uid_data* uid_dat
                            bool per_pixel_depth, bool use_dual_source);
 static void WriteFog(ShaderCode& out, const pixel_shader_uid_data* uid_data);
 static void WriteLogicOp(ShaderCode& out, const pixel_shader_uid_data* uid_data);
+static void WriteLogicOpBlend(ShaderCode& out, const pixel_shader_uid_data* uid_data);
 static void WriteColor(ShaderCode& out, APIType api_type, const pixel_shader_uid_data* uid_data,
                        bool use_dual_source);
 static void WriteBlend(ShaderCode& out, const pixel_shader_uid_data* uid_data);
@@ -1145,6 +1149,8 @@ ShaderCode GeneratePixelShaderCode(APIType api_type, const ShaderHostConfig& hos
 
   if (uid_data->logic_op_enable)
     WriteLogicOp(out, uid_data);
+  else if (uid_data->emulate_logic_op_with_blend)
+    WriteLogicOpBlend(out, uid_data);
 
   // Write the color and alpha values to the framebuffer
   // If using shader blend, we still use the separate alpha
@@ -1798,6 +1804,29 @@ static void WriteLogicOp(ShaderCode& out, const pixel_shader_uid_data* uid_data)
 
   out.Write("\tint4 fb_value = iround(initial_ocol0 * 255.0);\n");
   out.Write("\tprev = ({}) & 0xff;\n", logic_op_mode[uid_data->logic_op_mode]);
+}
+
+static void WriteLogicOpBlend(ShaderCode& out, const pixel_shader_uid_data* uid_data)
+{
+  switch (static_cast<LogicOp>(uid_data->logic_op_mode))
+  {
+  case LogicOp::Clear:
+  case LogicOp::NoOp:
+    out.Write("\tprev = int4(0, 0, 0, 0);\n");
+    break;
+  case LogicOp::Copy:
+    // Do nothing!
+    break;
+  case LogicOp::CopyInverted:
+    out.Write("\tprev ^= 255;\n");
+    break;
+  case LogicOp::Set:
+  case LogicOp::Invert:  // In cooperation with blend
+    out.Write("\tprev = int4(255, 255, 255, 255);\n");
+    break;
+  default:
+    break;
+  }
 }
 
 static void WriteColor(ShaderCode& out, APIType api_type, const pixel_shader_uid_data* uid_data,

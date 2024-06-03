@@ -13,6 +13,8 @@
 #include "Common/Config/Config.h"
 #include "Common/Logging/Log.h"
 
+#include "VideoCommon/PerformanceMetrics.h"
+
 #include "Core/Config/GraphicsSettings.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/Config/SYSCONFSettings.h"
@@ -424,17 +426,18 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
 
 void UpdateInterrupts()
 {
-  auto& state = Core::System::GetInstance().GetVideoInterfaceState().GetData();
+  auto& system = Core::System::GetInstance();
+  auto& state = system.GetVideoInterfaceState().GetData();
   if ((state.interrupt_register[0].IR_INT && state.interrupt_register[0].IR_MASK) ||
       (state.interrupt_register[1].IR_INT && state.interrupt_register[1].IR_MASK) ||
       (state.interrupt_register[2].IR_INT && state.interrupt_register[2].IR_MASK) ||
       (state.interrupt_register[3].IR_INT && state.interrupt_register[3].IR_MASK))
   {
-    ProcessorInterface::SetInterrupt(ProcessorInterface::INT_CAUSE_VI, true);
+    system.GetProcessorInterface().SetInterrupt(ProcessorInterface::INT_CAUSE_VI, true);
   }
   else
   {
-    ProcessorInterface::SetInterrupt(ProcessorInterface::INT_CAUSE_VI, false);
+    system.GetProcessorInterface().SetInterrupt(ProcessorInterface::INT_CAUSE_VI, false);
   }
 }
 
@@ -871,7 +874,7 @@ static void EndField(FieldType field, u64 ticks)
   if (!Config::Get(Config::GFX_HACK_EARLY_XFB_OUTPUT))
     OutputField(field, ticks);
 
-  Core::VideoThrottle();
+  g_perf_metrics.CountVBlank();
   Core::OnFrameEnd();
 }
 
@@ -950,6 +953,10 @@ void Update(u64 ticks)
   {
     state.ticks_last_line_start = system.GetCoreTiming().GetTicks();
   }
+
+  // TODO: Findout why skipping interrupts acts as a frameskip
+  if (system.GetCoreTiming().GetVISkip())
+    return;
 
   // Check if we need to assert IR_INT. Note that the granularity of our current horizontal
   // position is limited to half-lines.

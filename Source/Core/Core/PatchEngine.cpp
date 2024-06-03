@@ -11,13 +11,16 @@
 #include <array>
 #include <iterator>
 #include <map>
+#include <mutex>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
 #include <fmt/format.h>
 
 #include "Common/Assert.h"
+#include "Common/Debug/MemoryPatches.h"
 #include "Common/IniFile.h"
 #include "Common/StringUtil.h"
 
@@ -25,10 +28,12 @@
 #include "Core/CheatCodes.h"
 #include "Core/Config/SessionSettings.h"
 #include "Core/ConfigManager.h"
+#include "Core/Debugger/PPCDebugInterface.h"
 #include "Core/GeckoCode.h"
 #include "Core/GeckoCodeConfig.h"
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
+#include "Core/System.h"
 
 namespace PatchEngine
 {
@@ -39,6 +44,8 @@ constexpr std::array<const char*, 3> s_patch_type_strings{{
 }};
 
 static std::vector<Patch> s_on_frame;
+static std::vector<std::size_t> s_on_frame_memory;
+static std::mutex s_on_frame_memory_mutex;
 static std::map<u32, int> s_speed_hacks;
 
 const char* PatchTypeAsString(PatchType type)
@@ -257,15 +264,27 @@ static void ApplyPatches(const std::vector<Patch>& patches)
   }
 }
 
+static void ApplyMemoryPatches(std::span<const std::size_t> memory_patch_indices)
+{
+  std::lock_guard lock(s_on_frame_memory_mutex);
+  for (std::size_t index : memory_patch_indices)
+  {
+    PowerPC::debug_interface.ApplyExistingPatch(index);
+  }
+}
+
 // Requires MSR.DR, MSR.IR
 // There's no perfect way to do this, it's just a heuristic.
 // We require at least 2 stack frames, if the stack is shallower than that then it won't work.
 static bool IsStackSane()
 {
-  DEBUG_ASSERT(MSR.DR && MSR.IR);
+  auto& system = Core::System::GetInstance();
+  auto& ppc_state = system.GetPPCState();
+
+  DEBUG_ASSERT(ppc_state.msr.DR && ppc_state.msr.IR);
 
   // Check the stack pointer
-  u32 SP = GPR(1);
+  u32 SP = ppc_state.gpr[1];
   if (!PowerPC::HostIsRAMAddress(SP))
     return false;
 
@@ -281,22 +300,39 @@ static bool IsStackSane()
          0 != PowerPC::HostRead_Instruction(address);
 }
 
+void AddMemoryPatch(std::size_t index)
+{
+  std::lock_guard lock(s_on_frame_memory_mutex);
+  s_on_frame_memory.push_back(index);
+}
+
+void RemoveMemoryPatch(std::size_t index)
+{
+  std::lock_guard lock(s_on_frame_memory_mutex);
+  s_on_frame_memory.erase(std::remove(s_on_frame_memory.begin(), s_on_frame_memory.end(), index),
+                          s_on_frame_memory.end());
+}
+
 bool ApplyFramePatches()
 {
+  auto& system = Core::System::GetInstance();
+  auto& ppc_state = system.GetPPCState();
+
   // Because we're using the VI Interrupt to time this instead of patching the game with a
   // callback hook we can end up catching the game in an exception vector.
   // We deal with this by returning false so that SystemTimers will reschedule us in a few cycles
   // where we can try again after the CPU hopefully returns back to the normal instruction flow.
-  if (!MSR.DR || !MSR.IR || !IsStackSane())
+  if (!ppc_state.msr.DR || !ppc_state.msr.IR || !IsStackSane())
   {
     DEBUG_LOG_FMT(ACTIONREPLAY,
                   "Need to retry later. CPU configuration is currently incorrect. PC = {:#010x}, "
                   "MSR = {:#010x}",
-                  PC, MSR.Hex);
+                  ppc_state.pc, ppc_state.msr.Hex);
     return false;
   }
 
   ApplyPatches(s_on_frame);
+  ApplyMemoryPatches(s_on_frame_memory);
 
   // Run the Gecko code handler
   Gecko::RunCodeHandler();

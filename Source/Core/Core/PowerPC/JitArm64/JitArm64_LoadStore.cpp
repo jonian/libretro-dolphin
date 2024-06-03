@@ -635,6 +635,8 @@ void JitArm64::stmw(UGeckoInstruction inst)
 
 void JitArm64::dcbx(UGeckoInstruction inst)
 {
+  FALLBACK_IF(m_accurate_cpu_cache_enabled);
+
   INSTRUCTION_START
   JITDISABLE(bJITLoadStoreOff);
 
@@ -729,7 +731,7 @@ void JitArm64::dcbx(UGeckoInstruction inst)
   // Translate effective address to physical address.
   const u8* loop_start = GetCodePtr();
   FixupBranch bat_lookup_failed;
-  if (MSR.IR)
+  if (PowerPC::ppcState.msr.IR)
   {
     bat_lookup_failed =
         BATAddressLookup(physical_addr, effective_addr, WA, PowerPC::ibat_table.data());
@@ -758,7 +760,7 @@ void JitArm64::dcbx(UGeckoInstruction inst)
 
   SwitchToFarCode();
   SetJumpTarget(invalidate_needed);
-  if (MSR.IR)
+  if (PowerPC::ppcState.msr.IR)
     SetJumpTarget(bat_lookup_failed);
 
   BitSet32 gprs_to_push = gpr.GetCallerSavedUsed();

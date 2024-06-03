@@ -14,9 +14,13 @@ if (POLICY CMP0117)
   cmake_policy(SET CMP0117 NEW) # MSVC RTTI flag will not be added by default.
 endif()
 
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW) # MSVC debug information format flags are selected by an abstraction.
+endif()
+
 # Minimum OS X version.
 # This is inserted into the Info.plist as well.
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14.0" CACHE STRING "")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15.0" CACHE STRING "")
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "CMake/FlagsOverride.cmake")
 
@@ -133,6 +137,7 @@ include(CheckCCompilerFlag)
 include(CheckVendoringApproved)
 include(DolphinCompileDefinitions)
 include(DolphinDisableWarningsMSVC)
+include(DolphinLibraryTools)
 include(RemoveCompileFlag)
 
 # Enable folders for IDE
@@ -324,23 +329,13 @@ if(MSVC)
   add_compile_options(/Oi)
   # Enable buffer security check on Debug, disable otherwise
   add_compile_options($<IF:$<CONFIG:Debug>,/GS,/GS->)
-  # Enforce C++ standard conforming conversion rules to catch possible bugs
-  add_compile_options(/permissive-)
   # Remove unreferenced inline functions/data to reduce link time and catch bugs
+  # Note: In msbuild build, this gets set by msbuild by default
   add_compile_options(/Zc:inline)
-  # Assume `new` (w/o std::nothrow) throws to reduce binary size
-  add_compile_options(/Zc:throwingNew)
+  # Fix various other non-conformant behaviors
+  add_compile_options(/Zc:__cplusplus,enumTypes,externConstexpr,preprocessor,throwingNew)
   # Enforce strict volatile semantics as per ISO C++
   add_compile_options(/volatile:iso)
-  # Fix non-conformant lambda behavior (constexpr variables shouldn't need capturing)
-  add_compile_options(/experimental:newLambdaProcessor)
-  # Fix various other non-conformant behaviors
-  add_compile_options(/Zc:__cplusplus,externConstexpr,lambda,preprocessor)
-
-  # Temporarily disable warnings to enable /Zc:preprocessor compatibility with WinSDK headers.
-  add_compile_options(
-    /wd5105 # macro expansion producing 'defined' has undefined behavior
-  )
 
   # Use 'precise' floating point model
   add_compile_options(/fp:precise)
@@ -784,36 +779,29 @@ endif()
 
 # macOS ships with liblzma.dylib but no headers, so check for the headers too
 find_package(LibLZMA)
-check_include_file(lzma.h HAVE_LZMA_H)
-if(LIBLZMA_FOUND AND HAVE_LZMA_H)
+if(LIBLZMA_FOUND)
+  # Imported target added in CMake 3.14
+  dolphin_make_imported_target_if_missing(LibLZMA::LibLZMA LIBLZMA)
   message(STATUS "Using shared lzma")
 else()
   check_vendoring_approved(lzma)
-  if(LIBLZMA_FOUND AND NOT HAVE_LZMA_H)
-    message(STATUS "Shared lzma found but lacks headers, falling back to the static library")
-  else()
-    message(STATUS "Shared lzma not found, falling back to the static library")
-  endif()
+  message(STATUS "Shared lzma not found, falling back to the static library")
   add_subdirectory(Externals/liblzma)
 endif()
 
-pkg_check_modules(ZSTD QUIET libzstd>=1.4.0)
-check_include_file(zstd.h HAVE_ZSTD_H)
-if(ZSTD_FOUND AND HAVE_ZSTD_H)
+pkg_check_modules(ZSTD QUIET libzstd>=1.4.0 IMPORTED_TARGET)
+if(ZSTD_FOUND)
   message(STATUS "Using shared zstd version: " ${ZSTD_VERSION})
+  dolphin_alias_library(zstd::zstd PkgConfig::ZSTD)
 else()
   check_vendoring_approved(zstd)
-  if(ZSTD_FOUND AND NOT HAVE_ZSTD_H)
-    message(STATUS "Shared zstd found but lacks headers, falling back to the static library")
-  else()
-    message(STATUS "Shared zstd not found, falling back to the static library")
-  endif()
+  message(STATUS "Shared zstd not found, falling back to the static library")
   add_subdirectory(Externals/zstd)
 endif()
 
 add_subdirectory(Externals/zlib-ng)
 
-pkg_check_modules(MINIZIP minizip-ng>=3.0.0)
+pkg_check_modules(MINIZIP minizip>=3.0.0)
 if(MINIZIP_FOUND)
   message(STATUS "Using shared minizip")
   include_directories(${MINIZIP_INCLUDE_DIRS})
@@ -968,8 +956,11 @@ if(NOT ENABLE_QT)
   set(USE_MGBA 0)
 endif()
 if(USE_MGBA)
-  message(STATUS "Using static libmgba from Externals")
-  add_subdirectory(Externals/mGBA)
+  find_package(LIBMGBA)
+  if(NOT LIBMGBA_FOUND)
+    message(STATUS "Using static libmgba from Externals")
+    add_subdirectory(Externals/mGBA)
+  endif()
 endif()
 
 find_package(SYSTEMD)

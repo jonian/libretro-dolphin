@@ -229,6 +229,8 @@ void Jit64::lXXx(UGeckoInstruction inst)
 
 void Jit64::dcbx(UGeckoInstruction inst)
 {
+  FALLBACK_IF(m_accurate_cpu_cache_enabled);
+
   INSTRUCTION_START
   JITDISABLE(bJITLoadStoreOff);
 
@@ -318,7 +320,7 @@ void Jit64::dcbx(UGeckoInstruction inst)
   FixupBranch bat_lookup_failed;
   MOV(32, R(effective_address), R(addr));
   const u8* loop_start = GetCodePtr();
-  if (MSR.IR)
+  if (PowerPC::ppcState.msr.IR)
   {
     // Translate effective address to physical address.
     bat_lookup_failed = BATAddressLookup(addr, tmp, PowerPC::ibat_table.data());
@@ -347,7 +349,7 @@ void Jit64::dcbx(UGeckoInstruction inst)
 
   SwitchToFarCode();
   SetJumpTarget(invalidate_needed);
-  if (MSR.IR)
+  if (PowerPC::ppcState.msr.IR)
     SetJumpTarget(bat_lookup_failed);
 
   BitSet32 registersInUse = CallerSavedRegistersInUse();
@@ -420,7 +422,7 @@ void Jit64::dcbz(UGeckoInstruction inst)
     end_dcbz_hack = J_CC(CC_L);
   }
 
-  bool emit_fast_path = MSR.DR && m_jit.jo.fastmem_arena;
+  bool emit_fast_path = PowerPC::ppcState.msr.DR && m_jit.jo.fastmem_arena;
 
   if (emit_fast_path)
   {
@@ -444,7 +446,7 @@ void Jit64::dcbz(UGeckoInstruction inst)
   MOV(32, PPCSTATE(pc), Imm32(js.compilerPC));
   BitSet32 registersInUse = CallerSavedRegistersInUse();
   ABI_PushRegistersAndAdjustStack(registersInUse, 0);
-  ABI_CallFunctionR(PowerPC::ClearCacheLine, RSCRATCH);
+  ABI_CallFunctionR(PowerPC::ClearDCacheLine, RSCRATCH);
   ABI_PopRegistersAndAdjustStack(registersInUse, 0);
 
   if (emit_fast_path)

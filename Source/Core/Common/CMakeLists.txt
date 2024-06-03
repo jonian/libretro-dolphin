@@ -6,8 +6,6 @@ add_library(common
   BitSet.h
   BitUtils.h
   BlockingLoop.h
-  CDUtils.cpp
-  CDUtils.h
   ChunkFile.h
   CodeBlock.h
   ColorUtil.cpp
@@ -273,6 +271,7 @@ if(WIN32)
   target_sources(common PRIVATE
     GL/GLInterface/WGL.cpp
     GL/GLInterface/WGL.h
+    WindowsRegistry.cpp
   )
   if(MSVC)
     target_sources(common PRIVATE
