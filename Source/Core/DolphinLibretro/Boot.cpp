@@ -11,6 +11,7 @@
 #include "Core/Config/SYSCONFSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/Core.h"
+#include "Core/System.h"
 #include "Core/HW/DVD/DVDInterface.h"
 #include "Core/HW/VideoInterface.h"
 #include "Core/PowerPC/PowerPC.h"
@@ -269,9 +270,11 @@ static bool retro_set_eject_state(bool ejected)
 
   if (!ejected)
   {
-    if (disk_index >= 0 && disk_index < (int)disk_paths.size())
+    if (disk_index < disk_paths.size())
     {
-      Core::RunAsCPUThread([] { DVDInterface::ChangeDisc(NormalizePath(disk_paths[disk_index])); });
+      Core::RunAsCPUThread([] {
+        Core::System::GetInstance().GetDVDInterface().ChangeDisc(NormalizePath(disk_paths[disk_index]));
+      });
     }
   }
 
