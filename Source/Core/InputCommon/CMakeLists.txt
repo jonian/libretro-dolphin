@@ -113,11 +113,6 @@ if(WIN32)
   endif()
 elseif(APPLE)
   target_sources(inputcommon PRIVATE
-    ControllerInterface/OSX/OSX.h
-    ControllerInterface/OSX/OSX.mm
-    ControllerInterface/OSX/OSXJoystick.h
-    ControllerInterface/OSX/OSXJoystick.mm
-    ControllerInterface/OSX/RunLoopStopper.h
     ControllerInterface/Quartz/Quartz.h
     ControllerInterface/Quartz/Quartz.mm
     ControllerInterface/Quartz/QuartzKeyboardAndMouse.h
@@ -130,7 +125,6 @@ elseif(APPLE)
     ${CARBON_LIBRARY}
     ${COCOA_LIBRARY}
     ${FORCEFEEDBACK_LIBRARY}
-    ${IOK_LIBRARY}
   )
   target_compile_options(inputcommon PRIVATE
     -fobjc-arc
@@ -197,4 +191,14 @@ endif()
 if(MSVC)
   # Add precompiled header
   target_link_libraries(inputcommon PRIVATE use_pch)
+endif()
+
+if(TARGET Hidapi::Hidapi)
+  target_sources(inputcommon
+  PRIVATE
+    ControllerInterface/SteamDeck/SteamDeck.cpp
+    ControllerInterface/SteamDeck/SteamDeck.h
+  )
+  target_link_libraries(inputcommon PUBLIC Hidapi::Hidapi)
+  target_compile_definitions(inputcommon PRIVATE -DHAVE_HIDAPI=1)
 endif()
