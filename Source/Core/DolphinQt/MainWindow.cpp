@@ -14,6 +14,7 @@
 #include <QIcon>
 #include <QMimeData>
 #include <QStackedWidget>
+#include <QStyleHints>
 #include <QVBoxLayout>
 #include <QWindow>
 
@@ -37,6 +38,7 @@
 #include "Common/Version.h"
 #include "Common/WindowSystemInfo.h"
 
+#include "Core/AchievementManager.h"
 #include "Core/Boot/Boot.h"
 #include "Core/BootManager.h"
 #include "Core/CommonTitles.h"
@@ -93,6 +95,7 @@
 #include "DolphinQt/GameList/GameList.h"
 #include "DolphinQt/Host.h"
 #include "DolphinQt/HotkeyScheduler.h"
+#include "DolphinQt/InfinityBase/InfinityBaseWindow.h"
 #include "DolphinQt/MenuBar.h"
 #include "DolphinQt/NKitWarningDialog.h"
 #include "DolphinQt/NetPlay/NetPlayBrowser.h"
@@ -222,6 +225,11 @@ MainWindow::MainWindow(std::unique_ptr<BootParameters> boot_parameters,
 
   InitControllers();
 
+#ifdef USE_RETRO_ACHIEVEMENTS
+  // This has to be done before CreateComponents() so it's initialized.
+  AchievementManager::GetInstance()->Init();
+#endif  // USE_RETRO_ACHIEVEMENTS
+
   CreateComponents();
 
   ConnectGameList();
@@ -231,6 +239,13 @@ MainWindow::MainWindow(std::unique_ptr<BootParameters> boot_parameters,
   ConnectStack();
   ConnectMenuBar();
   ConnectHotkeys();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, this,
+          [](Qt::ColorScheme colorScheme) {
+            Settings::Instance().SetCurrentUserStyle(Settings::Instance().GetCurrentUserStyle());
+          });
+#endif
 
   connect(m_cheats_manager, &CheatsManager::OpenGeneralSettings, this,
           &MainWindow::ShowGeneralWindow);
@@ -300,6 +315,10 @@ MainWindow::~MainWindow()
   // Shut down NetPlay first to avoid race condition segfault
   Settings::Instance().ResetNetPlayClient();
   Settings::Instance().ResetNetPlayServer();
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+  AchievementManager::GetInstance()->Shutdown();
+#endif  // USE_RETRO_ACHIEVEMENTS
 
   delete m_render_widget;
   delete m_netplay_dialog;
@@ -522,6 +541,7 @@ void MainWindow::ConnectMenuBar()
   connect(m_menu_bar, &MenuBar::BrowseNetPlay, this, &MainWindow::ShowNetPlayBrowser);
   connect(m_menu_bar, &MenuBar::ShowFIFOPlayer, this, &MainWindow::ShowFIFOPlayer);
   connect(m_menu_bar, &MenuBar::ShowSkylanderPortal, this, &MainWindow::ShowSkylanderPortal);
+  connect(m_menu_bar, &MenuBar::ShowInfinityBase, this, &MainWindow::ShowInfinityBase);
   connect(m_menu_bar, &MenuBar::ConnectWiiRemote, this, &MainWindow::OnConnectWiiRemote);
 
   // Movie
@@ -1264,10 +1284,8 @@ void MainWindow::ShowGraphicsWindow()
               "display", windowHandle())),
           winId());
     }
-    m_graphics_window = new GraphicsWindow(m_xrr_config.get(), this);
-#else
-    m_graphics_window = new GraphicsWindow(nullptr, this);
 #endif
+    m_graphics_window = new GraphicsWindow(this);
     InstallHotkeyFilter(m_graphics_window);
   }
 
@@ -1309,12 +1327,24 @@ void MainWindow::ShowSkylanderPortal()
 {
   if (!m_skylander_window)
   {
-    m_skylander_window = new SkylanderPortalWindow;
+    m_skylander_window = new SkylanderPortalWindow();
   }
 
   m_skylander_window->show();
   m_skylander_window->raise();
   m_skylander_window->activateWindow();
+}
+
+void MainWindow::ShowInfinityBase()
+{
+  if (!m_infinity_window)
+  {
+    m_infinity_window = new InfinityBaseWindow();
+  }
+
+  m_infinity_window->show();
+  m_infinity_window->raise();
+  m_infinity_window->activateWindow();
 }
 
 void MainWindow::StateLoad()

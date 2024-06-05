@@ -105,7 +105,7 @@ struct TransferCommand
   Request ios_request;
   u32 data_address = 0;
 
-  TransferCommand(Kernel& ios, const Request& ios_request_, u32 data_address_)
+  TransferCommand(EmulationKernel& ios, const Request& ios_request_, u32 data_address_)
       : ios_request(ios_request_), data_address(data_address_), m_ios(ios)
   {
   }
@@ -117,8 +117,8 @@ struct TransferCommand
   std::unique_ptr<u8[]> MakeBuffer(size_t size) const;
   void FillBuffer(const u8* src, size_t size) const;
 
-private:
-  Kernel& m_ios;
+protected:
+  EmulationKernel& m_ios;
 };
 
 struct CtrlMessage : TransferCommand

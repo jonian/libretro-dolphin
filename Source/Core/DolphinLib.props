@@ -36,13 +36,12 @@
     <ClInclude Include="Common\Crypto\bn.h" />
     <ClInclude Include="Common\Crypto\ec.h" />
     <ClInclude Include="Common\Crypto\SHA1.h" />
-    <ClInclude Include="Common\Debug\CodeTrace.h" />
     <ClInclude Include="Common\Debug\MemoryPatches.h" />
     <ClInclude Include="Common\Debug\Threads.h" />
     <ClInclude Include="Common\Debug\Watches.h" />
     <ClInclude Include="Common\DebugInterface.h" />
     <ClInclude Include="Common\DynamicLibrary.h" />
-    <ClInclude Include="Common\ENetUtil.h" />
+    <ClInclude Include="Common\ENet.h" />
     <ClInclude Include="Common\EnumFormatter.h" />
     <ClInclude Include="Common\EnumMap.h" />
     <ClInclude Include="Common\Event.h" />
@@ -161,6 +160,7 @@
     <ClInclude Include="Common\WindowsRegistry.h" />
     <ClInclude Include="Common\WindowSystemInfo.h" />
     <ClInclude Include="Common\WorkQueueThread.h" />
+    <ClInclude Include="Core\AchievementManager.h" />
     <ClInclude Include="Core\ActionReplay.h" />
     <ClInclude Include="Core\ARDecrypt.h" />
     <ClInclude Include="Core\Boot\Boot.h" />
@@ -172,6 +172,7 @@
     <ClInclude Include="Core\CheatGeneration.h" />
     <ClInclude Include="Core\CheatSearch.h" />
     <ClInclude Include="Core\CommonTitles.h" />
+    <ClInclude Include="Core\Config\AchievementSettings.h" />
     <ClInclude Include="Core\Config\DefaultLocale.h" />
     <ClInclude Include="Core\Config\FreeLookSettings.h" />
     <ClInclude Include="Core\Config\GraphicsSettings.h" />
@@ -189,6 +190,7 @@
     <ClInclude Include="Core\ConfigManager.h" />
     <ClInclude Include="Core\Core.h" />
     <ClInclude Include="Core\CoreTiming.h" />
+    <ClInclude Include="Core\Debugger\CodeTrace.h" />
     <ClInclude Include="Core\Debugger\Debugger_SymbolMap.h" />
     <ClInclude Include="Core\Debugger\Dump.h" />
     <ClInclude Include="Core\Debugger\GCELF.h" />
@@ -375,6 +377,7 @@
     <ClInclude Include="Core\IOS\USB\Bluetooth\WiimoteDevice.h" />
     <ClInclude Include="Core\IOS\USB\Bluetooth\WiimoteHIDAttr.h" />
     <ClInclude Include="Core\IOS\USB\Common.h" />
+    <ClInclude Include="Core\IOS\USB\Emulated\Infinity.h" />
     <ClInclude Include="Core\IOS\USB\Emulated\Skylander.h" />
     <ClInclude Include="Core\IOS\USB\Host.h" />
     <ClInclude Include="Core\IOS\USB\LibusbDevice.h" />
@@ -747,11 +750,10 @@
     <ClCompile Include="Common\Crypto\bn.cpp" />
     <ClCompile Include="Common\Crypto\ec.cpp" />
     <ClCompile Include="Common\Crypto\SHA1.cpp" />
-    <ClCompile Include="Common\Debug\CodeTrace.cpp" />
     <ClCompile Include="Common\Debug\MemoryPatches.cpp" />
     <ClCompile Include="Common\Debug\Watches.cpp" />
     <ClCompile Include="Common\DynamicLibrary.cpp" />
-    <ClCompile Include="Common\ENetUtil.cpp" />
+    <ClCompile Include="Common\ENet.cpp" />
     <ClCompile Include="Common\FatFsUtil.cpp" />
     <ClCompile Include="Common\FileSearch.cpp" />
     <ClCompile Include="Common\FileUtil.cpp" />
@@ -771,7 +773,6 @@
     <ClCompile Include="Common\LdrWatcher.cpp" />
     <ClCompile Include="Common\Logging\ConsoleListenerWin.cpp" />
     <ClCompile Include="Common\Logging\LogManager.cpp" />
-    <ClCompile Include="Common\MathUtil.cpp" />
     <ClCompile Include="Common\Matrix.cpp" />
     <ClCompile Include="Common\MemArenaWin.cpp" />
     <ClCompile Include="Common\MemoryUtil.cpp" />
@@ -795,6 +796,7 @@
     <ClCompile Include="Common\UPnP.cpp" />
     <ClCompile Include="Common\WindowsRegistry.cpp" />
     <ClCompile Include="Common\Version.cpp" />
+    <ClCompile Include="Core\AchievementManager.cpp" />
     <ClCompile Include="Core\ActionReplay.cpp" />
     <ClCompile Include="Core\ARDecrypt.cpp" />
     <ClCompile Include="Core\Boot\Boot_BS2Emu.cpp" />
@@ -805,6 +807,7 @@
     <ClCompile Include="Core\BootManager.cpp" />
     <ClCompile Include="Core\CheatGeneration.cpp" />
     <ClCompile Include="Core\CheatSearch.cpp" />
+    <ClCompile Include="Core\Config\AchievementSettings.cpp" />
     <ClCompile Include="Core\Config\DefaultLocale.cpp" />
     <ClCompile Include="Core\Config\FreeLookSettings.cpp" />
     <ClCompile Include="Core\Config\GraphicsSettings.cpp" />
@@ -822,6 +825,7 @@
     <ClCompile Include="Core\ConfigManager.cpp" />
     <ClCompile Include="Core\Core.cpp" />
     <ClCompile Include="Core\CoreTiming.cpp" />
+    <ClCompile Include="Core\Debugger\CodeTrace.cpp" />
     <ClCompile Include="Core\Debugger\Debugger_SymbolMap.cpp" />
     <ClCompile Include="Core\Debugger\Dump.cpp" />
     <ClCompile Include="Core\Debugger\OSThread.cpp" />
@@ -1002,6 +1006,7 @@
     <ClCompile Include="Core\IOS\USB\Bluetooth\WiimoteDevice.cpp" />
     <ClCompile Include="Core\IOS\USB\Bluetooth\WiimoteHIDAttr.cpp" />
     <ClCompile Include="Core\IOS\USB\Common.cpp" />
+    <ClCompile Include="Core\IOS\USB\Emulated\Infinity.cpp" />
     <ClCompile Include="Core\IOS\USB\Emulated\Skylander.cpp" />
     <ClCompile Include="Core\IOS\USB\Host.cpp" />
     <ClCompile Include="Core\IOS\USB\LibusbDevice.cpp" />
