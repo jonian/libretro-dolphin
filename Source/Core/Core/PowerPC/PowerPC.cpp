@@ -40,7 +40,6 @@ PowerPCState ppcState;
 
 static CPUCoreBase* s_cpu_core_base = nullptr;
 static bool s_cpu_core_base_is_injected = false;
-Interpreter* const s_interpreter = Interpreter::getInstance();
 static CoreMode s_mode = CoreMode::Interpreter;
 
 BreakPoints breakpoints;
@@ -154,7 +153,7 @@ void DoState(PointerWrap& p)
   // SystemTimers::DecrementerSet();
   // SystemTimers::TimeBaseSet();
 
-  JitInterface::DoState(p);
+  Core::System::GetInstance().GetJitInterface().DoState(p);
 }
 
 static void ResetRegisters()
@@ -220,26 +219,28 @@ static void InitializeCPUCore(CPUCore cpu_core)
 {
   // We initialize the interpreter because
   // it is used on boot and code window independently.
-  s_interpreter->Init();
+  auto& system = Core::System::GetInstance();
+  auto& interpreter = system.GetInterpreter();
+  interpreter.Init();
 
   switch (cpu_core)
   {
   case CPUCore::Interpreter:
-    s_cpu_core_base = s_interpreter;
+    s_cpu_core_base = &interpreter;
     break;
 
   default:
-    s_cpu_core_base = JitInterface::InitJitCore(cpu_core);
+    s_cpu_core_base = system.GetJitInterface().InitJitCore(cpu_core);
     if (!s_cpu_core_base)  // Handle Situations where JIT core isn't available
     {
       WARN_LOG_FMT(POWERPC, "CPU core {} not available. Falling back to default.",
                    static_cast<int>(cpu_core));
-      s_cpu_core_base = JitInterface::InitJitCore(DefaultCPUCore());
+      s_cpu_core_base = system.GetJitInterface().InitJitCore(DefaultCPUCore());
     }
     break;
   }
 
-  s_mode = s_cpu_core_base == s_interpreter ? CoreMode::Interpreter : CoreMode::JIT;
+  s_mode = s_cpu_core_base == &interpreter ? CoreMode::Interpreter : CoreMode::JIT;
 }
 
 const std::vector<CPUCore>& AvailableCPUCores()
@@ -298,10 +299,13 @@ void Reset()
 
 void ScheduleInvalidateCacheThreadSafe(u32 address)
 {
-  if (CPU::GetState() == CPU::State::Running && !Core::IsCPUThread())
+  auto& system = Core::System::GetInstance();
+  auto& cpu = system.GetCPU();
+
+  if (cpu.GetState() == CPU::State::Running && !Core::IsCPUThread())
   {
-    Core::System::GetInstance().GetCoreTiming().ScheduleEvent(
-        0, s_invalidate_cache_thread_safe, address, CoreTiming::FromThread::NON_CPU);
+    system.GetCoreTiming().ScheduleEvent(0, s_invalidate_cache_thread_safe, address,
+                                         CoreTiming::FromThread::NON_CPU);
   }
   else
   {
@@ -312,8 +316,10 @@ void ScheduleInvalidateCacheThreadSafe(u32 address)
 void Shutdown()
 {
   InjectExternalCPUCore(nullptr);
-  JitInterface::Shutdown();
-  s_interpreter->Shutdown();
+  auto& system = Core::System::GetInstance();
+  system.GetJitInterface().Shutdown();
+  auto& interpreter = system.GetInterpreter();
+  interpreter.Shutdown();
   s_cpu_core_base = nullptr;
 }
 
@@ -324,17 +330,20 @@ CoreMode GetMode()
 
 static void ApplyMode()
 {
+  auto& system = Core::System::GetInstance();
+  auto& interpreter = system.GetInterpreter();
+
   switch (s_mode)
   {
   case CoreMode::Interpreter:  // Switching from JIT to interpreter
-    s_cpu_core_base = s_interpreter;
+    s_cpu_core_base = &interpreter;
     break;
 
   case CoreMode::JIT:  // Switching from interpreter to JIT.
     // Don't really need to do much. It'll work, the cache will refill itself.
-    s_cpu_core_base = JitInterface::GetCore();
+    s_cpu_core_base = system.GetJitInterface().GetCore();
     if (!s_cpu_core_base)  // Has a chance to not get a working JIT core if one isn't active on host
-      s_cpu_core_base = s_interpreter;
+      s_cpu_core_base = &interpreter;
     break;
   }
 }
@@ -637,7 +646,8 @@ void CheckBreakPoints()
 
   if (bp->break_on_hit)
   {
-    CPU::Break();
+    auto& system = Core::System::GetInstance();
+    system.GetCPU().Break();
     if (GDBStub::IsActive())
       GDBStub::TakeControl();
   }
@@ -679,7 +689,7 @@ void RoundingModeUpdated()
   // The rounding mode is separate for each thread, so this must run on the CPU thread
   ASSERT(Core::IsCPUThread());
 
-  FPURoundMode::SetSIMDMode(PowerPC::ppcState.fpscr.RN, PowerPC::ppcState.fpscr.NI);
+  Common::FPU::SetSIMDMode(PowerPC::ppcState.fpscr.RN, PowerPC::ppcState.fpscr.NI);
 }
 
 }  // namespace PowerPC

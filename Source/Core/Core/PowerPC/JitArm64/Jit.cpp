@@ -38,12 +38,7 @@ constexpr size_t CODE_SIZE = 1024 * 1024 * 32;
 constexpr size_t FARCODE_SIZE = 1024 * 1024 * 64;
 constexpr size_t FARCODE_SIZE_MMU = 1024 * 1024 * 64;
 
-constexpr size_t STACK_SIZE = 2 * 1024 * 1024;
-constexpr size_t SAFE_STACK_SIZE = 512 * 1024;
-constexpr size_t GUARD_SIZE = 64 * 1024;  // two guards - bottom (permanent) and middle (see above)
-constexpr size_t GUARD_OFFSET = STACK_SIZE - SAFE_STACK_SIZE - GUARD_SIZE;
-
-JitArm64::JitArm64() : m_float_emit(this)
+JitArm64::JitArm64(Core::System& system) : JitBase(system), m_float_emit(this)
 {
 }
 
@@ -55,8 +50,7 @@ void JitArm64::Init()
   AllocCodeSpace(CODE_SIZE + child_code_size);
   AddChildCodeSpace(&m_far_code, child_code_size);
 
-  auto& system = Core::System::GetInstance();
-  auto& memory = system.GetMemory();
+  auto& memory = m_system.GetMemory();
 
   jo.fastmem_arena = m_fastmem_enabled && memory.InitFastmemArena();
   jo.optimizeGatherPipe = true;
@@ -71,10 +65,6 @@ void JitArm64::Init()
   code_block.m_gpa = &js.gpa;
   code_block.m_fpa = &js.fpa;
 
-  m_enable_blr_optimization = jo.enableBlocklink && m_fastmem_enabled && !m_enable_debugging;
-  m_cleanup_after_stackfault = false;
-
-  AllocStack();
   GenerateAsm();
 
   ResetFreeMemoryRanges();
@@ -117,29 +107,25 @@ bool JitArm64::HandleFault(uintptr_t access_address, SContext* ctx)
   bool success = false;
 
   // Handle BLR stack faults, may happen in C++ code.
-  uintptr_t stack = (uintptr_t)m_stack_base;
-  uintptr_t diff = access_address - stack;
-  if (diff >= GUARD_OFFSET && diff < GUARD_OFFSET + GUARD_SIZE)
+  const uintptr_t stack_guard = reinterpret_cast<uintptr_t>(m_stack_guard);
+  if (access_address >= stack_guard && access_address < stack_guard + GUARD_SIZE)
     success = HandleStackFault();
 
   // If the fault is in JIT code space, look for fastmem areas.
   if (!success && IsInSpace(reinterpret_cast<u8*>(ctx->CTX_PC)))
   {
-    auto& system = Core::System::GetInstance();
-    auto& memory = system.GetMemory();
-
+    auto& memory = m_system.GetMemory();
     if (memory.IsAddressInFastmemArea(reinterpret_cast<u8*>(access_address)))
     {
-      auto& ppc_state = system.GetPPCState();
       const uintptr_t memory_base = reinterpret_cast<uintptr_t>(
-          ppc_state.msr.DR ? memory.GetLogicalBase() : memory.GetPhysicalBase());
+          m_ppc_state.msr.DR ? memory.GetLogicalBase() : memory.GetPhysicalBase());
 
       if (access_address < memory_base || access_address >= memory_base + 0x1'0000'0000)
       {
         ERROR_LOG_FMT(DYNA_REC,
                       "JitArm64 address calculation overflowed. This should never happen! "
                       "PC {:#018x}, access address {:#018x}, memory base {:#018x}, MSR.DR {}",
-                      ctx->CTX_PC, access_address, memory_base, ppc_state.msr.DR);
+                      ctx->CTX_PC, access_address, memory_base, m_ppc_state.msr.DR);
       }
       else
       {
@@ -154,23 +140,6 @@ bool JitArm64::HandleFault(uintptr_t access_address, SContext* ctx)
     DoBacktrace(access_address, ctx);
   }
   return success;
-}
-
-bool JitArm64::HandleStackFault()
-{
-  if (!m_enable_blr_optimization)
-    return false;
-
-  ERROR_LOG_FMT(POWERPC, "BLR cache disabled due to excessive BL in the emulated program.");
-  m_enable_blr_optimization = false;
-#ifndef _WIN32
-  Common::UnWriteProtectMemory(m_stack_base + GUARD_OFFSET, GUARD_SIZE);
-#endif
-  GetBlockCache()->InvalidateICache(0, 0xffffffff, true);
-  Core::System::GetInstance().GetCoreTiming().ForceExceptionCheck(0);
-  m_cleanup_after_stackfault = true;
-
-  return true;
 }
 
 void JitArm64::ClearCache()
@@ -200,12 +169,10 @@ void JitArm64::ResetFreeMemoryRanges()
 
 void JitArm64::Shutdown()
 {
-  auto& system = Core::System::GetInstance();
-  auto& memory = system.GetMemory();
+  auto& memory = m_system.GetMemory();
   memory.ShutdownFastmemArena();
   FreeCodeSpace();
   blocks.Shutdown();
-  FreeStack();
 }
 
 void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
@@ -225,9 +192,10 @@ void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
     gpr.Unlock(WA);
   }
 
-  Interpreter::Instruction instr = PPCTables::GetInterpreterOp(inst);
+  Interpreter::Instruction instr = Interpreter::GetInterpreterOp(inst);
   MOVP2R(ARM64Reg::X8, instr);
-  MOVI2R(ARM64Reg::W0, inst.hex);
+  MOVP2R(ARM64Reg::X0, &m_system.GetInterpreter());
+  MOVI2R(ARM64Reg::W1, inst.hex);
   BLR(ARM64Reg::X8);
 
   // If the instruction wrote to any registers which were marked as discarded,
@@ -304,19 +272,19 @@ void JitArm64::Cleanup()
     CMP(ARM64Reg::X0, GPFifo::GATHER_PIPE_SIZE);
     FixupBranch exit = B(CC_LT);
     MOVP2R(ARM64Reg::X1, &GPFifo::UpdateGatherPipe);
-    MOVP2R(ARM64Reg::X0, &Core::System::GetInstance().GetGPFifo());
+    MOVP2R(ARM64Reg::X0, &m_system.GetGPFifo());
     BLR(ARM64Reg::X1);
     SetJumpTarget(exit);
   }
 
   // SPEED HACK: MMCR0/MMCR1 should be checked at run-time, not at compile time.
-  if (MMCR0(PowerPC::ppcState).Hex || MMCR1(PowerPC::ppcState).Hex)
+  if (MMCR0(m_ppc_state).Hex || MMCR1(m_ppc_state).Hex)
   {
     MOVP2R(ARM64Reg::X8, &PowerPC::UpdatePerformanceMonitor);
     MOVI2R(ARM64Reg::X0, js.downcountAmount);
     MOVI2R(ARM64Reg::X1, js.numLoadStoreInst);
     MOVI2R(ARM64Reg::X2, js.numFloatingPointInst);
-    MOVP2R(ARM64Reg::X3, &PowerPC::ppcState);
+    MOVP2R(ARM64Reg::X3, &m_ppc_state);
     BLR(ARM64Reg::X8);
   }
 }
@@ -337,40 +305,6 @@ void JitArm64::ResetStack()
   ADD(ARM64Reg::SP, ARM64Reg::X0, 0);
 }
 
-void JitArm64::AllocStack()
-{
-  if (!m_enable_blr_optimization)
-    return;
-
-#ifndef _WIN32
-  m_stack_base = static_cast<u8*>(Common::AllocateMemoryPages(STACK_SIZE));
-  if (!m_stack_base)
-  {
-    m_enable_blr_optimization = false;
-    return;
-  }
-
-  m_stack_pointer = m_stack_base + STACK_SIZE;
-  Common::ReadProtectMemory(m_stack_base, GUARD_SIZE);
-  Common::ReadProtectMemory(m_stack_base + GUARD_OFFSET, GUARD_SIZE);
-#else
-  // For windows we just keep using the system stack and reserve a large amount of memory at the end
-  // of the stack.
-  ULONG reserveSize = SAFE_STACK_SIZE;
-  SetThreadStackGuarantee(&reserveSize);
-#endif
-}
-
-void JitArm64::FreeStack()
-{
-#ifndef _WIN32
-  if (m_stack_base)
-    Common::FreeMemoryPages(m_stack_base, STACK_SIZE);
-  m_stack_base = nullptr;
-  m_stack_pointer = nullptr;
-#endif
-}
-
 void JitArm64::IntializeSpeculativeConstants()
 {
   // If the block depends on an input register which looks like a gather pipe or MMIO related
@@ -382,7 +316,7 @@ void JitArm64::IntializeSpeculativeConstants()
   const u8* fail = nullptr;
   for (auto i : code_block.m_gpr_inputs)
   {
-    u32 compile_time_value = PowerPC::ppcState.gpr[i];
+    u32 compile_time_value = m_ppc_state.gpr[i];
     if (PowerPC::IsOptimizableGatherPipeWrite(compile_time_value) ||
         PowerPC::IsOptimizableGatherPipeWrite(compile_time_value - 0x8000) ||
         compile_time_value == 0xCC000000)
@@ -393,8 +327,9 @@ void JitArm64::IntializeSpeculativeConstants()
         fail = GetCodePtr();
         MOVI2R(DISPATCHER_PC, js.blockStart);
         STR(IndexType::Unsigned, DISPATCHER_PC, PPC_REG, PPCSTATE_OFF(pc));
-        MOVP2R(ARM64Reg::X8, &JitInterface::CompileExceptionCheck);
-        MOVI2R(ARM64Reg::W0, static_cast<u32>(JitInterface::ExceptionType::SpeculativeConstants));
+        MOVP2R(ARM64Reg::X8, &JitInterface::CompileExceptionCheckFromJIT);
+        MOVP2R(ARM64Reg::X0, &m_system.GetJitInterface());
+        MOVI2R(ARM64Reg::W1, static_cast<u32>(JitInterface::ExceptionType::SpeculativeConstants));
         BLR(ARM64Reg::X8);
         B(dispatcher_no_check);
         SwitchToNearCode();
@@ -696,14 +631,22 @@ void JitArm64::EndTimeProfile(JitBlock* b)
 
 void JitArm64::Run()
 {
+  ProtectStack();
+
   CompiledCode pExecAddr = (CompiledCode)enter_code;
   pExecAddr();
+
+  UnprotectStack();
 }
 
 void JitArm64::SingleStep()
 {
+  ProtectStack();
+
   CompiledCode pExecAddr = (CompiledCode)enter_code;
   pExecAddr();
+
+  UnprotectStack();
 }
 
 void JitArm64::Trace()
@@ -712,25 +655,24 @@ void JitArm64::Trace()
   std::string fregs;
 
 #ifdef JIT_LOG_GPR
-  for (size_t i = 0; i < std::size(PowerPC::ppcState.gpr); i++)
+  for (size_t i = 0; i < std::size(m_ppc_state.gpr); i++)
   {
-    regs += fmt::format("r{:02d}: {:08x} ", i, PowerPC::ppcState.gpr[i]);
+    regs += fmt::format("r{:02d}: {:08x} ", i, m_ppc_state.gpr[i]);
   }
 #endif
 
 #ifdef JIT_LOG_FPR
-  for (size_t i = 0; i < std::size(PowerPC::ppcState.ps); i++)
+  for (size_t i = 0; i < std::size(m_ppc_state.ps); i++)
   {
-    fregs += fmt::format("f{:02d}: {:016x} ", i, PowerPC::ppcState.ps[i].PS0AsU64());
+    fregs += fmt::format("f{:02d}: {:016x} ", i, m_ppc_state.ps[i].PS0AsU64());
   }
 #endif
 
   DEBUG_LOG_FMT(DYNA_REC,
                 "JitArm64 PC: {:08x} SRR0: {:08x} SRR1: {:08x} FPSCR: {:08x} "
                 "MSR: {:08x} LR: {:08x} {} {}",
-                PowerPC::ppcState.pc, SRR0(PowerPC::ppcState), SRR1(PowerPC::ppcState),
-                PowerPC::ppcState.fpscr.Hex, PowerPC::ppcState.msr.Hex, PowerPC::ppcState.spr[8],
-                regs, fregs);
+                m_ppc_state.pc, SRR0(m_ppc_state), SRR1(m_ppc_state), m_ppc_state.fpscr.Hex,
+                m_ppc_state.msr.Hex, m_ppc_state.spr[8], regs, fregs);
 }
 
 void JitArm64::Jit(u32 em_address)
@@ -740,15 +682,7 @@ void JitArm64::Jit(u32 em_address)
 
 void JitArm64::Jit(u32 em_address, bool clear_cache_and_retry_on_failure)
 {
-  if (m_cleanup_after_stackfault)
-  {
-    ClearCache();
-    m_cleanup_after_stackfault = false;
-#ifdef _WIN32
-    // The stack is in an invalid state with no guard page, reset it.
-    _resetstkoflw();
-#endif
-  }
+  CleanUpAfterStackFault();
 
   if (SConfig::GetInstance().bJITNoBlockCache)
     ClearCache();
@@ -776,6 +710,8 @@ void JitArm64::Jit(u32 em_address, bool clear_cache_and_retry_on_failure)
 
   std::size_t block_size = m_code_buffer.size();
 
+  auto& cpu = m_system.GetCPU();
+
   if (m_enable_debugging)
   {
     // We can link blocks as long as we are not single stepping
@@ -784,7 +720,7 @@ void JitArm64::Jit(u32 em_address, bool clear_cache_and_retry_on_failure)
 
     if (!jo.profile_blocks)
     {
-      if (CPU::IsStepping())
+      if (cpu.IsStepping())
       {
         block_size = 1;
 
@@ -804,8 +740,8 @@ void JitArm64::Jit(u32 em_address, bool clear_cache_and_retry_on_failure)
   if (code_block.m_memory_exception)
   {
     // Address of instruction could not be translated
-    PowerPC::ppcState.npc = nextPC;
-    PowerPC::ppcState.Exceptions |= EXCEPTION_ISI;
+    m_ppc_state.npc = nextPC;
+    m_ppc_state.Exceptions |= EXCEPTION_ISI;
     PowerPC::CheckExceptions();
     WARN_LOG_FMT(POWERPC, "ISI exception at {:#010x}", nextPC);
     return;
@@ -882,6 +818,8 @@ bool JitArm64::SetEmitterStateToFreeCodeRegion()
 
 bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
 {
+  auto& cpu = m_system.GetCPU();
+
   js.isLastInstruction = false;
   js.firstFPInstructionFound = false;
   js.assumeNoPairedQuantize = false;
@@ -920,7 +858,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       js.pairedQuantizeAddresses.find(js.blockStart) == js.pairedQuantizeAddresses.end())
   {
     int gqr = *code_block.m_gqr_used.begin();
-    if (!code_block.m_gqr_modified[gqr] && !GQR(PowerPC::ppcState, gqr))
+    if (!code_block.m_gqr_modified[gqr] && !GQR(m_ppc_state, gqr))
     {
       LDR(IndexType::Unsigned, ARM64Reg::W0, PPC_REG, PPCSTATE_OFF_SPR(SPR_GQR0 + gqr));
       FixupBranch no_fail = CBZ(ARM64Reg::W0);
@@ -929,9 +867,10 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       SetJumpTarget(fail);
       MOVI2R(DISPATCHER_PC, js.blockStart);
       STR(IndexType::Unsigned, DISPATCHER_PC, PPC_REG, PPCSTATE_OFF(pc));
-      MOVI2R(ARM64Reg::W0, static_cast<u32>(JitInterface::ExceptionType::PairedQuantize));
-      MOVP2R(ARM64Reg::X1, &JitInterface::CompileExceptionCheck);
-      BLR(ARM64Reg::X1);
+      MOVP2R(ARM64Reg::X0, &m_system.GetJitInterface());
+      MOVI2R(ARM64Reg::W1, static_cast<u32>(JitInterface::ExceptionType::PairedQuantize));
+      MOVP2R(ARM64Reg::X2, &JitInterface::CompileExceptionCheckFromJIT);
+      BLR(ARM64Reg::X2);
       B(dispatcher_no_check);
       SwitchToNearCode();
       SetJumpTarget(no_fail);
@@ -959,7 +898,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
     js.instructionNumber = i;
     js.instructionsLeft = (code_block.m_num_instructions - 1) - i;
     const GekkoOPInfo* opinfo = op.opinfo;
-    js.downcountAmount += opinfo->numCycles;
+    js.downcountAmount += opinfo->num_cycles;
     js.isLastInstruction = i == (code_block.m_num_instructions - 1);
 
     if (!m_enable_debugging)
@@ -991,7 +930,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       ABI_PushRegisters(regs_in_use);
       m_float_emit.ABI_PushRegisters(fprs_in_use, ARM64Reg::X30);
       MOVP2R(ARM64Reg::X8, &GPFifo::FastCheckGatherPipe);
-      MOVP2R(ARM64Reg::X0, &Core::System::GetInstance().GetGPFifo());
+      MOVP2R(ARM64Reg::X0, &m_system.GetGPFifo());
       BLR(ARM64Reg::X8);
       m_float_emit.ABI_PopRegisters(fprs_in_use, ARM64Reg::X30);
       ABI_PopRegisters(regs_in_use);
@@ -1006,9 +945,8 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       SetJumpTarget(exception);
       LDR(IndexType::Unsigned, ARM64Reg::W30, PPC_REG, PPCSTATE_OFF(msr));
       TBZ(ARM64Reg::W30, 15, done_here);  // MSR.EE
-      auto& system = Core::System::GetInstance();
       LDR(IndexType::Unsigned, ARM64Reg::W30, ARM64Reg::X30,
-          MOVPage2R(ARM64Reg::X30, &system.GetProcessorInterface().m_interrupt_cause));
+          MOVPage2R(ARM64Reg::X30, &m_system.GetProcessorInterface().m_interrupt_cause));
       constexpr u32 cause_mask = ProcessorInterface::INT_CAUSE_CP |
                                  ProcessorInterface::INT_CAUSE_PE_TOKEN |
                                  ProcessorInterface::INT_CAUSE_PE_FINISH;
@@ -1043,9 +981,8 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       SetJumpTarget(exception);
       LDR(IndexType::Unsigned, WA, PPC_REG, PPCSTATE_OFF(msr));
       TBZ(WA, 15, done_here);  // MSR.EE
-      auto& system = Core::System::GetInstance();
       LDR(IndexType::Unsigned, WA, XA,
-          MOVPage2R(XA, &system.GetProcessorInterface().m_interrupt_cause));
+          MOVPage2R(XA, &m_system.GetProcessorInterface().m_interrupt_cause));
       constexpr u32 cause_mask = ProcessorInterface::INT_CAUSE_CP |
                                  ProcessorInterface::INT_CAUSE_PE_TOKEN |
                                  ProcessorInterface::INT_CAUSE_PE_FINISH;
@@ -1097,7 +1034,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
       }
 
       if (m_enable_debugging && PowerPC::breakpoints.IsAddressBreakPoint(op.address) &&
-          !CPU::IsStepping())
+          !cpu.IsStepping())
       {
         FlushCarry();
         gpr.Flush(FlushMode::All, ARM64Reg::INVALID_REG);
@@ -1112,7 +1049,7 @@ bool JitArm64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
         BLR(ARM64Reg::X0);
 
         LDR(IndexType::Unsigned, ARM64Reg::W0, ARM64Reg::X0,
-            MOVPage2R(ARM64Reg::X0, CPU::GetStatePtr()));
+            MOVPage2R(ARM64Reg::X0, cpu.GetStatePtr()));
         FixupBranch no_breakpoint = CBZ(ARM64Reg::W0);
 
         Cleanup();
