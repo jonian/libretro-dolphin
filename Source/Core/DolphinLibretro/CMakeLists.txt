@@ -10,15 +10,7 @@ add_library(dolphin_libretro SHARED
   Video.cpp
 )
 
-if (NOT APPLE)
-   target_sources(dolphin_libretro PRIVATE
-      Vulkan.cpp
-   )
-endif()
-
 include_directories(${CMAKE_SOURCE_DIR}/Externals/Libretro/Include)
-include_directories(${CMAKE_SOURCE_DIR}/Externals/Vulkan/Include)
-include_directories(${CMAKE_SOURCE_DIR}/Externals/VulkanMemoryAllocator/include)
 
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 

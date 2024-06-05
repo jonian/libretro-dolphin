@@ -143,19 +143,6 @@ void retro_run(void)
     Core::RunEmuThread(wsi);
     Libretro::Audio::Init();
 
-    if (Config::Get(Config::MAIN_GFX_BACKEND) == "Software Renderer")
-    {
-      g_renderer->Shutdown();
-      g_renderer.reset();
-      g_renderer = std::make_unique<Libretro::Video::SWRenderer>();
-    }
-    else if (Config::Get(Config::MAIN_GFX_BACKEND) == "Null")
-    {
-      g_renderer->Shutdown();
-      g_renderer.reset();
-      g_renderer = std::make_unique<Libretro::Video::NullRenderer>();
-    }
-
     while (!Core::IsRunningAndStarted())
       Common::SleepCurrentThread(100);
   }

@@ -89,7 +89,6 @@ private:
   std::vector<std::pair<std::string, T>> m_list;
 };
 
-extern Option<std::string> renderer;
 extern Option<int> efbScale;
 extern Option<bool> Widescreen;
 extern Option<bool> WidescreenHack;

@@ -7,18 +7,6 @@
 #include <sstream>
 #include <vector>
 
-#ifdef _WIN32
-#define HAVE_D3D11
-#include <libretro_d3d.h>
-#include "Common/DynamicLibrary.h"
-#include "VideoBackends/D3D/D3DBase.h"
-#include "VideoBackends/D3D/D3DState.h"
-#include "VideoBackends/D3D/VideoBackend.h"
-#endif
-#ifndef __APPLE__
-#include <libretro_vulkan.h>
-#endif
-
 #include "Common/GL/GLContext.h"
 #include "Common/GL/GLUtil.h"
 #include "Common/Logging/Log.h"
@@ -29,7 +17,6 @@
 #include "Core/Core.h"
 #include "Core/Host.h"
 #include "DolphinLibretro/Options.h"
-#include "VideoBackends/Null/NullRender.h"
 #include "VideoBackends/OGL/OGLRender.h"
 #include "VideoBackends/OGL/VideoBackend.h"
 #include "VideoCommon/AsyncRequests.h"
@@ -39,10 +26,6 @@
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"
 #include "VideoCommon/VideoConfig.h"
-#ifndef __APPLE__
-#include "VideoBackends/Vulkan/VideoBackend.h"
-#include "VideoBackends/Vulkan/VulkanContext.h"
-#endif
 
 /* retroGL interface*/
 
@@ -91,80 +74,11 @@ namespace Video
 {
 retro_video_refresh_t video_cb;
 struct retro_hw_render_callback hw_render;
-#ifdef _WIN32
-static Common::DynamicLibrary d3d11_library;
-#endif
 
 static void ContextReset(void)
 {
   DEBUG_LOG_FMT(VIDEO, "Context reset!\n");
 
-#ifndef __APPLE__
-  if (hw_render.context_type == RETRO_HW_CONTEXT_VULKAN)
-  {
-    retro_hw_render_interface* vulkan;
-    if (!Libretro::environ_cb(RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE, (void**)&vulkan) ||
-        !vulkan)
-    {
-      ERROR_LOG_FMT(VIDEO, "Failed to get HW rendering interface!\n");
-      return;
-    }
-    if (vulkan->interface_version != RETRO_HW_RENDER_INTERFACE_VULKAN_VERSION)
-    {
-      ERROR_LOG_FMT(VIDEO, "HW render interface mismatch, expected {}, got {}!\n",
-                RETRO_HW_RENDER_INTERFACE_VULKAN_VERSION, vulkan->interface_version);
-      return;
-    }
-    Vk::SetHWRenderInterface(vulkan);
-    Vk::SetSurfaceSize(EFB_WIDTH * Libretro::Options::efbScale,
-                       EFB_HEIGHT * Libretro::Options::efbScale);
-  }
-#endif
-#ifdef _WIN32
-  if (hw_render.context_type == RETRO_HW_CONTEXT_DIRECT3D)
-  {
-    retro_hw_render_interface_d3d11* d3d;
-    if (!Libretro::environ_cb(RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE, (void**)&d3d) || !d3d)
-    {
-      ERROR_LOG_FMT(VIDEO, "Failed to get HW rendering interface!\n");
-      return;
-    }
-    if (d3d->interface_version != RETRO_HW_RENDER_INTERFACE_D3D11_VERSION)
-    {
-      ERROR_LOG_FMT(VIDEO, "HW render interface mismatch, expected {}, got {}!\n",
-                RETRO_HW_RENDER_INTERFACE_D3D11_VERSION, d3d->interface_version);
-      return;
-    }
-    DX11::D3D::device = d3d->device;
-    DX11::D3D::context = d3d->context;
-    DX11::D3D::feature_level = d3d->featureLevel;
-    D3DCommon::d3d_compile = d3d->D3DCompile;
-
-    if (!d3d11_library.Open("d3d11.dll") || !D3DCommon::LoadLibraries())
-    {
-      d3d11_library.Close();
-      ERROR_LOG_FMT(VIDEO, "Failed to load D3D11 Libraries");
-      return;
-    }
-
-    if (FAILED(DX11::D3D::device.As(&DX11::D3D::device1)))
-    {
-      WARN_LOG_FMT(VIDEO, "Missing Direct3D 11.1 support. Logical operations will not be supported.");
-      g_Config.backend_info.bSupportsLogicOp = false;
-    }
-    DX11::D3D::stateman = std::make_unique<DX11::D3D::StateManager>();
-
-    DX11::VideoBackend* d3d11 = static_cast<DX11::VideoBackend*>(g_video_backend);
-    d3d11->FillBackendInfo();
-    d3d11->InitializeShared();
-
-    WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
-    std::unique_ptr<DX11SwapChain> swap_chain = std::make_unique<DX11SwapChain>(
-        wsi, EFB_WIDTH * Libretro::Options::efbScale, EFB_HEIGHT * Libretro::Options::efbScale);
-    g_renderer =
-        std::make_unique<DX11::Renderer>(std::move(swap_chain), Libretro::Options::efbScale);
-  }
-#endif
   if (Config::Get(Config::MAIN_GFX_BACKEND) == "OGL")
   {
     std::unique_ptr<GLContext> main_gl_context = std::make_unique<RGLContext>();
@@ -194,26 +108,8 @@ static void ContextDestroy(void)
   switch (hw_render.context_type)
   {
   case RETRO_HW_CONTEXT_DIRECT3D:
-#ifdef _WIN32
-    DX11::D3D::context->ClearState();
-    DX11::D3D::context->Flush();
-
-    DX11::D3D::context.Reset();
-    DX11::D3D::device1.Reset();
-
-    DX11::D3D::device = nullptr;
-    DX11::D3D::device1 = nullptr;
-    DX11::D3D::context = nullptr;
-    D3DCommon::d3d_compile = nullptr;
-    DX11::D3D::stateman.reset();
-    D3DCommon::UnloadLibraries();
-    d3d11_library.Close();
-#endif
     break;
   case RETRO_HW_CONTEXT_VULKAN:
-#ifndef __APPLE__
-    Vk::SetHWRenderInterface(nullptr);
-#endif
     break;
   case RETRO_HW_CONTEXT_OPENGL:
   case RETRO_HW_CONTEXT_OPENGL_CORE:
@@ -224,75 +120,6 @@ static void ContextDestroy(void)
     break;
   }
 }
-#ifndef __APPLE__
-namespace Vk
-{
-static const VkApplicationInfo* GetApplicationInfo(void)
-{
-  static VkApplicationInfo app_info{VK_STRUCTURE_TYPE_APPLICATION_INFO};
-  app_info.pApplicationName = "Dolphin-Emu";
-  app_info.applicationVersion = 5;  // TODO: extract from Common::scm_desc_str
-  app_info.pEngineName = "Dolphin-Emu";
-  app_info.engineVersion = 2;
-  app_info.apiVersion = VK_API_VERSION_1_0;
-  return &app_info;
-}
-
-static bool CreateDevice(retro_vulkan_context* context, VkInstance instance, VkPhysicalDevice gpu,
-                         VkSurfaceKHR surface, PFN_vkGetInstanceProcAddr get_instance_proc_addr,
-                         const char** required_device_extensions,
-                         unsigned num_required_device_extensions,
-                         const char** required_device_layers, unsigned num_required_device_layers,
-                         const VkPhysicalDeviceFeatures* required_features)
-{
-  assert(g_video_backend->GetName() == "Vulkan");
-
-  Vulkan::LoadVulkanLibrary();
-
-  Init(instance, gpu, surface, get_instance_proc_addr, required_device_extensions,
-       num_required_device_extensions, required_device_layers, num_required_device_layers,
-       required_features);
-
-  if (!Vulkan::LoadVulkanInstanceFunctions(instance))
-  {
-    ERROR_LOG_FMT(VIDEO, "Failed to load Vulkan instance functions.");
-    Vulkan::UnloadVulkanLibrary();
-    return false;
-  }
-
-  Vulkan::VulkanContext::GPUList gpu_list = Vulkan::VulkanContext::EnumerateGPUs(instance);
-  if (gpu_list.empty())
-  {
-    ERROR_LOG_FMT(VIDEO, "No Vulkan physical devices available.");
-    Vulkan::UnloadVulkanLibrary();
-    return false;
-  }
-
-  Vulkan::VulkanContext::PopulateBackendInfo(&g_Config);
-  Vulkan::VulkanContext::PopulateBackendInfoAdapters(&g_Config, gpu_list);
-
-  if (gpu == VK_NULL_HANDLE)
-    gpu = gpu_list[0];
-
-  Vulkan::g_vulkan_context = Vulkan::VulkanContext::Create(instance, gpu, surface, false, false, VK_API_VERSION_1_0);
-  if (!Vulkan::g_vulkan_context)
-  {
-    ERROR_LOG_FMT(VIDEO, "Failed to create Vulkan device");
-    Vulkan::UnloadVulkanLibrary();
-    return false;
-  }
-
-  context->gpu = Vulkan::g_vulkan_context->GetPhysicalDevice();
-  context->device = Vulkan::g_vulkan_context->GetDevice();
-  context->queue = Vulkan::g_vulkan_context->GetGraphicsQueue();
-  context->queue_family_index = Vulkan::g_vulkan_context->GetGraphicsQueueFamilyIndex();
-  context->presentation_queue = context->queue;
-  context->presentation_queue_family_index = context->queue_family_index;
-
-  return true;
-}
-}  // namespace Vk
-#endif
 
 static bool SetHWRender(retro_hw_context_type type)
 {
@@ -326,37 +153,6 @@ static bool SetHWRender(retro_hw_context_type type)
       return true;
     }
     break;
-#ifdef _WIN32
-  case RETRO_HW_CONTEXT_DIRECT3D:
-    hw_render.version_major = 11;
-    hw_render.version_minor = 0;
-    if (environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
-    {
-      Config::SetBase(Config::MAIN_GFX_BACKEND, "D3D");
-      return true;
-    }
-    break;
-#endif
-#ifndef __APPLE__
-  case RETRO_HW_CONTEXT_VULKAN:
-    hw_render.version_major = VK_API_VERSION_1_0;
-    hw_render.version_minor = 0;
-    if (environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
-    {
-      static const struct retro_hw_render_context_negotiation_interface_vulkan iface = {
-          RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN,
-          RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN_VERSION,
-          Vk::GetApplicationInfo,
-          Vk::CreateDevice,
-          NULL,
-      };
-      environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE, (void*)&iface);
-
-      Config::SetBase(Config::MAIN_GFX_BACKEND, "Vulkan");
-      return true;
-    }
-    break;
-#endif
   default:
     break;
   }
@@ -364,31 +160,18 @@ static bool SetHWRender(retro_hw_context_type type)
 }
 void Init()
 {
-  if (Options::renderer == "Hardware")
-  {
-    retro_hw_context_type preferred = RETRO_HW_CONTEXT_NONE;
-    if (environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred) && SetHWRender(preferred))
-      return;
-    if (SetHWRender(RETRO_HW_CONTEXT_OPENGL_CORE))
-      return;
-    if (SetHWRender(RETRO_HW_CONTEXT_OPENGL))
-      return;
-    if (SetHWRender(RETRO_HW_CONTEXT_OPENGLES3))
-      return;
-#ifdef _WIN32
-    if (SetHWRender(RETRO_HW_CONTEXT_DIRECT3D))
-      return;
-#endif
-#ifndef __APPLE__
-    if (SetHWRender(RETRO_HW_CONTEXT_VULKAN))
-      return;
-#endif
-  }
+  retro_hw_context_type preferred = RETRO_HW_CONTEXT_NONE;
+
+  if (environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred) && SetHWRender(preferred))
+    return;
+  if (SetHWRender(RETRO_HW_CONTEXT_OPENGL_CORE))
+    return;
+  if (SetHWRender(RETRO_HW_CONTEXT_OPENGL))
+    return;
+  if (SetHWRender(RETRO_HW_CONTEXT_OPENGLES3))
+    return;
+
   hw_render.context_type = RETRO_HW_CONTEXT_NONE;
-  if (Options::renderer == "Software")
-    Config::SetBase(Config::MAIN_GFX_BACKEND, "Software Renderer");
-  else
-    Config::SetBase(Config::MAIN_GFX_BACKEND, "Null");
 }
 
 }  // namespace Video
