@@ -609,7 +609,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
     GCPad* gcPad = (GCPad*)Pad::GetConfig()->GetController(port > 3 ? port - 4 : port);
     // load an empty inifile section, clears everything
-    IniFile::Section sec;
+    Common::IniFile::Section sec;
     gcPad->LoadConfig(&sec);
     gcPad->SetDefaultDevice(devJoypad);
 
@@ -667,7 +667,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
     WiimoteEmu::Wiimote* wm = (WiimoteEmu::Wiimote*)Wiimote::GetConfig()->GetController(port);
     // load an empty inifile section, clears everything
-    IniFile::Section sec;
+    Common::IniFile::Section sec;
     wm->LoadConfig(&sec);
     wm->SetDefaultDevice(devJoypad);
 
