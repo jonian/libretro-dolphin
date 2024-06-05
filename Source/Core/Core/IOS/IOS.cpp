@@ -17,6 +17,7 @@
 #include "Common/CommonTypes.h"
 #include "Common/Logging/Log.h"
 #include "Common/Timer.h"
+
 #include "Core/Boot/AncastTypes.h"
 #include "Core/Boot/DolReader.h"
 #include "Core/Boot/ElfReader.h"
@@ -912,7 +913,10 @@ static void FinishPPCBootstrap(Core::System& system, u64 userdata, s64 cycles_la
   else
     ReleasePPC();
 
-  SConfig::OnNewTitleLoad();
+  ASSERT(Core::IsCPUThread());
+  Core::CPUThreadGuard guard;
+  SConfig::OnNewTitleLoad(guard);
+
   INFO_LOG_FMT(IOS, "Bootstrapping done.");
 }
 
@@ -922,7 +926,7 @@ void Init()
   auto& core_timing = system.GetCoreTiming();
 
   s_event_enqueue =
-      core_timing.RegisterEvent("IPCEvent", [](Core::System& system, u64 userdata, s64) {
+      core_timing.RegisterEvent("IPCEvent", [](Core::System& system_, u64 userdata, s64) {
         if (s_ios)
           s_ios->HandleIPCEvent(userdata);
       });
@@ -933,7 +937,7 @@ void Init()
       core_timing.RegisterEvent("IOSFinishPPCBootstrap", FinishPPCBootstrap);
 
   s_event_finish_ios_boot =
-      core_timing.RegisterEvent("IOSFinishIOSBoot", [](Core::System& system, u64 ios_title_id,
+      core_timing.RegisterEvent("IOSFinishIOSBoot", [](Core::System& system_, u64 ios_title_id,
                                                        s64) { FinishIOSBoot(ios_title_id); });
 
   DIDevice::s_finish_executing_di_command =

@@ -310,37 +310,6 @@ const std::map<const std::pair<const u16, const u16>, const char*> list_skylande
     {{503, 0x0000}, "Spry"},
     {{504, 0x0000}, "Hijinx"},
     {{543, 0x0000}, "Eye Small"},
-    {{601, 0x0000}, "King Pen"},
-    {{602, 0x0000}, "Tri-Tip"},
-    {{603, 0x0000}, "Chopscotch"},
-    {{604, 0x0000}, "Boom Bloom"},
-    {{605, 0x0000}, "Pit Boss"},
-    {{606, 0x0000}, "Barbella"},
-    {{607, 0x0000}, "Air Strike"},
-    {{608, 0x0000}, "Ember"},
-    {{609, 0x0000}, "Ambush"},
-    {{610, 0x0000}, "Dr. Krankcase"},
-    {{611, 0x0000}, "Hood Sickle"},
-    {{612, 0x0000}, "Tae Kwon Crow"},
-    {{613, 0x0000}, "Golden Queen"},
-    {{614, 0x0000}, "Wolfgang"},
-    {{615, 0x0000}, "Pain-Yatta"},
-    {{616, 0x0000}, "Mysticat"},
-    {{617, 0x0000}, "Starcast"},
-    {{618, 0x0000}, "Buckshot"},
-    {{619, 0x0000}, "Aurora"},
-    {{620, 0x0000}, "Flare Wolf"},
-    {{621, 0x0000}, "Chompy Mage"},
-    {{622, 0x0000}, "Bad Juju"},
-    {{623, 0x0000}, "Grave Clobber"},
-    {{624, 0x0000}, "Blaster-Tron"},
-    {{625, 0x0000}, "Ro-Bow"},
-    {{626, 0x0000}, "Chain Reaction"},
-    {{627, 0x0000}, "Kaos"},
-    {{628, 0x0000}, "Wild Storm"},
-    {{629, 0x0000}, "Tidepool"},
-    {{630, 0x0000}, "Crash Bandicoot"},
-    {{631, 0x0000}, "Dr. Neo Cortex"},
     {{1000, 0x0000}, "Boom Jet (Bottom)"},
     {{1001, 0x0000}, "Free Ranger (Bottom)"},
     {{1001, 0x2403}, "Legendary Free Ranger (Bottom)"},
@@ -413,6 +382,7 @@ const std::map<const std::pair<const u16, const u16>, const char*> list_skylande
     {{3010, 0x2402}, "Kickoff Countdown"},
     {{3010, 0x2206}, "LightCore Countdown"},
     {{3011, 0x0000}, "Wind Up"},
+    {{3011, 0x2404}, "Gear Head VVind Up"},
     {{3012, 0x0000}, "Roller Brawl"},
     {{3013, 0x0000}, "Grim Creeper"},
     {{3013, 0x2603}, "Legendary Grim Creeper"},
@@ -1174,9 +1144,9 @@ void SkylanderPortal::WriteBlock(u8 sky_num, u8 block, const u8* to_write_buf, u
   }
 }
 
-u16 SkylanderCRC16(u16 init_value, const u8* buffer, u32 size)
+static u16 SkylanderCRC16(u16 init_value, const u8* buffer, u32 size)
 {
-  const unsigned short CRC_CCITT_TABLE[256] = {
+  static constexpr std::array<u16, 256> CRC_CCITT_TABLE{
       0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108, 0x9129, 0xA14A,
       0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF, 0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294,
       0x72F7, 0x62D6, 0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE, 0x2462,

@@ -20,12 +20,12 @@
 #include "Core/HW/Memmap.h"
 #include "Core/System.h"
 
+#include "VideoCommon/AbstractGfx.h"
 #include "VideoCommon/BPMemory.h"
 #include "VideoCommon/CPMemory.h"
 #include "VideoCommon/DataReader.h"
 #include "VideoCommon/IndexGenerator.h"
 #include "VideoCommon/NativeVertexFormat.h"
-#include "VideoCommon/RenderBase.h"
 #include "VideoCommon/Statistics.h"
 #include "VideoCommon/VertexLoaderBase.h"
 #include "VideoCommon/VertexManagerBase.h"
@@ -140,7 +140,7 @@ NativeVertexFormat* GetOrCreateMatchingFormat(const PortableVertexDeclaration& d
   auto iter = s_native_vertex_map.find(decl);
   if (iter == s_native_vertex_map.end())
   {
-    std::unique_ptr<NativeVertexFormat> fmt = g_renderer->CreateNativeVertexFormat(decl);
+    std::unique_ptr<NativeVertexFormat> fmt = g_gfx->CreateNativeVertexFormat(decl);
     auto ipair = s_native_vertex_map.emplace(decl, std::move(fmt));
     iter = ipair.first;
   }
@@ -153,7 +153,14 @@ NativeVertexFormat* GetUberVertexFormat(const PortableVertexDeclaration& decl)
   // The padding in the structs can cause the memcmp() in the map to create duplicates.
   // Avoid this by initializing the padding to zero.
   PortableVertexDeclaration new_decl;
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
   std::memset(&new_decl, 0, sizeof(new_decl));
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
   new_decl.stride = decl.stride;
 
   auto MakeDummyAttribute = [](AttributeFormat& attr, ComponentFormat type, int components,

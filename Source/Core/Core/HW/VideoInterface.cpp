@@ -51,8 +51,8 @@ struct VideoInterfaceState::Data
   UVIFBInfoRegister xfb_info_bottom;
   UVIFBInfoRegister xfb_3d_info_top;  // Start making your stereoscopic demos! :p
   UVIFBInfoRegister xfb_3d_info_bottom;
-  std::array<UVIInterruptRegister, 4> interrupt_register;
-  std::array<UVILatchRegister, 2> latch_register;
+  std::array<UVIInterruptRegister, 4> interrupt_register{};
+  std::array<UVILatchRegister, 2> latch_register{};
   PictureConfigurationRegister picture_configuration;
   UVIHorizontalScaling horizontal_scaling;
   SVIFilterCoefTables filter_coef_tables;
@@ -68,15 +68,15 @@ struct VideoInterfaceState::Data
   u32 target_refresh_rate_numerator = 0;
   u32 target_refresh_rate_denominator = 1;
 
-  u64 ticks_last_line_start;      // number of ticks when the current full scanline started
-  u32 half_line_count;            // number of halflines that have occurred for this full frame
-  u32 half_line_of_next_si_poll;  // halfline when next SI poll results should be available
+  u64 ticks_last_line_start = 0;      // number of ticks when the current full scanline started
+  u32 half_line_count = 0;            // number of halflines that have occurred for this full frame
+  u32 half_line_of_next_si_poll = 0;  // halfline when next SI poll results should be available
 
   // below indexes are 0-based
-  u32 even_field_first_hl;  // index first halfline of the even field
-  u32 odd_field_first_hl;   // index first halfline of the odd field
-  u32 even_field_last_hl;   // index last halfline of the even field
-  u32 odd_field_last_hl;    // index last halfline of the odd field
+  u32 even_field_first_hl = 0;  // index first halfline of the even field
+  u32 odd_field_first_hl = 0;   // index first halfline of the odd field
+  u32 even_field_last_hl = 0;   // index last halfline of the even field
+  u32 odd_field_last_hl = 0;    // index last halfline of the odd field
 };
 
 VideoInterfaceState::VideoInterfaceState() : m_data(std::make_unique<Data>())
@@ -277,38 +277,38 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
   // XFB related MMIOs that require special handling on writes.
   mmio->Register(base | VI_FB_LEFT_TOP_HI, MMIO::DirectRead<u16>(&state.xfb_info_top.Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.xfb_info_top.Hi = val;
-                   if (state.xfb_info_top.CLRPOFF)
-                     state.xfb_info_top.POFF = 0;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.xfb_info_top.Hi = val;
+                   if (state_.xfb_info_top.CLRPOFF)
+                     state_.xfb_info_top.POFF = 0;
                  }));
   mmio->Register(base | VI_FB_LEFT_BOTTOM_HI, MMIO::DirectRead<u16>(&state.xfb_info_bottom.Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.xfb_info_bottom.Hi = val;
-                   if (state.xfb_info_bottom.CLRPOFF)
-                     state.xfb_info_bottom.POFF = 0;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.xfb_info_bottom.Hi = val;
+                   if (state_.xfb_info_bottom.CLRPOFF)
+                     state_.xfb_info_bottom.POFF = 0;
                  }));
   mmio->Register(base | VI_FB_RIGHT_TOP_HI, MMIO::DirectRead<u16>(&state.xfb_3d_info_top.Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.xfb_3d_info_top.Hi = val;
-                   if (state.xfb_3d_info_top.CLRPOFF)
-                     state.xfb_3d_info_top.POFF = 0;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.xfb_3d_info_top.Hi = val;
+                   if (state_.xfb_3d_info_top.CLRPOFF)
+                     state_.xfb_3d_info_top.POFF = 0;
                  }));
   mmio->Register(base | VI_FB_RIGHT_BOTTOM_HI, MMIO::DirectRead<u16>(&state.xfb_3d_info_bottom.Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.xfb_3d_info_bottom.Hi = val;
-                   if (state.xfb_3d_info_bottom.CLRPOFF)
-                     state.xfb_3d_info_bottom.POFF = 0;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.xfb_3d_info_bottom.Hi = val;
+                   if (state_.xfb_3d_info_bottom.CLRPOFF)
+                     state_.xfb_3d_info_bottom.POFF = 0;
                  }));
 
   // MMIOs with unimplemented writes that trigger warnings.
   mmio->Register(
       base | VI_VERTICAL_BEAM_POSITION, MMIO::ComplexRead<u16>([](Core::System& system, u32) {
-        auto& state = system.GetVideoInterfaceState().GetData();
-        return 1 + (state.half_line_count) / 2;
+        auto& state_ = system.GetVideoInterfaceState().GetData();
+        return 1 + (state_.half_line_count) / 2;
       }),
       MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
         WARN_LOG_FMT(
@@ -317,12 +317,12 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
       }));
   mmio->Register(
       base | VI_HORIZONTAL_BEAM_POSITION, MMIO::ComplexRead<u16>([](Core::System& system, u32) {
-        auto& state = system.GetVideoInterfaceState().GetData();
+        auto& state_ = system.GetVideoInterfaceState().GetData();
         u16 value = static_cast<u16>(
-            1 + state.h_timing_0.HLW *
-                    (system.GetCoreTiming().GetTicks() - state.ticks_last_line_start) /
+            1 + state_.h_timing_0.HLW *
+                    (system.GetCoreTiming().GetTicks() - state_.ticks_last_line_start) /
                     (GetTicksPerHalfLine()));
-        return std::clamp<u16>(value, 1, state.h_timing_0.HLW * 2);
+        return std::clamp<u16>(value, 1, state_.h_timing_0.HLW * 2);
       }),
       MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
         WARN_LOG_FMT(
@@ -335,50 +335,50 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
   // on writes.
   mmio->Register(base | VI_PRERETRACE_HI, MMIO::DirectRead<u16>(&state.interrupt_register[0].Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.interrupt_register[0].Hi = val;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.interrupt_register[0].Hi = val;
                    UpdateInterrupts();
                  }));
   mmio->Register(base | VI_POSTRETRACE_HI, MMIO::DirectRead<u16>(&state.interrupt_register[1].Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.interrupt_register[1].Hi = val;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.interrupt_register[1].Hi = val;
                    UpdateInterrupts();
                  }));
   mmio->Register(base | VI_DISPLAY_INTERRUPT_2_HI,
                  MMIO::DirectRead<u16>(&state.interrupt_register[2].Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.interrupt_register[2].Hi = val;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.interrupt_register[2].Hi = val;
                    UpdateInterrupts();
                  }));
   mmio->Register(base | VI_DISPLAY_INTERRUPT_3_HI,
                  MMIO::DirectRead<u16>(&state.interrupt_register[3].Hi),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.interrupt_register[3].Hi = val;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.interrupt_register[3].Hi = val;
                    UpdateInterrupts();
                  }));
 
   // Unknown anti-aliasing related MMIO register: puts a warning on log and
   // needs to shift/mask when reading/writing.
   mmio->Register(base | VI_UNK_AA_REG_HI, MMIO::ComplexRead<u16>([](Core::System& system, u32) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   return state.unknown_aa_register >> 16;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   return state_.unknown_aa_register >> 16;
                  }),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.unknown_aa_register =
-                       (state.unknown_aa_register & 0x0000FFFF) | ((u32)val << 16);
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.unknown_aa_register =
+                       (state_.unknown_aa_register & 0x0000FFFF) | ((u32)val << 16);
                    WARN_LOG_FMT(VIDEOINTERFACE, "Writing to the unknown AA register (hi)");
                  }));
   mmio->Register(base | VI_UNK_AA_REG_LO, MMIO::ComplexRead<u16>([](Core::System& system, u32) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   return state.unknown_aa_register & 0xFFFF;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   return state_.unknown_aa_register & 0xFFFF;
                  }),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
-                   state.unknown_aa_register = (state.unknown_aa_register & 0xFFFF0000) | val;
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
+                   state_.unknown_aa_register = (state_.unknown_aa_register & 0xFFFF0000) | val;
                    WARN_LOG_FMT(VIDEOINTERFACE, "Writing to the unknown AA register (lo)");
                  }));
 
@@ -387,21 +387,21 @@ void RegisterMMIO(MMIO::Mapping* mmio, u32 base)
   mmio->Register(base | VI_CONTROL_REGISTER,
                  MMIO::DirectRead<u16>(&state.display_control_register.Hex),
                  MMIO::ComplexWrite<u16>([](Core::System& system, u32, u16 val) {
-                   auto& state = system.GetVideoInterfaceState().GetData();
+                   auto& state_ = system.GetVideoInterfaceState().GetData();
 
                    UVIDisplayControlRegister tmpConfig(val);
-                   state.display_control_register.ENB = tmpConfig.ENB;
-                   state.display_control_register.NIN = tmpConfig.NIN;
-                   state.display_control_register.DLR = tmpConfig.DLR;
-                   state.display_control_register.LE0 = tmpConfig.LE0;
-                   state.display_control_register.LE1 = tmpConfig.LE1;
-                   state.display_control_register.FMT = tmpConfig.FMT;
+                   state_.display_control_register.ENB = tmpConfig.ENB;
+                   state_.display_control_register.NIN = tmpConfig.NIN;
+                   state_.display_control_register.DLR = tmpConfig.DLR;
+                   state_.display_control_register.LE0 = tmpConfig.LE0;
+                   state_.display_control_register.LE1 = tmpConfig.LE1;
+                   state_.display_control_register.FMT = tmpConfig.FMT;
 
                    if (tmpConfig.RST)
                    {
                      // shuffle2 clear all data, reset to default vals, and enter idle mode
-                     state.display_control_register.RST = 0;
-                     state.interrupt_register = {};
+                     state_.display_control_register.RST = 0;
+                     state_.interrupt_register = {};
                      UpdateInterrupts();
                    }
 

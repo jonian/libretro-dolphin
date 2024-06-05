@@ -18,6 +18,12 @@ class Mapping;
 }
 class PointerWrap;
 
+class AbstractGfx;
+class BoundingBox;
+class Renderer;
+class TextureCacheBase;
+class VertexManagerBase;
+
 enum class FieldType
 {
   Odd,
@@ -70,10 +76,22 @@ public:
   // Wrapper function which pushes the event to the GPU thread.
   void DoState(PointerWrap& p);
 
-  void InitializeShared();
+protected:
+  // For hardware backends
+  bool InitializeShared(std::unique_ptr<AbstractGfx> gfx,
+                        std::unique_ptr<VertexManagerBase> vertex_manager,
+                        std::unique_ptr<PerfQueryBase> perf_query,
+                        std::unique_ptr<BoundingBox> bounding_box);
+
+  // For software and null backends. Allows overriding the default Renderer and Texture Cache
+  bool InitializeShared(std::unique_ptr<AbstractGfx> gfx,
+                        std::unique_ptr<VertexManagerBase> vertex_manager,
+                        std::unique_ptr<PerfQueryBase> perf_query,
+                        std::unique_ptr<BoundingBox> bounding_box,
+                        std::unique_ptr<Renderer> renderer,
+                        std::unique_ptr<TextureCacheBase> texture_cache);
   void ShutdownShared();
 
-protected:
   bool m_initialized = false;
 };
 

@@ -48,6 +48,21 @@ u32 GetMemoryTargetSize(std::string_view instr)
 
   return 4;
 }
+
+bool CompareMemoryTargetToTracked(const std::string& instr, const u32 mem_target,
+                                  const std::set<u32>& mem_tracked)
+{
+  // This function is hit often and should be optimized.
+  auto it_lower = std::lower_bound(mem_tracked.begin(), mem_tracked.end(), mem_target);
+
+  if (it_lower == mem_tracked.end())
+    return false;
+  else if (*it_lower == mem_target)
+    return true;
+
+  // If the base value doesn't hit, still need to check if longer values overlap.
+  return *it_lower < mem_target + GetMemoryTargetSize(instr);
+}
 }  // namespace
 
 void CodeTrace::SetRegTracked(const std::string& reg)
@@ -107,14 +122,14 @@ InstructionAttributes CodeTrace::GetInstructionAttributes(const TraceOutput& ins
   return tmp_attributes;
 }
 
-TraceOutput CodeTrace::SaveCurrentInstruction() const
+TraceOutput CodeTrace::SaveCurrentInstruction(const Core::CPUThreadGuard* guard) const
 {
   auto& system = Core::System::GetInstance();
   auto& ppc_state = system.GetPPCState();
 
   // Quickly save instruction and memory target for fast logging.
   TraceOutput output;
-  const std::string instr = PowerPC::debug_interface.Disassemble(ppc_state.pc);
+  const std::string instr = PowerPC::debug_interface.Disassemble(guard, ppc_state.pc);
   output.instruction = instr;
   output.address = ppc_state.pc;
 
@@ -124,29 +139,15 @@ TraceOutput CodeTrace::SaveCurrentInstruction() const
   return output;
 }
 
-bool CompareMemoryTargetToTracked(const std::string& instr, const u32 mem_target,
-                                  const std::set<u32>& mem_tracked)
-{
-  // This function is hit often and should be optimized.
-  auto it_lower = std::lower_bound(mem_tracked.begin(), mem_tracked.end(), mem_target);
-
-  if (it_lower == mem_tracked.end())
-    return false;
-  else if (*it_lower == mem_target)
-    return true;
-
-  // If the base value doesn't hit, still need to check if longer values overlap.
-  return *it_lower < mem_target + GetMemoryTargetSize(instr);
-}
-
-AutoStepResults CodeTrace::AutoStepping(bool continue_previous, AutoStop stop_on)
+AutoStepResults CodeTrace::AutoStepping(const Core::CPUThreadGuard& guard, bool continue_previous,
+                                        AutoStop stop_on)
 {
   AutoStepResults results;
 
-  if (!CPU::IsStepping() || m_recording)
+  if (m_recording)
     return results;
 
-  TraceOutput pc_instr = SaveCurrentInstruction();
+  TraceOutput pc_instr = SaveCurrentInstruction(&guard);
   const InstructionAttributes instr = GetInstructionAttributes(pc_instr);
 
   // Not an instruction we should start autostepping from (ie branches).
@@ -187,7 +188,6 @@ AutoStepResults CodeTrace::AutoStepping(bool continue_previous, AutoStop stop_on
   else if (stop_on == AutoStop::Changed)
     stop_condition = HitType::ACTIVE;
 
-  CPU::PauseAndLock(true, false);
   PowerPC::breakpoints.ClearAllTemporary();
   using clock = std::chrono::steady_clock;
   clock::time_point timeout = clock::now() + std::chrono::seconds(4);
@@ -199,7 +199,7 @@ AutoStepResults CodeTrace::AutoStepping(bool continue_previous, AutoStop stop_on
   {
     PowerPC::SingleStep();
 
-    pc_instr = SaveCurrentInstruction();
+    pc_instr = SaveCurrentInstruction(&guard);
     hit = TraceLogic(pc_instr);
     results.count += 1;
   } while (clock::now() < timeout && hit < stop_condition &&
@@ -210,7 +210,6 @@ AutoStepResults CodeTrace::AutoStepping(bool continue_previous, AutoStop stop_on
     results.timed_out = true;
 
   PowerPC::SetMode(old_mode);
-  CPU::PauseAndLock(false, false);
   m_recording = false;
 
   results.reg_tracked = m_reg_autotrack;

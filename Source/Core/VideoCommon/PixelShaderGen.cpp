@@ -16,7 +16,6 @@
 #include "VideoCommon/DriverDetails.h"
 #include "VideoCommon/LightingShaderGen.h"
 #include "VideoCommon/NativeVertexFormat.h"
-#include "VideoCommon/RenderBase.h"
 #include "VideoCommon/RenderState.h"
 #include "VideoCommon/VertexLoaderManager.h"
 #include "VideoCommon/VideoCommon.h"
@@ -180,7 +179,7 @@ PixelShaderUid GetPixelShaderUid()
   uid_data->genMode_numindstages = bpmem.genMode.numindstages;
   uid_data->genMode_numtevstages = bpmem.genMode.numtevstages;
   uid_data->genMode_numtexgens = bpmem.genMode.numtexgens;
-  uid_data->bounding_box = g_ActiveConfig.bBBoxEnable && g_renderer->IsBBoxEnabled();
+  uid_data->bounding_box = g_ActiveConfig.bBBoxEnable && g_bounding_box->IsEnabled();
   uid_data->rgba6_format =
       bpmem.zcontrol.pixel_format == PixelFormat::RGBA6_Z24 && !g_ActiveConfig.bForceTrueColor;
   uid_data->dither = bpmem.blendmode.dither && uid_data->rgba6_format;
@@ -323,7 +322,7 @@ void ClearUnusedPixelShaderUidBits(APIType api_type, const ShaderHostConfig& hos
 
   // If bounding box is enabled when a UID cache is created, then later disabled, we shouldn't
   // emit the bounding box portion of the shader.
-  uid_data->bounding_box &= host_config.bounding_box & host_config.backend_bbox;
+  uid_data->bounding_box &= host_config.bounding_box && host_config.backend_bbox;
 }
 
 void WritePixelShaderCommonHeader(ShaderCode& out, APIType api_type,
@@ -458,15 +457,12 @@ void UpdateBoundingBox(float2 rawpos) {{
   int2 pos_br = pos | 1;   // round up to odd
 
 #ifdef SUPPORTS_SUBGROUP_REDUCTION
-  if (CAN_USE_SUBGROUP_REDUCTION) {{
-    int2 min_pos = IS_HELPER_INVOCATION ? int2(2147483647, 2147483647) : pos_tl;
-    int2 max_pos = IS_HELPER_INVOCATION ? int2(-2147483648, -2147483648) : pos_br;
-    SUBGROUP_MIN(min_pos);
-    SUBGROUP_MAX(max_pos);
+  if (!IS_HELPER_INVOCATION)
+  {{
+    SUBGROUP_MIN(pos_tl);
+    SUBGROUP_MAX(pos_br);
     if (IS_FIRST_ACTIVE_INVOCATION)
-      UpdateBoundingBoxBuffer(min_pos, max_pos);
-  }} else {{
-    UpdateBoundingBoxBuffer(pos_tl, pos_br);
+      UpdateBoundingBoxBuffer(pos_tl, pos_br);
   }}
 #else
   UpdateBoundingBoxBuffer(pos_tl, pos_br);
@@ -870,6 +866,8 @@ ShaderCode GeneratePixelShaderCode(APIType api_type, const ShaderHostConfig& hos
                             GetInterpolationQualifier(msaa, ssaa, true, true), ShaderStage::Pixel);
 
     out.Write("}};\n");
+    if (stereo && !host_config.backend_gl_layer_in_fs)
+      out.Write("flat in int layer;");
   }
   else
   {
@@ -927,7 +925,8 @@ ShaderCode GeneratePixelShaderCode(APIType api_type, const ShaderHostConfig& hos
 
   if (host_config.backend_geometry_shaders && stereo)
   {
-    out.Write("\tint layer = gl_Layer;\n");
+    if (host_config.backend_gl_layer_in_fs)
+      out.Write("\tint layer = gl_Layer;\n");
   }
   else
   {
