@@ -5,6 +5,7 @@
 
 #include "VideoCommon/AbstractGfx.h"
 #include "VideoCommon/Constants.h"
+#include "Common/GL/GLExtensions/GLExtensions.h"
 
 class GLContext;
 
@@ -88,6 +89,8 @@ public:
 
   // Restores FBO binding after it's been changed.
   void RestoreFramebufferBinding();
+
+  void SetSystemFrameBuffer(GLuint fbo);
 
   SurfaceInfo GetSurfaceInfo() const override;
 

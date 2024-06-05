@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "Common/GL/GLUtil.h"
+#include "Common/GL/GLExtensions/GLExtensions.h"
 
 #include "VideoCommon/AbstractFramebuffer.h"
 #include "VideoCommon/AbstractStagingTexture.h"

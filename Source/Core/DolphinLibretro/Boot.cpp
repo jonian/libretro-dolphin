@@ -220,7 +220,7 @@ void retro_unload_game(void)
 {
   Core::Stop();
   Core::Shutdown();
-  g_video_backend->ShutdownShared();
+  g_video_backend->Shutdown();
   Libretro::Input::Shutdown();
   Libretro::Audio::Shutdown();
   Libretro::Log::Shutdown();

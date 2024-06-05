@@ -17,7 +17,7 @@
 #include "Core/Core.h"
 #include "Core/Host.h"
 #include "DolphinLibretro/Options.h"
-#include "VideoBackends/OGL/OGLRender.h"
+#include "VideoBackends/OGL/OGLGfx.h"
 #include "VideoBackends/OGL/VideoBackend.h"
 #include "VideoCommon/AsyncRequests.h"
 #include "VideoCommon/Fifo.h"
@@ -51,7 +51,7 @@ static void ContextDestroy(void)
 
   if (Config::Get(Config::MAIN_GFX_BACKEND) == "OGL")
   {
-    static_cast<OGL::Renderer*>(g_renderer.get())->SetSystemFrameBuffer(0);
+    OGL::GetOGLGfx()->SetSystemFrameBuffer(0);
   }
 
   g_video_backend->Shutdown();

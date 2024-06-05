@@ -565,7 +565,7 @@ static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi
     PowerPC::debug_interface.Clear(guard);
   }};
 
-  bool init_video = !g_renderer;
+  bool init_video = !g_presenter;
   if (init_video)
   {
     VideoBackendBase::PopulateBackendInfo();
