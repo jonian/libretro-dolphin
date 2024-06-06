@@ -37,6 +37,8 @@ add_library(inputcommon
   ControllerEmu/ControlGroup/IMUCursor.h
   ControllerEmu/ControlGroup/IMUGyroscope.cpp
   ControllerEmu/ControlGroup/IMUGyroscope.h
+  ControllerEmu/ControlGroup/IRPassthrough.cpp
+  ControllerEmu/ControlGroup/IRPassthrough.h
   ControllerEmu/ControlGroup/MixedTriggers.cpp
   ControllerEmu/ControlGroup/MixedTriggers.h
   ControllerEmu/ControlGroup/ModifySettingsButton.cpp
@@ -118,8 +120,6 @@ elseif(APPLE)
     ControllerInterface/Quartz/Quartz.mm
     ControllerInterface/Quartz/QuartzKeyboardAndMouse.h
     ControllerInterface/Quartz/QuartzKeyboardAndMouse.mm
-    ControllerInterface/ForceFeedback/ForceFeedbackDevice.cpp
-    ControllerInterface/ForceFeedback/ForceFeedbackDevice.h
   )
   target_link_libraries(inputcommon PRIVATE
     ${COREFOUNDATION_LIBRARY}

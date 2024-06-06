@@ -17,6 +17,7 @@
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/System.h"
 #include "DolphinQt/Host.h"
+#include "DolphinQt/QtUtils/FromStdString.h"
 #include "DolphinQt/Settings.h"
 
 ThreadWidget::ThreadWidget(QWidget* parent) : QDockWidget(parent)
@@ -252,13 +253,14 @@ void ThreadWidget::Update()
   if (!isVisible())
     return;
 
-  const auto emu_state = Core::GetState();
+  auto& system = Core::System::GetInstance();
+  const auto emu_state = Core::GetState(system);
   if (emu_state == Core::State::Stopping)
   {
     m_thread_table->setRowCount(0);
     UpdateThreadContext({});
 
-    Core::CPUThreadGuard guard(Core::System::GetInstance());
+    const Core::CPUThreadGuard guard(system);
     UpdateThreadCallstack(guard, {});
   }
   if (emu_state != Core::State::Paused)
@@ -303,7 +305,7 @@ void ThreadWidget::Update()
   };
 
   {
-    Core::CPUThreadGuard guard(Core::System::GetInstance());
+    const Core::CPUThreadGuard guard(system);
 
     // YAGCD - Section 4.2.1.4 Dolphin OS Globals
     m_current_context->setText(format_hex_from(guard, 0x800000D4));
@@ -460,7 +462,7 @@ void ThreadWidget::UpdateThreadCallstack(const Core::CPUThreadGuard& guard,
       m_callstack_table->setItem(i, 2, new QTableWidgetItem(format_hex(lr_save)));
       m_callstack_table->setItem(
           i, 3,
-          new QTableWidgetItem(QString::fromStdString(
+          new QTableWidgetItem(QtUtils::FromStdString(
               guard.GetSystem().GetPowerPC().GetDebugInterface().GetDescription(lr_save))));
     }
     else

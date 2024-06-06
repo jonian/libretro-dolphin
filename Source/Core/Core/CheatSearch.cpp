@@ -211,12 +211,13 @@ Cheats::NewSearch(const Core::CPUThreadGuard& guard,
   if (Config::Get(Config::RA_HARDCORE_ENABLED))
     return Cheats::SearchErrorCode::DisabledInHardcoreMode;
 #endif  // USE_RETRO_ACHIEVEMENTS
+  auto& system = guard.GetSystem();
   std::vector<Cheats::SearchResult<T>> results;
-  const Core::State core_state = Core::GetState();
+  const Core::State core_state = Core::GetState(system);
   if (core_state != Core::State::Running && core_state != Core::State::Paused)
     return Cheats::SearchErrorCode::NoEmulationActive;
 
-  const auto& ppc_state = guard.GetSystem().GetPPCState();
+  const auto& ppc_state = system.GetPPCState();
   if (address_space == PowerPC::RequestedAddressSpace::Virtual && !ppc_state.msr.DR)
     return Cheats::SearchErrorCode::VirtualAddressesCurrentlyNotAccessible;
 
@@ -265,12 +266,13 @@ Cheats::NextSearch(const Core::CPUThreadGuard& guard,
   if (Config::Get(Config::RA_HARDCORE_ENABLED))
     return Cheats::SearchErrorCode::DisabledInHardcoreMode;
 #endif  // USE_RETRO_ACHIEVEMENTS
+  auto& system = guard.GetSystem();
   std::vector<Cheats::SearchResult<T>> results;
-  const Core::State core_state = Core::GetState();
+  const Core::State core_state = Core::GetState(system);
   if (core_state != Core::State::Running && core_state != Core::State::Paused)
     return Cheats::SearchErrorCode::NoEmulationActive;
 
-  const auto& ppc_state = guard.GetSystem().GetPPCState();
+  const auto& ppc_state = system.GetPPCState();
   if (address_space == PowerPC::RequestedAddressSpace::Virtual && !ppc_state.msr.DR)
     return Cheats::SearchErrorCode::VirtualAddressesCurrentlyNotAccessible;
 
@@ -570,11 +572,19 @@ std::string Cheats::CheatSearchSession<T>::GetResultValueAsString(size_t index, 
   if (hex)
   {
     if constexpr (std::is_same_v<T, float>)
-      return fmt::format("0x{0:08x}", Common::BitCast<u32>(m_search_results[index].m_value));
+    {
+      return fmt::format("0x{0:08x}", Common::BitCast<s32>(m_search_results[index].m_value));
+    }
     else if constexpr (std::is_same_v<T, double>)
-      return fmt::format("0x{0:016x}", Common::BitCast<u64>(m_search_results[index].m_value));
+    {
+      return fmt::format("0x{0:016x}", Common::BitCast<s64>(m_search_results[index].m_value));
+    }
     else
-      return fmt::format("0x{0:0{1}x}", m_search_results[index].m_value, sizeof(T) * 2);
+    {
+      return fmt::format("0x{0:0{1}x}",
+                         Common::BitCast<std::make_unsigned_t<T>>(m_search_results[index].m_value),
+                         sizeof(T) * 2);
+    }
   }
 
   return fmt::format("{}", m_search_results[index].m_value);

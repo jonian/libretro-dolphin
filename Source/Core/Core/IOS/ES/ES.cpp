@@ -982,7 +982,8 @@ IPCReply ESDevice::SetUpStreamKey(const Context& context, const IOCtlVRequest& r
 
   u32 handle;
   const ReturnCode ret = m_core.SetUpStreamKey(
-      context.uid, memory.GetPointer(request.in_vectors[0].address), tmd, &handle);
+      context.uid, memory.GetPointerForRange(request.in_vectors[0].address, sizeof(ES::TicketView)),
+      tmd, &handle);
   memory.Write_U32(handle, request.io_vectors[0].address);
   return IPCReply(ret);
 }
@@ -1016,11 +1017,11 @@ bool ESCore::IsIssuerCorrect(VerifyContainerType type, const ES::CertReader& iss
   switch (type)
   {
   case VerifyContainerType::TMD:
-    return issuer_cert.GetName().compare(0, 2, "CP") == 0;
+    return issuer_cert.GetName().starts_with("CP");
   case VerifyContainerType::Ticket:
-    return issuer_cert.GetName().compare(0, 2, "XS") == 0;
+    return issuer_cert.GetName().starts_with("XS");
   case VerifyContainerType::Device:
-    return issuer_cert.GetName().compare(0, 2, "MS") == 0;
+    return issuer_cert.GetName().starts_with("MS");
   default:
     return false;
   }

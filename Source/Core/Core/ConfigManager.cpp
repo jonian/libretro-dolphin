@@ -190,7 +190,7 @@ void SConfig::SetRunningGameMetadata(const std::string& game_id, const std::stri
   Host_TitleChanged();
   if (Core::IsRunning())
   {
-    Core::UpdateTitle();
+    Core::UpdateTitle(system);
   }
 
   Config::AddLayer(ConfigLoaders::GenerateGlobalGameConfigLoader(game_id, revision));
@@ -205,13 +205,14 @@ void SConfig::OnNewTitleLoad(const Core::CPUThreadGuard& guard)
   if (!Core::IsRunning())
     return;
 
-  if (!g_symbolDB.IsEmpty())
+  auto& system = guard.GetSystem();
+  auto& ppc_symbol_db = system.GetPPCSymbolDB();
+  if (!ppc_symbol_db.IsEmpty())
   {
-    g_symbolDB.Clear();
-    Host_NotifyMapLoaded();
+    ppc_symbol_db.Clear();
+    Host_PPCSymbolsChanged();
   }
-  CBoot::LoadMapFromFilename(guard);
-  auto& system = Core::System::GetInstance();
+  CBoot::LoadMapFromFilename(guard, ppc_symbol_db);
   HLE::Reload(system);
   PatchEngine::Reload();
   HiresTexture::Update();
