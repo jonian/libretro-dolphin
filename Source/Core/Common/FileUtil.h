@@ -33,6 +33,8 @@ enum
   D_CONFIG_IDX,           // global settings
   D_GAMESETTINGS_IDX,     // user-specified settings which override both the global and the default
                           // settings (per game)
+  D_SKYLANDERS_IDX,
+
   D_MAPS_IDX,
   D_CACHE_IDX,
   D_COVERCACHE_IDX,
@@ -65,6 +67,10 @@ enum
   D_GBAUSER_IDX,
   D_GBASAVES_IDX,
   D_WIISDCARDSYNCFOLDER_IDX,
+  D_GPU_DRIVERS_EXTRACTED,
+  D_GPU_DRIVERS_TMP,
+  D_GPU_DRIVERS_HOOKS,
+  D_GPU_DRIVERS_FILE_REDIRECT,
   FIRST_FILE_USER_PATH_IDX,
   F_DOLPHINCONFIG_IDX = FIRST_FILE_USER_PATH_IDX,
   F_GCPADCONFIG_IDX,
@@ -225,6 +231,11 @@ std::string GetThemeDir(const std::string& theme_name);
 const std::string& GetSysDirectory();
 
 void SetSysDirectory(const std::string& path);
+
+#if defined ANDROID
+void SetGpuDriverDirectories(const std::string& path, const std::string& lib_path);
+const std::string GetGpuDriverDirectory(unsigned int dir_index);
+#endif
 
 #ifdef __APPLE__
 std::string GetBundleDirectory();

@@ -19,11 +19,11 @@ public:
   std::string GetName() const override;
   std::string GetDisplayName() const override;
 
-  void InitBackendInfo() override;
+  void InitBackendInfo(const WindowSystemInfo& wsi) override;
 
   static constexpr const char* NAME = "OGL";
 
   bool InitializeGLExtensions(GLContext* context);
-  bool FillBackendInfo();
+  bool FillBackendInfo(GLContext* context);
 };
 }  // namespace OGL

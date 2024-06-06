@@ -27,6 +27,10 @@ add_executable(dolphin-emu
   CheatSearchWidget.h
   CheatsManager.cpp
   CheatsManager.h
+  Achievements/AchievementSettingsWidget.cpp
+  Achievements/AchievementSettingsWidget.h
+  Achievements/AchievementsWindow.cpp
+  Achievements/AchievementsWindow.h
   Config/ARCodeWidget.cpp
   Config/ARCodeWidget.h
   Config/CheatCodeEditor.cpp
@@ -43,6 +47,8 @@ add_executable(dolphin-emu
   Config/ConfigControls/ConfigInteger.h
   Config/ConfigControls/ConfigRadio.cpp
   Config/ConfigControls/ConfigRadio.h
+  Config/ConfigControls/ConfigFloatSlider.cpp
+  Config/ConfigControls/ConfigFloatSlider.h
   Config/ConfigControls/ConfigSlider.cpp
   Config/ConfigControls/ConfigSlider.h
   Config/ControllerInterface/ControllerInterfaceWindow.cpp
@@ -81,6 +87,8 @@ add_executable(dolphin-emu
   Config/Graphics/GraphicsWindow.h
   Config/Graphics/HacksWidget.cpp
   Config/Graphics/HacksWidget.h
+  Config/Graphics/ColorCorrectionConfigWindow.cpp
+  Config/Graphics/ColorCorrectionConfigWindow.h
   Config/Graphics/PostProcessingConfigWindow.cpp
   Config/Graphics/PostProcessingConfigWindow.h
   Config/GraphicsModListWidget.cpp
