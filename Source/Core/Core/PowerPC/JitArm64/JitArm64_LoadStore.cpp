@@ -136,7 +136,7 @@ void JitArm64::SafeLoadToReg(u32 dest, s32 addr, s32 offsetReg, u32 flags, s32 o
   if (is_immediate)
     mmio_address = m_mmu.IsOptimizableMMIOAccess(imm_addr, access_size);
 
-  if (is_immediate && m_mmu.IsOptimizableRAMAddress(imm_addr))
+  if (is_immediate && m_mmu.IsOptimizableRAMAddress(imm_addr, access_size))
   {
     set_addr_reg_if_needed();
     EmitBackpatchRoutine(flags, MemAccessMode::AlwaysFastAccess, dest_reg, XA, regs_in_use,
@@ -308,7 +308,7 @@ void JitArm64::SafeStoreFromReg(s32 dest, u32 value, s32 regOffset, u32 flags, s
 
     js.fifoBytesSinceCheck += accessSize >> 3;
   }
-  else if (is_immediate && m_mmu.IsOptimizableRAMAddress(imm_addr))
+  else if (is_immediate && m_mmu.IsOptimizableRAMAddress(imm_addr, access_size))
   {
     set_addr_reg_if_needed();
     EmitBackpatchRoutine(flags, MemAccessMode::AlwaysFastAccess, RS, XA, regs_in_use, fprs_in_use);
@@ -890,7 +890,7 @@ void JitArm64::dcbx(UGeckoInstruction inst)
     gprs_to_push[DecodeReg(loop_counter)] = false;
 
   ABI_PushRegisters(gprs_to_push);
-  m_float_emit.ABI_PushRegisters(fprs_to_push, WA);
+  m_float_emit.ABI_PushRegisters(fprs_to_push, EncodeRegTo64(WA));
 
   // For efficiency, effective_addr and loop_counter are already in W1 and W2 respectively
   if (make_loop)
@@ -904,7 +904,7 @@ void JitArm64::dcbx(UGeckoInstruction inst)
                      effective_addr);
   }
 
-  m_float_emit.ABI_PopRegisters(fprs_to_push, WA);
+  m_float_emit.ABI_PopRegisters(fprs_to_push, EncodeRegTo64(WA));
   ABI_PopRegisters(gprs_to_push);
 
   FixupBranch near_addr = B();
@@ -939,7 +939,6 @@ void JitArm64::dcbz(UGeckoInstruction inst)
 {
   INSTRUCTION_START
   JITDISABLE(bJITLoadStoreOff);
-  FALLBACK_IF(m_low_dcbz_hack);
 
   int a = inst.RA, b = inst.RB;
 

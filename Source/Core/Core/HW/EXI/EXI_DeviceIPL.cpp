@@ -106,7 +106,7 @@ CEXIIPL::CEXIIPL(Core::System& system) : IEXIDevice(system)
 
   // Load whole ROM dump
   // Note: The Wii doesn't have a copy of the IPL, only fonts.
-  if (!SConfig::GetInstance().bWii && Config::Get(Config::SESSION_LOAD_IPL_DUMP) &&
+  if (!system.IsWii() && Config::Get(Config::SESSION_LOAD_IPL_DUMP) &&
       LoadFileToIPL(SConfig::GetInstance().m_strBootROM, 0))
   {
     // Descramble the encrypted section (contains BS1 and BS2)
@@ -406,24 +406,26 @@ u32 CEXIIPL::GetEmulatedTime(Core::System& system, u32 epoch)
 {
   u64 ltime = 0;
 
-  if (Movie::IsMovieActive())
+  auto& movie = system.GetMovie();
+  if (movie.IsMovieActive())
   {
-    ltime = Movie::GetRecordingStartTime();
+    ltime = movie.GetRecordingStartTime();
 
     // let's keep time moving forward, regardless of what it starts at
-    ltime += system.GetCoreTiming().GetTicks() / SystemTimers::GetTicksPerSecond();
+    ltime += system.GetCoreTiming().GetTicks() / system.GetSystemTimers().GetTicksPerSecond();
   }
   else if (NetPlay::IsNetPlayRunning())
   {
     ltime = NetPlay_GetEmulatedTime();
 
     // let's keep time moving forward, regardless of what it starts at
-    ltime += system.GetCoreTiming().GetTicks() / SystemTimers::GetTicksPerSecond();
+    ltime += system.GetCoreTiming().GetTicks() / system.GetSystemTimers().GetTicksPerSecond();
   }
   else
   {
     ASSERT(!Core::WantsDeterminism());
-    ltime = Common::Timer::GetLocalTimeSinceJan1970() - SystemTimers::GetLocalTimeRTCOffset();
+    ltime = Common::Timer::GetLocalTimeSinceJan1970() -
+            system.GetSystemTimers().GetLocalTimeRTCOffset();
   }
 
   return static_cast<u32>(ltime) - epoch;

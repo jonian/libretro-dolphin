@@ -47,8 +47,9 @@ static bool IsVSyncActive(bool enabled)
 
 void UpdateActiveConfig()
 {
-  if (Movie::IsPlayingInput() && Movie::IsConfigSaved())
-    Movie::SetGraphicsConfig();
+  auto& movie = Core::System::GetInstance().GetMovie();
+  if (movie.IsPlayingInput() && movie.IsConfigSaved())
+    movie.SetGraphicsConfig();
   g_ActiveConfig = g_Config;
   g_ActiveConfig.bVSyncActive = IsVSyncActive(g_ActiveConfig.bVSync);
 }
@@ -394,5 +395,5 @@ void CheckForConfigChanges()
   // TODO: Move everything else to the ConfigChanged event
 }
 
-static Common::EventHook s_check_config_event =
-    AfterFrameEvent::Register([] { CheckForConfigChanges(); }, "CheckForConfigChanges");
+static Common::EventHook s_check_config_event = AfterFrameEvent::Register(
+    [](Core::System&) { CheckForConfigChanges(); }, "CheckForConfigChanges");

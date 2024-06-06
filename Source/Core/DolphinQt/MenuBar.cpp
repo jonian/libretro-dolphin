@@ -146,7 +146,8 @@ void MenuBar::OnEmulationStateChanged(Core::State state)
 #else   // USE_RETRO_ACHIEVEMENTS
   m_recording_play->setEnabled(m_game_selected && !running);
 #endif  // USE_RETRO_ACHIEVEMENTS
-  m_recording_start->setEnabled((m_game_selected || running) && !Movie::IsPlayingInput());
+  m_recording_start->setEnabled((m_game_selected || running) &&
+                                !Core::System::GetInstance().GetMovie().IsPlayingInput());
 
   // JIT
   m_jit_interpreter_core->setEnabled(running);
@@ -171,7 +172,6 @@ void MenuBar::OnDebugModeToggled(bool enabled)
 {
   // Options
   m_boot_to_pause->setVisible(enabled);
-  m_automatic_start->setVisible(enabled);
   m_reset_ignore_panic_handler->setVisible(enabled);
   m_change_font->setVisible(enabled);
 
@@ -184,6 +184,7 @@ void MenuBar::OnDebugModeToggled(bool enabled)
   m_show_memory->setVisible(enabled);
   m_show_network->setVisible(enabled);
   m_show_jit->setVisible(enabled);
+  m_show_assembler->setVisible(enabled);
 
   if (enabled)
   {
@@ -571,13 +572,6 @@ void MenuBar::AddOptionsMenu()
   connect(m_boot_to_pause, &QAction::toggled, this,
           [](bool enable) { SConfig::GetInstance().bBootToPause = enable; });
 
-  m_automatic_start = options_menu->addAction(tr("&Automatic Start"));
-  m_automatic_start->setCheckable(true);
-  m_automatic_start->setChecked(SConfig::GetInstance().bAutomaticStart);
-
-  connect(m_automatic_start, &QAction::toggled, this,
-          [](bool enable) { SConfig::GetInstance().bAutomaticStart = enable; });
-
   m_reset_ignore_panic_handler = options_menu->addAction(tr("Reset Ignore Panic Handler"));
 
   connect(m_reset_ignore_panic_handler, &QAction::triggered, this, []() {
@@ -775,8 +769,9 @@ void MenuBar::AddMovieMenu()
 
   m_recording_read_only = movie_menu->addAction(tr("&Read-Only Mode"));
   m_recording_read_only->setCheckable(true);
-  m_recording_read_only->setChecked(Movie::IsReadOnly());
-  connect(m_recording_read_only, &QAction::toggled, [](bool value) { Movie::SetReadOnly(value); });
+  m_recording_read_only->setChecked(Core::System::GetInstance().GetMovie().IsReadOnly());
+  connect(m_recording_read_only, &QAction::toggled,
+          [](bool value) { Core::System::GetInstance().GetMovie().SetReadOnly(value); });
 
   movie_menu->addAction(tr("TAS Input"), this, [this] { emit ShowTASInput(); });
 
@@ -1231,7 +1226,8 @@ void MenuBar::OnSelectionChanged(std::shared_ptr<const UICommon::GameFile> game_
   m_game_selected = !!game_file;
 
   m_recording_play->setEnabled(m_game_selected && !Core::IsRunning());
-  m_recording_start->setEnabled((m_game_selected || Core::IsRunning()) && !Movie::IsPlayingInput());
+  m_recording_start->setEnabled((m_game_selected || Core::IsRunning()) &&
+                                !Core::System::GetInstance().GetMovie().IsPlayingInput());
 }
 
 void MenuBar::OnRecordingStatusChanged(bool recording)

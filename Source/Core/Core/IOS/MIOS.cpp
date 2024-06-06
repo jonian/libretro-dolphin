@@ -32,7 +32,7 @@ namespace IOS::HLE::MIOS
 {
 static void ReinitHardware(Core::System& system)
 {
-  SConfig::GetInstance().bWii = false;
+  system.SetIsWii(false);
 
   // IOS clears mem2 and overwrites it with pseudo-random data (for security).
   auto& memory = system.GetMemory();
@@ -47,10 +47,9 @@ static void ReinitHardware(Core::System& system)
   // Note: this is specific to Dolphin and is required because we initialised it in Wii mode.
   auto& dsp = system.GetDSP();
   dsp.Reinit(Config::Get(Config::MAIN_DSP_HLE));
-  dsp.GetDSPEmulator()->Initialize(SConfig::GetInstance().bWii,
-                                   Config::Get(Config::MAIN_DSP_THREAD));
+  dsp.GetDSPEmulator()->Initialize(system.IsWii(), Config::Get(Config::MAIN_DSP_THREAD));
 
-  SystemTimers::ChangePPCClock(SystemTimers::Mode::GC);
+  system.GetSystemTimers().ChangePPCClock(SystemTimers::Mode::GC);
 }
 
 constexpr u32 ADDRESS_INIT_SEMAPHORE = 0x30f8;
@@ -101,7 +100,7 @@ bool Load(Core::System& system)
 
   memory.Write_U32(0x00000000, ADDRESS_INIT_SEMAPHORE);
   NOTICE_LOG_FMT(IOS, "IPL ready.");
-  SConfig::GetInstance().m_is_mios = true;
+  system.SetIsMIOS(true);
   system.GetDVDInterface().UpdateRunningGameMetadata();
   SConfig::OnNewTitleLoad(guard);
   return true;
