@@ -597,9 +597,6 @@ static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi
     HW::Shutdown(system);
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(false, "HW shutdown"));
 
-    // Clear on screen messages that haven't expired
-    OSD::ClearMessages();
-
     // The config must be restored only after the whole HW has shut down,
     // not when it is still running.
     BootManager::RestoreConfig();
@@ -624,6 +621,9 @@ static void EmuThread(std::unique_ptr<BootParameters> boot, WindowSystemInfo wsi
   }
 
   Common::ScopeGuard video_guard{[init_video] {
+    // Clear on screen messages that haven't expired
+    OSD::ClearMessages();
+
     if (init_video)
       g_video_backend->Shutdown();
   }};
