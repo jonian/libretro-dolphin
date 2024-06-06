@@ -23,6 +23,14 @@ const Info<bool> GFX_WIDESCREEN_HACK{{System::GFX, "Settings", "wideScreenHack"}
 const Info<AspectMode> GFX_ASPECT_RATIO{{System::GFX, "Settings", "AspectRatio"}, AspectMode::Auto};
 const Info<AspectMode> GFX_SUGGESTED_ASPECT_RATIO{{System::GFX, "Settings", "SuggestedAspectRatio"},
                                                   AspectMode::Auto};
+const Info<u32> GFX_WIDESCREEN_HEURISTIC_TRANSITION_THRESHOLD{
+    {System::GFX, "Settings", "WidescreenHeuristicTransitionThreshold"}, 3};
+const Info<float> GFX_WIDESCREEN_HEURISTIC_ASPECT_RATIO_SLOP{
+    {System::GFX, "Settings", "WidescreenHeuristicAspectRatioSlop"}, 0.11f};
+const Info<float> GFX_WIDESCREEN_HEURISTIC_STANDARD_RATIO{
+    {System::GFX, "Settings", "WidescreenHeuristicStandardRatio"}, 1.f};
+const Info<float> GFX_WIDESCREEN_HEURISTIC_WIDESCREEN_RATIO{
+    {System::GFX, "Settings", "WidescreenHeuristicWidescreenRatio"}, (16 / 9.f) / (4 / 3.f)};
 const Info<bool> GFX_CROP{{System::GFX, "Settings", "Crop"}, false};
 const Info<int> GFX_SAFE_TEXTURE_CACHE_COLOR_SAMPLES{
     {System::GFX, "Settings", "SafeTextureCacheColorSamples"}, 128};
@@ -118,6 +126,8 @@ const Info<std::string> GFX_DRIVER_LIB_NAME{{System::GFX, "Settings", "DriverLib
 const Info<TextureFilteringMode> GFX_ENHANCE_FORCE_TEXTURE_FILTERING{
     {System::GFX, "Enhancements", "ForceTextureFiltering"}, TextureFilteringMode::Default};
 const Info<int> GFX_ENHANCE_MAX_ANISOTROPY{{System::GFX, "Enhancements", "MaxAnisotropy"}, 0};
+const Info<OutputResamplingMode> GFX_ENHANCE_OUTPUT_RESAMPLING{
+    {System::GFX, "Enhancements", "OutputResampling"}, OutputResamplingMode::Default};
 const Info<std::string> GFX_ENHANCE_POST_SHADER{
     {System::GFX, "Enhancements", "PostProcessingShader"}, ""};
 const Info<bool> GFX_ENHANCE_FORCE_TRUE_COLOR{{System::GFX, "Enhancements", "ForceTrueColor"},

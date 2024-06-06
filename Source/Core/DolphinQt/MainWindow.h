@@ -13,6 +13,7 @@
 
 #include "Core/Boot/Boot.h"
 
+class QMenu;
 class QStackedWidget;
 class QString;
 
@@ -80,6 +81,7 @@ public:
   WindowSystemInfo GetWindowSystemInfo() const;
 
   bool eventFilter(QObject* object, QEvent* event) override;
+  QMenu* createPopupMenu() override;
 
 signals:
   void ReadOnlyModeChanged(bool read_only);
@@ -209,6 +211,11 @@ private:
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
   QSize sizeHint() const override;
+
+#ifdef _WIN32
+  // This gets called for each event from the Windows message queue.
+  bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+#endif
 
 #ifdef HAVE_XRANDR
   std::unique_ptr<X11Utils::XRRConfiguration> m_xrr_config;

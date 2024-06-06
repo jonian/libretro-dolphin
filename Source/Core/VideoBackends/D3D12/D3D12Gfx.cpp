@@ -263,7 +263,7 @@ void Gfx::SetSamplerState(u32 index, const SamplerState& state)
   m_dirty_bits |= DirtyState_Samplers;
 }
 
-void Gfx::SetComputeImageTexture(AbstractTexture* texture, bool read, bool write)
+void Gfx::SetComputeImageTexture(u32 index, AbstractTexture* texture, bool read, bool write)
 {
   const DXTexture* dxtex = static_cast<const DXTexture*>(texture);
   if (m_state.compute_image_texture == dxtex)
@@ -654,7 +654,7 @@ bool Gfx::UpdateSRVDescriptorTable()
   static constexpr std::array<UINT, VideoCommon::MAX_PIXEL_SHADER_SAMPLERS> src_sizes = {
       1, 1, 1, 1, 1, 1, 1, 1};
   DescriptorHandle dst_base_handle;
-  const UINT dst_handle_sizes = 8;
+  const UINT dst_handle_sizes = VideoCommon::MAX_PIXEL_SHADER_SAMPLERS;
   if (!g_dx_context->GetDescriptorAllocator()->Allocate(VideoCommon::MAX_PIXEL_SHADER_SAMPLERS,
                                                         &dst_base_handle))
     return false;
