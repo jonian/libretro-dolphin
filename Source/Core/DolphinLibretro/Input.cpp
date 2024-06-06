@@ -30,6 +30,7 @@
 #include "InputCommon/ControllerEmu/ControlGroup/Attachments.h"
 #include "InputCommon/ControllerEmu/Setting/NumericSetting.h"
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
+#include "InputCommon/ControllerInterface/CoreDevice.h"
 #include "InputCommon/GCAdapter.h"
 #include "InputCommon/GCPadStatus.h"
 #include "InputCommon/InputConfig.h"
@@ -299,11 +300,12 @@ private:
 
 public:
   Device(unsigned device, unsigned port);
-  void UpdateInput() override
+  ciface::Core::DeviceRemoval UpdateInput() override
   {
 #if 0
     Libretro::poll_cb();
 #endif
+    return ciface::Core::DeviceRemoval::Keep;
   }
   std::string GetName() const override { return GetDeviceName(m_device); }
   std::string GetSource() const override { return source; }
