@@ -175,10 +175,10 @@ bool retro_load_game(const struct retro_game_info* game)
   }
 
   Libretro::Video::Init();
-  VideoBackendBase::PopulateBackendInfo();
-  NOTICE_LOG_FMT(VIDEO, "Using GFX backend: {}", Config::Get(Config::MAIN_GFX_BACKEND));
-
   WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
+
+  VideoBackendBase::PopulateBackendInfo(wsi);
+  NOTICE_LOG_FMT(VIDEO, "Using GFX backend: {}", Config::Get(Config::MAIN_GFX_BACKEND));
 
   std::vector<std::string> normalized_game_paths;
   normalized_game_paths.push_back(Libretro::NormalizePath(game->path));

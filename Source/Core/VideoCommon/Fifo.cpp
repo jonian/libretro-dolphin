@@ -136,7 +136,7 @@ void FifoManager::ExitGpuLoop(Core::System& system)
 
 void FifoManager::StopGpuLoop()
 {
-  m_gpu_mainloop.Stop(m_gpu_mainloop.kNonBlock);
+  m_gpu_mainloop.Stop(Common::BlockingLoop::StopMode::NonBlock);
 }
 
 void FifoManager::EmulatorState(bool running)
