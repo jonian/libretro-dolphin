@@ -200,7 +200,9 @@ bool retro_load_game(const struct retro_game_info* game)
   for (auto& normalized_game_path : normalized_game_paths)
     Libretro::disk_paths.push_back(Libretro::DenormalizePath(normalized_game_path));
 
-  if (!BootManager::BootCore(BootParameters::GenerateFromFile(normalized_game_paths), wsi))
+  auto& system = Core::System::GetInstance();
+
+  if (!BootManager::BootCore(system, BootParameters::GenerateFromFile(normalized_game_paths), wsi))
   {
     ERROR_LOG_FMT(BOOT, "Could not boot {}\n", game->path);
     return false;
@@ -219,8 +221,9 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info* i
 
 void retro_unload_game(void)
 {
-  Core::Stop();
-  Core::Shutdown();
+  auto& system = Core::System::GetInstance();
+  Core::Stop(system);
+  Core::Shutdown(system);
   g_video_backend->Shutdown();
   Libretro::Input::Shutdown();
   Libretro::Audio::Shutdown();
@@ -272,9 +275,10 @@ static bool retro_set_eject_state(bool ejected)
   {
     if (disk_index < disk_paths.size())
     {
-      Core::RunAsCPUThread([] {
-        Core::System::GetInstance().GetDVDInterface().ChangeDisc(NormalizePath(disk_paths[disk_index]));
-      });
+      std::string path = NormalizePath(disk_paths[disk_index]);
+      auto& system = Core::System::GetInstance();
+
+      system.GetDVDInterface().ChangeDisc(Core::CPUThreadGuard{system}, path);
     }
   }
 

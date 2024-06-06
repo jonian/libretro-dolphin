@@ -137,8 +137,9 @@ void retro_run(void)
   g_Config.bWidescreenHack = Libretro::Options::WidescreenHack;
 
   Libretro::Input::Update();
+  auto& system = Core::System::GetInstance();
 
-  if (Core::GetState() == Core::State::Starting)
+  if (Core::GetState(system) == Core::State::Starting)
   {
     WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
     Core::RunEmuThread(wsi);
@@ -191,8 +192,7 @@ void retro_run(void)
 
   AsyncRequests::GetInstance()->SetEnable(true);
   AsyncRequests::GetInstance()->SetPassthrough(false);
-  Core::DoFrameStep();
-  Core::System& system = Core::System::GetInstance();
+  Core::DoFrameStep(system);
   Fifo::FifoManager& fifo = system.GetFifo();
   fifo.RunGpuLoop();
   if (!fifo.UseDeterministicGPUThread())
@@ -206,31 +206,36 @@ void retro_run(void)
 
 size_t retro_serialize_size(void)
 {
+  auto& system = Core::System::GetInstance();
   size_t size = 0;
 
-  Core::RunAsCPUThread([&] {
+  Core::RunOnCPUThread(system, [&] {
     PointerWrap p((u8**)&size, sizeof(size_t), PointerWrap::Mode::Measure);
-    State::DoState(p);
-  });
+    State::DoState(system, p);
+  }, true);
 
   return size;
 }
 
 bool retro_serialize(void* data, size_t size)
 {
-  Core::RunAsCPUThread([&] {
+  auto& system = Core::System::GetInstance();
+
+  Core::RunOnCPUThread(system, [&] {
     PointerWrap p((u8**)&data, size, PointerWrap::Mode::Write);
-    State::DoState(p);
-  });
+    State::DoState(system, p);
+  }, true);
 
   return true;
 }
 bool retro_unserialize(const void* data, size_t size)
 {
-  Core::RunAsCPUThread([&] {
+  auto& system = Core::System::GetInstance();
+
+  Core::RunOnCPUThread(system, [&] {
     PointerWrap p((u8**)&data, size, PointerWrap::Mode::Read);
-    State::DoState(p);
-  });
+    State::DoState(system, p);
+  }, true);
 
   return true;
 }
@@ -262,7 +267,8 @@ void* retro_get_memory_data(unsigned id)
 {
   if (id == RETRO_MEMORY_SYSTEM_RAM)
   {
-    return Core::System::GetInstance().GetMemory().GetPointer(0);
+    std::span<u8> span = Core::System::GetInstance().GetMemory().GetSpanForAddress(0);
+    return span.data();
   }
   return NULL;
 }
