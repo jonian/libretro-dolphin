@@ -240,9 +240,7 @@ MainWindow::MainWindow(std::unique_ptr<BootParameters> boot_parameters,
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
   connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, this,
-          [](Qt::ColorScheme colorScheme) {
-            Settings::Instance().SetCurrentUserStyle(Settings::Instance().GetCurrentUserStyle());
-          });
+          [](Qt::ColorScheme colorScheme) { Settings::Instance().ApplyStyle(); });
 #endif
 
   connect(m_cheats_manager, &CheatsManager::OpenGeneralSettings, this,
@@ -1593,14 +1591,16 @@ bool MainWindow::NetPlayHost(const UICommon::GameFile& game)
 
   const std::string traversal_host = Config::Get(Config::NETPLAY_TRAVERSAL_SERVER);
   const u16 traversal_port = Config::Get(Config::NETPLAY_TRAVERSAL_PORT);
+  const u16 traversal_port_alt = Config::Get(Config::NETPLAY_TRAVERSAL_PORT_ALT);
 
   if (is_traversal)
     host_port = Config::Get(Config::NETPLAY_LISTEN_PORT);
 
   // Create Server
-  Settings::Instance().ResetNetPlayServer(new NetPlay::NetPlayServer(
-      host_port, use_upnp, m_netplay_dialog,
-      NetPlay::NetTraversalConfig{is_traversal, traversal_host, traversal_port}));
+  Settings::Instance().ResetNetPlayServer(
+      new NetPlay::NetPlayServer(host_port, use_upnp, m_netplay_dialog,
+                                 NetPlay::NetTraversalConfig{is_traversal, traversal_host,
+                                                             traversal_port, traversal_port_alt}));
 
   if (!Settings::Instance().GetNetPlayServer()->is_connected)
   {
@@ -1739,7 +1739,7 @@ bool MainWindow::nativeEvent(const QByteArray& eventType, void* message, qintptr
     settings.UpdateSystemDark();
     if (settings.IsSystemDark() != was_dark_before)
     {
-      settings.SetCurrentUserStyle(settings.GetCurrentUserStyle());
+      settings.ApplyStyle();
 
       // force the colors in the Skylander window to update
       if (m_skylander_window)

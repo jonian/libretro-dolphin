@@ -133,7 +133,8 @@ NetPlayServer::NetPlayServer(const u16 port, const bool forward_port, NetPlayUI*
   if (traversal_config.use_traversal)
   {
     if (!Common::EnsureTraversalClient(traversal_config.traversal_host,
-                                       traversal_config.traversal_port, port))
+                                       traversal_config.traversal_port,
+                                       traversal_config.traversal_port_alt, port))
     {
       return;
     }
@@ -386,7 +387,11 @@ void NetPlayServer::ThreadFunc()
       }
       break;
       default:
-        ERROR_LOG_FMT(NETPLAY, "enet_host_service: unknown event type: {}", int(netEvent.type));
+        // not a valid switch case due to not technically being part of the enum
+        if (static_cast<int>(netEvent.type) == Common::ENet::SKIPPABLE_EVENT)
+          INFO_LOG_FMT(NETPLAY, "enet_host_service: skippable packet event");
+        else
+          ERROR_LOG_FMT(NETPLAY, "enet_host_service: unknown event type: {}", int(netEvent.type));
         break;
       }
     }
@@ -1262,6 +1267,11 @@ void NetPlayServer::OnTraversalStateChanged()
     m_dialog->OnTraversalError(m_traversal_client->GetFailureReason());
 
   m_dialog->OnTraversalStateChanged(state);
+}
+
+void NetPlayServer::OnTtlDetermined(u8 ttl)
+{
+  m_dialog->OnTtlDetermined(ttl);
 }
 
 // called from ---GUI--- thread

@@ -251,7 +251,9 @@ bool Jit64::BackPatch(SContext* ctx)
 
 void Jit64::Init()
 {
-  RefreshConfig(InitFastmemArena::Yes);
+  InitFastmemArena();
+
+  RefreshConfig();
 
   EnableBlockLink();
 
@@ -304,7 +306,8 @@ void Jit64::ClearCache()
   m_const_pool.Clear();
   ClearCodeSpace();
   Clear();
-  RefreshConfig(InitFastmemArena::No);
+  RefreshConfig();
+  asm_routines.Regenerate();
   ResetFreeMemoryRanges();
 }
 
@@ -480,7 +483,8 @@ void Jit64::FakeBLCall(u32 after)
 
   // We may need to fake the BLR stack on inlined CALL instructions.
   // Else we can't return to this location any more.
-  MOV(32, R(RSCRATCH2), Imm32(after));
+  MOV(64, R(RSCRATCH2),
+      Imm64(u64(m_ppc_state.msr.Hex & JitBaseBlockCache::JIT_CACHE_MSR_MASK) << 32 | after));
   PUSH(RSCRATCH2);
   FixupBranch skip_exit = CALL();
   POP(RSCRATCH2);
@@ -496,10 +500,18 @@ void Jit64::EmitUpdateMembase()
 void Jit64::EmitStoreMembase(const OpArg& msr, X64Reg scratch_reg)
 {
   auto& memory = m_system.GetMemory();
-  MOV(64, R(RMEM), ImmPtr(memory.GetLogicalBase()));
-  MOV(64, R(scratch_reg), ImmPtr(memory.GetPhysicalBase()));
-  TEST(32, msr, Imm32(1 << (31 - 27)));
-  CMOVcc(64, RMEM, R(scratch_reg), CC_Z);
+  if (msr.IsImm())
+  {
+    MOV(64, R(RMEM),
+        ImmPtr(UReg_MSR(msr.Imm32()).DR ? memory.GetLogicalBase() : memory.GetPhysicalBase()));
+  }
+  else
+  {
+    MOV(64, R(RMEM), ImmPtr(memory.GetLogicalBase()));
+    MOV(64, R(scratch_reg), ImmPtr(memory.GetPhysicalBase()));
+    TEST(32, msr, Imm32(1 << (31 - 27)));
+    CMOVcc(64, RMEM, R(scratch_reg), CC_Z);
+  }
   MOV(64, PPCSTATE(mem_ptr), R(RMEM));
 }
 
@@ -512,7 +524,8 @@ void Jit64::WriteExit(u32 destination, bool bl, u32 after)
 
   if (bl)
   {
-    MOV(32, R(RSCRATCH2), Imm32(after));
+    MOV(64, R(RSCRATCH2),
+        Imm64(u64(m_ppc_state.msr.Hex & JitBaseBlockCache::JIT_CACHE_MSR_MASK) << 32 | after));
     PUSH(RSCRATCH2);
   }
 
@@ -569,7 +582,8 @@ void Jit64::WriteExitDestInRSCRATCH(bool bl, u32 after)
 
   if (bl)
   {
-    MOV(32, R(RSCRATCH2), Imm32(after));
+    MOV(64, R(RSCRATCH2),
+        Imm64(u64(m_ppc_state.msr.Hex & JitBaseBlockCache::JIT_CACHE_MSR_MASK) << 32 | after));
     PUSH(RSCRATCH2);
   }
 
@@ -597,6 +611,13 @@ void Jit64::WriteBLRExit()
   bool disturbed = Cleanup();
   if (disturbed)
     MOV(32, R(RSCRATCH), PPCSTATE(pc));
+  const u64 msr_bits = m_ppc_state.msr.Hex & JitBaseBlockCache::JIT_CACHE_MSR_MASK;
+  if (msr_bits != 0)
+  {
+    MOV(32, R(RSCRATCH2), Imm32(msr_bits));
+    SHL(64, R(RSCRATCH2), Imm8(32));
+    OR(64, R(RSCRATCH), R(RSCRATCH2));
+  }
   MOV(32, R(RSCRATCH2), Imm32(js.downcountAmount));
   CMP(64, R(RSCRATCH), MDisp(RSP, 8));
   J_CC(CC_NE, asm_routines.dispatcher_mispredicted_blr);
@@ -885,9 +906,8 @@ bool Jit64::DoJit(u32 em_address, JitBlock* b, u32 nextPC)
   js.constantGqrValid = BitSet8();
 
   // Assume that GQR values don't change often at runtime. Many paired-heavy games use largely float
-  // loads and stores,
-  // which are significantly faster when inlined (especially in MMU mode, where this lets them use
-  // fastmem).
+  // loads and stores, which are significantly faster when inlined (especially in MMU mode, where
+  // this lets them use fastmem).
   if (js.pairedQuantizeAddresses.find(js.blockStart) == js.pairedQuantizeAddresses.end())
   {
     // If there are GQRs used but not set, we'll treat those as constant and optimize them
@@ -1236,17 +1256,19 @@ void Jit64::IntializeSpeculativeConstants()
 
 bool Jit64::HandleFunctionHooking(u32 address)
 {
-  return HLE::ReplaceFunctionIfPossible(address, [&](u32 hook_index, HLE::HookType type) {
-    HLEFunction(hook_index);
+  const auto result = HLE::TryReplaceFunction(address);
+  if (!result)
+    return false;
 
-    if (type != HLE::HookType::Replace)
-      return false;
+  HLEFunction(result.hook_index);
 
-    MOV(32, R(RSCRATCH), PPCSTATE(npc));
-    js.downcountAmount += js.st.numCycles;
-    WriteExitDestInRSCRATCH();
-    return true;
-  });
+  if (result.type != HLE::HookType::Replace)
+    return false;
+
+  MOV(32, R(RSCRATCH), PPCSTATE(npc));
+  js.downcountAmount += js.st.numCycles;
+  WriteExitDestInRSCRATCH();
+  return true;
 }
 
 void LogGeneratedX86(size_t size, const PPCAnalyst::CodeBuffer& code_buffer, const u8* normalEntry,

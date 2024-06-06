@@ -3,10 +3,13 @@
 
 #include "Core/PowerPC/JitArm64/Jit.h"
 
+#include <array>
+
 #include "Common/Arm64Emitter.h"
 #include "Common/Assert.h"
 #include "Common/CommonTypes.h"
 #include "Common/MathUtil.h"
+#include "Common/SmallVector.h"
 
 #include "Core/Core.h"
 #include "Core/CoreTiming.h"
@@ -78,9 +81,7 @@ void JitArm64::UpdateRoundingMode()
 
   ABI_PushRegisters(gprs_to_save);
   m_float_emit.ABI_PushRegisters(fprs_to_save, ARM64Reg::X8);
-  MOVP2R(ARM64Reg::X0, &m_ppc_state);
-  MOVP2R(ARM64Reg::X8, &PowerPC::RoundingModeUpdated);
-  BLR(ARM64Reg::X8);
+  ABI_CallFunction(&PowerPC::RoundingModeUpdated, &m_ppc_state);
   m_float_emit.ABI_PopRegisters(fprs_to_save, ARM64Reg::X8);
   ABI_PopRegisters(gprs_to_save);
 }
@@ -91,17 +92,17 @@ void JitArm64::mtmsr(UGeckoInstruction inst)
   JITDISABLE(bJITSystemRegistersOff);
   FALLBACK_IF(jo.fp_exceptions);
 
-  gpr.BindToRegister(inst.RS, true);
+  const bool imm_value = gpr.IsImm(inst.RS);
+  if (imm_value)
+    EmitStoreMembase(gpr.GetImm(inst.RS));
+
   STR(IndexType::Unsigned, gpr.R(inst.RS), PPC_REG, PPCSTATE_OFF(msr));
 
-  EmitStoreMembase(gpr.R(inst.RS));
+  if (!imm_value)
+    EmitStoreMembase(gpr.R(inst.RS));
 
   gpr.Flush(FlushMode::All, ARM64Reg::INVALID_REG);
   fpr.Flush(FlushMode::All, ARM64Reg::INVALID_REG);
-
-  // Our jit cache also stores some MSR bits, as they have changed, we either
-  // have to validate them in the BLR/RET check, or just flush the stack here.
-  ResetStack();
 
   WriteExceptionExit(js.compilerPC + 4, true);
 }
@@ -143,7 +144,7 @@ void JitArm64::mcrxr(UGeckoInstruction inst)
   LDRB(IndexType::Unsigned, WB, PPC_REG, PPCSTATE_OFF(xer_so_ov));
 
   // [0 SO OV CA]
-  ADD(WA, WA, WB, ArithOption(WB, ShiftType::LSL, 2));
+  BFI(WA, WB, 1, 2);
   // [SO OV CA 0] << 3
   LSL(WA, WA, 4);
 
@@ -151,8 +152,8 @@ void JitArm64::mcrxr(UGeckoInstruction inst)
   LDR(XB, XB, XA);
 
   // Clear XER[0-3]
-  STRB(IndexType::Unsigned, ARM64Reg::WZR, PPC_REG, PPCSTATE_OFF(xer_ca));
-  STRB(IndexType::Unsigned, ARM64Reg::WZR, PPC_REG, PPCSTATE_OFF(xer_so_ov));
+  static_assert(PPCSTATE_OFF(xer_ca) + 1 == PPCSTATE_OFF(xer_so_ov));
+  STRH(IndexType::Unsigned, ARM64Reg::WZR, PPC_REG, PPCSTATE_OFF(xer_ca));
 
   gpr.Unlock(WA);
 }
@@ -171,7 +172,6 @@ void JitArm64::mtsr(UGeckoInstruction inst)
   INSTRUCTION_START
   JITDISABLE(bJITSystemRegistersOff);
 
-  gpr.BindToRegister(inst.RS, true);
   STR(IndexType::Unsigned, gpr.R(inst.RS), PPC_REG, PPCSTATE_OFF_SR(inst.SR));
 }
 
@@ -183,13 +183,14 @@ void JitArm64::mfsrin(UGeckoInstruction inst)
   u32 b = inst.RB, d = inst.RD;
   gpr.BindToRegister(d, d == b);
 
-  ARM64Reg index = gpr.GetReg();
-  ARM64Reg index64 = EncodeRegTo64(index);
   ARM64Reg RB = gpr.R(b);
+  ARM64Reg RD = gpr.R(d);
+  ARM64Reg index = gpr.GetReg();
+  ARM64Reg addr = EncodeRegTo64(RD);
 
   UBFM(index, RB, 28, 31);
-  ADD(index64, PPC_REG, index64, ArithOption(index64, ShiftType::LSL, 2));
-  LDR(IndexType::Unsigned, gpr.R(d), index64, PPCSTATE_OFF_SR(0));
+  ADDI2R(addr, PPC_REG, PPCSTATE_OFF_SR(0), addr);
+  LDR(RD, addr, ArithOption(EncodeRegTo64(index), true));
 
   gpr.Unlock(index);
 }
@@ -202,15 +203,16 @@ void JitArm64::mtsrin(UGeckoInstruction inst)
   u32 b = inst.RB, d = inst.RD;
   gpr.BindToRegister(d, d == b);
 
-  ARM64Reg index = gpr.GetReg();
-  ARM64Reg index64 = EncodeRegTo64(index);
   ARM64Reg RB = gpr.R(b);
+  ARM64Reg RD = gpr.R(d);
+  ARM64Reg index = gpr.GetReg();
+  ARM64Reg addr = gpr.GetReg();
 
   UBFM(index, RB, 28, 31);
-  ADD(index64, PPC_REG, index64, ArithOption(index64, ShiftType::LSL, 2));
-  STR(IndexType::Unsigned, gpr.R(d), index64, PPCSTATE_OFF_SR(0));
+  ADDI2R(addr, PPC_REG, PPCSTATE_OFF_SR(0), addr);
+  STR(RD, addr, ArithOption(EncodeRegTo64(index), true));
 
-  gpr.Unlock(index);
+  gpr.Unlock(index, addr);
 }
 
 void JitArm64::twx(UGeckoInstruction inst)
@@ -231,10 +233,10 @@ void JitArm64::twx(UGeckoInstruction inst)
     CMP(gpr.R(a), gpr.R(inst.RB));
   }
 
-  std::vector<FixupBranch> fixups;
-  CCFlags conditions[] = {CC_LT, CC_GT, CC_EQ, CC_VC, CC_VS};
+  constexpr std::array<CCFlags, 5> conditions{{CC_LT, CC_GT, CC_EQ, CC_VC, CC_VS}};
+  Common::SmallVector<FixupBranch, conditions.size()> fixups;
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < conditions.size(); i++)
   {
     if (inst.TO & (1 << i))
     {

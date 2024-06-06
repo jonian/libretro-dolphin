@@ -149,7 +149,7 @@ bool WantsDeterminism();
 void RunEmuThread(WindowSystemInfo wsi);
 
 // [NOT THREADSAFE] For use by Host only
-void SetState(State state);
+void SetState(State state, bool report_state_change = true);
 State GetState();
 
 void SaveScreenShot();

@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#if defined(_M_X86) || defined(_M_X86_64)
+#if defined(_M_X86_64)
 #include <pmmintrin.h>
 #endif
 
@@ -52,6 +52,7 @@
 #include "VideoCommon/TextureConversionShader.h"
 #include "VideoCommon/TextureConverterShaderGen.h"
 #include "VideoCommon/TextureDecoder.h"
+#include "VideoCommon/TextureUtils.h"
 #include "VideoCommon/VertexManagerBase.h"
 #include "VideoCommon/VideoCommon.h"
 #include "VideoCommon/VideoConfig.h"
@@ -998,39 +999,6 @@ RcTcacheEntry TextureCacheBase::DoPartialTextureUpdates(RcTcacheEntry& entry_to_
   return entry_to_update;
 }
 
-void TextureCacheBase::DumpTexture(RcTcacheEntry& entry, std::string basename, unsigned int level,
-                                   bool is_arbitrary)
-{
-  std::string szDir = File::GetUserPath(D_DUMPTEXTURES_IDX) + SConfig::GetInstance().GetGameID();
-
-  // make sure that the directory exists
-  if (!File::IsDirectory(szDir))
-    File::CreateDir(szDir);
-
-  if (is_arbitrary)
-  {
-    basename += "_arb";
-  }
-
-  if (level > 0)
-  {
-    if (!g_ActiveConfig.bDumpMipmapTextures)
-      return;
-    basename += fmt::format("_mip{}", level);
-  }
-  else
-  {
-    if (!g_ActiveConfig.bDumpBaseTextures)
-      return;
-  }
-
-  const std::string filename = fmt::format("{}/{}.png", szDir, basename);
-  if (File::Exists(filename))
-    return;
-
-  entry->texture->Save(filename, level, Config::Get(Config::GFX_TEXTURE_PNG_COMPRESSION_LEVEL));
-}
-
 // Helper for checking if a BPMemory TexMode0 register is set to Point
 // Filtering modes. This is used to decide whether Anisotropic enhancements
 // are (mostly) safe in the VideoBackends.
@@ -1838,12 +1806,21 @@ RcTcacheEntry TextureCacheBase::CreateTextureEntry(
 
     entry->has_arbitrary_mips = arbitrary_mip_detector.HasArbitraryMipmaps(dst_buffer);
 
-    if (g_ActiveConfig.bDumpTextures && !skip_texture_dump)
+    if (g_ActiveConfig.bDumpTextures && !skip_texture_dump && texLevels > 0)
     {
       const std::string basename = texture_info.CalculateTextureName().GetFullName();
-      for (u32 level = 0; level < texLevels; ++level)
+      if (g_ActiveConfig.bDumpBaseTextures)
       {
-        DumpTexture(entry, basename, level, entry->has_arbitrary_mips);
+        VideoCommon::TextureUtils::DumpTexture(*entry->texture, basename, 0,
+                                               entry->has_arbitrary_mips);
+      }
+      if (g_ActiveConfig.bDumpMipmapTextures)
+      {
+        for (u32 level = 1; level < texLevels; ++level)
+        {
+          VideoCommon::TextureUtils::DumpTexture(*entry->texture, basename, level,
+                                                 entry->has_arbitrary_mips);
+        }
       }
     }
   }
@@ -2677,7 +2654,7 @@ void TextureCacheBase::UninitializeXFBMemory(u8* dst, u32 stride, u32 bytes_per_
   // (Y=1,U=254,V=254) instead of dark green (Y=0,U=0,V=0) in YUV
   // like is done in the EFB path.
 
-#if defined(_M_X86) || defined(_M_X86_64)
+#if defined(_M_X86_64)
   __m128i sixteenBytes = _mm_set1_epi16((s16)(u16)0xFE01);
 #endif
 
@@ -2685,7 +2662,7 @@ void TextureCacheBase::UninitializeXFBMemory(u8* dst, u32 stride, u32 bytes_per_
   {
     u32 size = bytes_per_row;
     u8* rowdst = dst;
-#if defined(_M_X86) || defined(_M_X86_64)
+#if defined(_M_X86_64)
     while (size >= 16)
     {
       _mm_storeu_si128((__m128i*)rowdst, sixteenBytes);
