@@ -194,7 +194,7 @@ void retro_run(void)
   Core::DoFrameStep();
   Core::System& system = Core::System::GetInstance();
   Fifo::FifoManager& fifo = system.GetFifo();
-  fifo.RunGpuLoop(system);
+  fifo.RunGpuLoop();
   if (!fifo.UseDeterministicGPUThread())
   {
     AsyncRequests::GetInstance()->SetEnable(false);
