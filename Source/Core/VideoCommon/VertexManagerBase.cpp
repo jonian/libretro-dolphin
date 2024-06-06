@@ -91,8 +91,9 @@ static bool IsAnamorphicProjection(const Projection::Raw& projection, const View
                                    const VideoConfig& config)
 {
   // If ratio between our projection and viewport aspect ratios is similar to 16:9 / 4:3
-  // we have an anamorphic projection. This value can be overridden
-  // by a GameINI.
+  // we have an anamorphic projection. This value can be overridden by a GameINI.
+  // Game cheats that change the aspect ratio to natively unsupported ones
+  // won't be automatically recognized here.
 
   return std::abs(CalculateProjectionViewportRatio(projection, viewport) -
                   config.widescreen_heuristic_widescreen_ratio) <
@@ -598,12 +599,13 @@ void VertexManagerBase::Flush()
     std::optional<CustomPixelShader> custom_pixel_shader;
     std::vector<std::string> custom_pixel_texture_names;
     std::span<u8> custom_pixel_shader_uniforms;
-    for (int i = 0; i < texture_names.size(); i++)
+    for (size_t i = 0; i < texture_names.size(); i++)
     {
       const std::string& texture_name = texture_names[i];
       const u32 texture_unit = texture_units[i];
       bool skip = false;
-      GraphicsModActionData::DrawStarted draw_started{texture_unit, &skip, &custom_pixel_shader};
+      GraphicsModActionData::DrawStarted draw_started{texture_unit, &skip, &custom_pixel_shader,
+                                                      &custom_pixel_shader_uniforms};
       for (const auto& action : g_graphics_mod_manager->GetDrawStartedActions(texture_name))
       {
         action->OnDrawStarted(&draw_started);

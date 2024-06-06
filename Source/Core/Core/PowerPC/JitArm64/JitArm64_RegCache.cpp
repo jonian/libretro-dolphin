@@ -248,7 +248,7 @@ void Arm64GPRCache::FlushRegisters(BitSet32 regs, bool maintain_state, ARM64Reg 
     ASSERT_MSG(DYNA_REC, m_guest_registers[GUEST_GPR_OFFSET + i].GetType() != RegType::Discarded,
                "Attempted to flush discarded register");
 
-    if (i + 1 < GUEST_GPR_COUNT && regs[i + 1])
+    if (i + 1 < int(GUEST_GPR_COUNT) && regs[i + 1])
     {
       // We've got two guest registers in a row to store
       OpArg& reg1 = m_guest_registers[GUEST_GPR_OFFSET + i];
@@ -454,6 +454,17 @@ BitSet32 Arm64GPRCache::GetCallerSavedUsed() const
   {
     if (it.IsLocked() && IsCallerSaved(it.GetReg()))
       registers[DecodeReg(it.GetReg())] = true;
+  }
+  return registers;
+}
+
+BitSet32 Arm64GPRCache::GetDirtyGPRs() const
+{
+  BitSet32 registers(0);
+  for (size_t i = 0; i < GUEST_GPR_COUNT; ++i)
+  {
+    const OpArg& arg = m_guest_registers[GUEST_GPR_OFFSET + i];
+    registers[i] = arg.GetType() != RegType::NotLoaded && arg.IsDirty();
   }
   return registers;
 }

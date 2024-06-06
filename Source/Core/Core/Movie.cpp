@@ -34,6 +34,7 @@
 #include "Common/Version.h"
 
 #include "Core/Boot/Boot.h"
+#include "Core/Config/AchievementSettings.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/Config/SYSCONFSettings.h"
 #include "Core/Config/WiimoteSettings.h"
@@ -715,8 +716,8 @@ static void SetInputDisplayString(ControllerState padState, int controllerID)
 }
 
 // NOTE: CPU Thread
-static void SetWiiInputDisplayString(int remoteID, const DataReportBuilder& rpt, int ext,
-                                     const EncryptionKey& key)
+static void SetWiiInputDisplayString(int remoteID, const DataReportBuilder& rpt,
+                                     ExtensionNumber ext, const EncryptionKey& key)
 {
   int controllerID = remoteID + 4;
 
@@ -897,7 +898,7 @@ void RecordInput(const GCPadStatus* PadStatus, int controllerID)
 }
 
 // NOTE: CPU Thread
-void CheckWiimoteStatus(int wiimote, const DataReportBuilder& rpt, int ext,
+void CheckWiimoteStatus(int wiimote, const DataReportBuilder& rpt, ExtensionNumber ext,
                         const EncryptionKey& key)
 {
   SetWiiInputDisplayString(wiimote, rpt, ext, key);
@@ -974,6 +975,12 @@ bool PlayInput(const std::string& movie_path, std::optional<std::string>* savest
   }
 
   ReadHeader();
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (Config::Get(Config::RA_HARDCORE_ENABLED))
+    return false;
+#endif  // USE_RETRO_ACHIEVEMENTS
+
   s_totalFrames = tmpHeader.frameCount;
   s_totalLagCount = tmpHeader.lagCount;
   s_totalInputCount = tmpHeader.inputCount;
@@ -1010,6 +1017,12 @@ bool PlayInput(const std::string& movie_path, std::optional<std::string>* savest
     }
 
     s_bRecordingFromSaveState = true;
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+    // On the chance someone tries to re-enable before the TAS can start
+    Config::SetBase(Config::RA_HARDCORE_ENABLED, false);
+#endif  // USE_RETRO_ACHIEVEMENTS
+
     Movie::LoadInput(movie_path);
   }
 
@@ -1297,7 +1310,7 @@ void PlayController(GCPadStatus* PadStatus, int controllerID)
 }
 
 // NOTE: CPU Thread
-bool PlayWiimote(int wiimote, WiimoteCommon::DataReportBuilder& rpt, int ext,
+bool PlayWiimote(int wiimote, WiimoteCommon::DataReportBuilder& rpt, ExtensionNumber ext,
                  const EncryptionKey& key)
 {
   if (!IsPlayingInput() || !IsUsingWiimote(wiimote) || s_temp_input.empty())

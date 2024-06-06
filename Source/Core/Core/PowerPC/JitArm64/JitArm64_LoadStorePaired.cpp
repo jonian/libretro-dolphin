@@ -23,7 +23,8 @@ void JitArm64::psq_lXX(UGeckoInstruction inst)
   JITDISABLE(bJITLoadStorePairedOff);
 
   // If fastmem is enabled, the asm routines assume address translation is on.
-  FALLBACK_IF(!js.assumeNoPairedQuantize && jo.fastmem && !m_ppc_state.msr.DR);
+  FALLBACK_IF(!js.assumeNoPairedQuantize && jo.fastmem &&
+              !(m_ppc_state.feature_flags & FEATURE_FLAG_MSR_DR));
 
   // X30 is LR
   // X0 is the address
@@ -58,10 +59,8 @@ void JitArm64::psq_lXX(UGeckoInstruction inst)
   {
     if (indexed)
       ADD(addr_reg, gpr.R(inst.RA), gpr.R(inst.RB));
-    else if (offset >= 0)
-      ADD(addr_reg, gpr.R(inst.RA), offset);
     else
-      SUB(addr_reg, gpr.R(inst.RA), std::abs(offset));
+      ADDI2R(addr_reg, gpr.R(inst.RA), offset, addr_reg);
   }
   else
   {
@@ -153,7 +152,8 @@ void JitArm64::psq_stXX(UGeckoInstruction inst)
   JITDISABLE(bJITLoadStorePairedOff);
 
   // If fastmem is enabled, the asm routines assume address translation is on.
-  FALLBACK_IF(!js.assumeNoPairedQuantize && jo.fastmem && !m_ppc_state.msr.DR);
+  FALLBACK_IF(!js.assumeNoPairedQuantize && jo.fastmem &&
+              !(m_ppc_state.feature_flags & FEATURE_FLAG_MSR_DR));
 
   // X30 is LR
   // X0 contains the scale
@@ -217,10 +217,8 @@ void JitArm64::psq_stXX(UGeckoInstruction inst)
   {
     if (indexed)
       ADD(addr_reg, gpr.R(inst.RA), gpr.R(inst.RB));
-    else if (offset >= 0)
-      ADD(addr_reg, gpr.R(inst.RA), offset);
     else
-      SUB(addr_reg, gpr.R(inst.RA), std::abs(offset));
+      ADDI2R(addr_reg, gpr.R(inst.RA), offset, addr_reg);
   }
   else
   {

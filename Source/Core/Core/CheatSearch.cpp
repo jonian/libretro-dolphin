@@ -16,6 +16,7 @@
 #include "Common/BitUtils.h"
 #include "Common/StringUtil.h"
 
+#include "Core/Config/AchievementSettings.h"
 #include "Core/Core.h"
 #include "Core/HW/Memmap.h"
 #include "Core/PowerPC/MMU.h"
@@ -206,6 +207,10 @@ Cheats::NewSearch(const Core::CPUThreadGuard& guard,
                   PowerPC::RequestedAddressSpace address_space, bool aligned,
                   const std::function<bool(const T& value)>& validator)
 {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (Config::Get(Config::RA_HARDCORE_ENABLED))
+    return Cheats::SearchErrorCode::DisabledInHardcoreMode;
+#endif  // USE_RETRO_ACHIEVEMENTS
   const u32 data_size = sizeof(T);
   std::vector<Cheats::SearchResult<T>> results;
   Cheats::SearchErrorCode error_code = Cheats::SearchErrorCode::Success;
@@ -217,8 +222,7 @@ Cheats::NewSearch(const Core::CPUThreadGuard& guard,
       return;
     }
 
-    auto& system = Core::System::GetInstance();
-    auto& ppc_state = system.GetPPCState();
+    const auto& ppc_state = guard.GetSystem().GetPPCState();
     if (address_space == PowerPC::RequestedAddressSpace::Virtual && !ppc_state.msr.DR)
     {
       error_code = Cheats::SearchErrorCode::VirtualAddressesCurrentlyNotAccessible;
@@ -269,6 +273,10 @@ Cheats::NextSearch(const Core::CPUThreadGuard& guard,
                    PowerPC::RequestedAddressSpace address_space,
                    const std::function<bool(const T& new_value, const T& old_value)>& validator)
 {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (Config::Get(Config::RA_HARDCORE_ENABLED))
+    return Cheats::SearchErrorCode::DisabledInHardcoreMode;
+#endif  // USE_RETRO_ACHIEVEMENTS
   std::vector<Cheats::SearchResult<T>> results;
   Cheats::SearchErrorCode error_code = Cheats::SearchErrorCode::Success;
   Core::RunAsCPUThread([&] {
@@ -279,8 +287,7 @@ Cheats::NextSearch(const Core::CPUThreadGuard& guard,
       return;
     }
 
-    auto& system = Core::System::GetInstance();
-    auto& ppc_state = system.GetPPCState();
+    const auto& ppc_state = guard.GetSystem().GetPPCState();
     if (address_space == PowerPC::RequestedAddressSpace::Virtual && !ppc_state.msr.DR)
     {
       error_code = Cheats::SearchErrorCode::VirtualAddressesCurrentlyNotAccessible;
@@ -444,6 +451,10 @@ MakeCompareFunctionForLastValue(Cheats::CompareType op)
 template <typename T>
 Cheats::SearchErrorCode Cheats::CheatSearchSession<T>::RunSearch(const Core::CPUThreadGuard& guard)
 {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (Config::Get(Config::RA_HARDCORE_ENABLED))
+    return Cheats::SearchErrorCode::DisabledInHardcoreMode;
+#endif  // USE_RETRO_ACHIEVEMENTS
   Common::Result<SearchErrorCode, std::vector<SearchResult<T>>> result =
       Cheats::SearchErrorCode::InvalidParameters;
   if (m_filter_type == FilterType::CompareAgainstSpecificValue)

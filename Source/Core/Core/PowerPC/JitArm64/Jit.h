@@ -182,6 +182,8 @@ public:
 
   bool IsFPRStoreSafe(size_t guest_reg) const;
 
+  void rlwinmx_internal(UGeckoInstruction inst, u32 sh);
+
 protected:
   struct FastmemArea
   {
@@ -310,8 +312,8 @@ protected:
   void EndTimeProfile(JitBlock* b);
 
   void EmitUpdateMembase();
-  void EmitStoreMembase(u32 msr);
-  void EmitStoreMembase(const Arm64Gen::ARM64Reg& msr);
+  void MSRUpdated(u32 msr);
+  void MSRUpdated(Arm64Gen::ARM64Reg msr);
 
   // Exits
   void

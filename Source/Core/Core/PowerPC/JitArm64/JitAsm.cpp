@@ -30,7 +30,7 @@ void JitArm64::GenerateAsm()
 {
   const Common::ScopedJITPageWriteAndNoExecute enable_jit_page_writes;
 
-  const bool enable_debugging = Config::Get(Config::MAIN_ENABLE_DEBUGGING);
+  const bool enable_debugging = Config::IsDebuggingEnabled();
 
   // This value is all of the callee saved registers that we are required to save.
   // According to the AACPS64 we need to save R19 ~ R30 and Q8 ~ Q15.
@@ -100,15 +100,20 @@ void JitArm64::GenerateAsm()
     if (GetBlockCache()->GetEntryPoints())
     {
       // Check if there is a block
-      ARM64Reg pc_and_msr = ARM64Reg::X8;
-      ARM64Reg cache_base = ARM64Reg::X9;
-      ARM64Reg block = ARM64Reg::X10;
-      LDR(IndexType::Unsigned, EncodeRegTo32(pc_and_msr), PPC_REG, PPCSTATE_OFF(msr));
+      ARM64Reg feature_flags = ARM64Reg::W8;
+      ARM64Reg pc_and_feature_flags = ARM64Reg::X9;
+      ARM64Reg cache_base = ARM64Reg::X10;
+      ARM64Reg block = ARM64Reg::X11;
+
+      LDR(IndexType::Unsigned, feature_flags, PPC_REG, PPCSTATE_OFF(feature_flags));
       MOVP2R(cache_base, GetBlockCache()->GetEntryPoints());
-      // The entry points map is indexed by ((msrBits << 26) | (address >> 2)).
-      UBFIZ(pc_and_msr, pc_and_msr, 26, 6);
-      BFXIL(pc_and_msr, EncodeRegTo64(DISPATCHER_PC), 2, 30);
-      LDR(block, cache_base, ArithOption(pc_and_msr, true));
+      // The entry points map is indexed by ((feature_flags << 30) | (pc >> 2)).
+      // The map contains 8-byte pointers and that means we need to shift feature_flags
+      // left by 33 bits and pc left by 1 bit to get the correct offset in the map.
+      LSL(pc_and_feature_flags, EncodeRegTo64(DISPATCHER_PC), 1);
+      BFI(pc_and_feature_flags, EncodeRegTo64(feature_flags), 33, 31);
+      LDR(block, cache_base, pc_and_feature_flags);
+
       FixupBranch not_found = CBZ(block);
       BR(block);
       SetJumpTarget(not_found);
@@ -119,8 +124,8 @@ void JitArm64::GenerateAsm()
       ARM64Reg cache_base = ARM64Reg::X9;
       ARM64Reg block = ARM64Reg::X10;
       ARM64Reg pc = ARM64Reg::W11;
-      ARM64Reg msr = ARM64Reg::W12;
-      ARM64Reg msr2 = ARM64Reg::W13;
+      ARM64Reg feature_flags = ARM64Reg::W12;
+      ARM64Reg feature_flags_2 = ARM64Reg::W13;
       ARM64Reg entry = ARM64Reg::X14;
 
       // iCache[(address >> 2) & iCache_Mask];
@@ -130,25 +135,24 @@ void JitArm64::GenerateAsm()
       LDR(block, cache_base, ArithOption(EncodeRegTo64(pc_masked), true));
       FixupBranch not_found = CBZ(block);
 
-      // b.effectiveAddress != addr || b.msrBits != msr
-      static_assert(offsetof(JitBlockData, msrBits) + 4 ==
+      // b.effectiveAddress != addr || b.feature_flags != feature_flags
+      static_assert(offsetof(JitBlockData, feature_flags) + 4 ==
                     offsetof(JitBlockData, effectiveAddress));
-      LDP(IndexType::Signed, msr, pc, block, offsetof(JitBlockData, msrBits));
-      LDR(IndexType::Unsigned, msr2, PPC_REG, PPCSTATE_OFF(msr));
+      LDP(IndexType::Signed, feature_flags, pc, block, offsetof(JitBlockData, feature_flags));
+      LDR(IndexType::Unsigned, feature_flags_2, PPC_REG, PPCSTATE_OFF(feature_flags));
       CMP(pc, DISPATCHER_PC);
       FixupBranch pc_mismatch = B(CC_NEQ);
 
       LDR(IndexType::Unsigned, entry, block, offsetof(JitBlockData, normalEntry));
-      AND(msr2, msr2, LogicalImm(JitBaseBlockCache::JIT_CACHE_MSR_MASK, 32));
-      CMP(msr, msr2);
-      FixupBranch msr_mismatch = B(CC_NEQ);
+      CMP(feature_flags, feature_flags_2);
+      FixupBranch feature_flags_mismatch = B(CC_NEQ);
 
       // return blocks[block_num].normalEntry;
       BR(entry);
 
       SetJumpTarget(not_found);
       SetJumpTarget(pc_mismatch);
-      SetJumpTarget(msr_mismatch);
+      SetJumpTarget(feature_flags_mismatch);
     }
   }
 
@@ -268,7 +272,7 @@ void JitArm64::GenerateFres()
 
   UBFX(ARM64Reg::X2, ARM64Reg::X1, 52, 11);  // Grab the exponent
   m_float_emit.FMOV(ARM64Reg::X0, ARM64Reg::D0);
-  AND(ARM64Reg::X3, ARM64Reg::X1, LogicalImm(Common::DOUBLE_SIGN, 64));
+  AND(ARM64Reg::X3, ARM64Reg::X1, LogicalImm(Common::DOUBLE_SIGN, GPRSize::B64));
   CMP(ARM64Reg::X2, 895);
   FixupBranch small_exponent = B(CCFlags::CC_LO);
 
@@ -283,12 +287,13 @@ void JitArm64::GenerateFres()
   MOVI2R(ARM64Reg::W4, 1);
   MADD(ARM64Reg::W1, ARM64Reg::W3, ARM64Reg::W1, ARM64Reg::W4);
   SUB(ARM64Reg::W1, ARM64Reg::W2, ARM64Reg::W1, ArithOption(ARM64Reg::W1, ShiftType::LSR, 1));
-  AND(ARM64Reg::X0, ARM64Reg::X0, LogicalImm(Common::DOUBLE_SIGN | Common::DOUBLE_EXP, 64));
+  AND(ARM64Reg::X0, ARM64Reg::X0,
+      LogicalImm(Common::DOUBLE_SIGN | Common::DOUBLE_EXP, GPRSize::B64));
   ORR(ARM64Reg::X0, ARM64Reg::X0, ARM64Reg::X1, ArithOption(ARM64Reg::X1, ShiftType::LSL, 29));
   RET();
 
   SetJumpTarget(small_exponent);
-  TST(ARM64Reg::X1, LogicalImm(Common::DOUBLE_EXP | Common::DOUBLE_FRAC, 64));
+  TST(ARM64Reg::X1, LogicalImm(Common::DOUBLE_EXP | Common::DOUBLE_FRAC, GPRSize::B64));
   FixupBranch zero = B(CCFlags::CC_EQ);
   MOVI2R(ARM64Reg::X4,
          Common::BitCast<u64>(static_cast<double>(std::numeric_limits<float>::max())));
@@ -321,7 +326,7 @@ void JitArm64::GenerateFrsqrte()
   LSL(ARM64Reg::X2, ARM64Reg::X1, 1);
   m_float_emit.FMOV(ARM64Reg::X0, ARM64Reg::D0);
   CLS(ARM64Reg::X3, ARM64Reg::X2);
-  TST(ARM64Reg::X1, LogicalImm(Common::DOUBLE_SIGN, 64));
+  TST(ARM64Reg::X1, LogicalImm(Common::DOUBLE_SIGN, GPRSize::B64));
   CCMP(ARM64Reg::X3, Common::DOUBLE_EXP_WIDTH - 1, 0b0010, CCFlags::CC_EQ);
   FixupBranch not_positive_normal = B(CCFlags::CC_HS);
 
@@ -331,7 +336,8 @@ void JitArm64::GenerateFrsqrte()
   ADD(ARM64Reg::X2, ARM64Reg::X3, ARM64Reg::X2, ArithOption(ARM64Reg::X2, ShiftType::LSL, 3));
   LDP(IndexType::Signed, ARM64Reg::W3, ARM64Reg::W2, ARM64Reg::X2, 0);
   UBFX(ARM64Reg::X1, ARM64Reg::X1, 37, 11);
-  AND(ARM64Reg::X0, ARM64Reg::X0, LogicalImm(Common::DOUBLE_SIGN | Common::DOUBLE_EXP, 64));
+  AND(ARM64Reg::X0, ARM64Reg::X0,
+      LogicalImm(Common::DOUBLE_SIGN | Common::DOUBLE_EXP, GPRSize::B64));
   MADD(ARM64Reg::W1, ARM64Reg::W1, ARM64Reg::W2, ARM64Reg::W3);
   ORR(ARM64Reg::X0, ARM64Reg::X0, ARM64Reg::X1, ArithOption(ARM64Reg::X1, ShiftType::LSL, 26));
   RET();
@@ -388,10 +394,10 @@ void JitArm64::GenerateConvertDoubleToSingle()
   SetJumpTarget(denormal);
   LSR(ARM64Reg::X3, ARM64Reg::X0, 21);
   MOVZ(ARM64Reg::X0, 905);
-  ORR(ARM64Reg::W3, ARM64Reg::W3, LogicalImm(0x80000000, 32));
+  ORR(ARM64Reg::W3, ARM64Reg::W3, LogicalImm(0x80000000, GPRSize::B32));
   SUB(ARM64Reg::W2, ARM64Reg::W0, ARM64Reg::W2);
   LSRV(ARM64Reg::W2, ARM64Reg::W3, ARM64Reg::W2);
-  AND(ARM64Reg::X3, ARM64Reg::X1, LogicalImm(0x80000000, 64));
+  AND(ARM64Reg::X3, ARM64Reg::X1, LogicalImm(0x80000000, GPRSize::B64));
   ORR(ARM64Reg::X1, ARM64Reg::X3, ARM64Reg::X2);
   RET();
 }
@@ -402,7 +408,7 @@ void JitArm64::GenerateConvertSingleToDouble()
   UBFX(ARM64Reg::W1, ARM64Reg::W0, 23, 8);
   FixupBranch normal_or_nan = CBNZ(ARM64Reg::W1);
 
-  AND(ARM64Reg::W1, ARM64Reg::W0, LogicalImm(0x007fffff, 32));
+  AND(ARM64Reg::W1, ARM64Reg::W0, LogicalImm(0x007fffff, GPRSize::B32));
   FixupBranch denormal = CBNZ(ARM64Reg::W1);
 
   // Zero
@@ -410,10 +416,10 @@ void JitArm64::GenerateConvertSingleToDouble()
   RET();
 
   SetJumpTarget(denormal);
-  AND(ARM64Reg::W2, ARM64Reg::W0, LogicalImm(0x80000000, 32));
+  AND(ARM64Reg::W2, ARM64Reg::W0, LogicalImm(0x80000000, GPRSize::B32));
   CLZ(ARM64Reg::X3, ARM64Reg::X1);
   LSL(ARM64Reg::X2, ARM64Reg::X2, 32);
-  ORR(ARM64Reg::X4, ARM64Reg::X3, LogicalImm(0xffffffffffffffc0, 64));
+  ORR(ARM64Reg::X4, ARM64Reg::X3, LogicalImm(0xffffffffffffffc0, GPRSize::B64));
   SUB(ARM64Reg::X2, ARM64Reg::X2, ARM64Reg::X3, ArithOption(ARM64Reg::X3, ShiftType::LSL, 52));
   ADD(ARM64Reg::X3, ARM64Reg::X4, 23);
   LSLV(ARM64Reg::X1, ARM64Reg::X1, ARM64Reg::X3);
@@ -423,13 +429,13 @@ void JitArm64::GenerateConvertSingleToDouble()
   RET();
 
   SetJumpTarget(normal_or_nan);
-  AND(ARM64Reg::W2, ARM64Reg::W0, LogicalImm(0x40000000, 32));
+  AND(ARM64Reg::W2, ARM64Reg::W0, LogicalImm(0x40000000, GPRSize::B32));
   CMP(ARM64Reg::W1, 0xff);
   CSET(ARM64Reg::W4, CCFlags::CC_NEQ);
-  AND(ARM64Reg::W3, ARM64Reg::W0, LogicalImm(0xc0000000, 32));
+  AND(ARM64Reg::W3, ARM64Reg::W0, LogicalImm(0xc0000000, GPRSize::B32));
   EOR(ARM64Reg::W2, ARM64Reg::W4, ARM64Reg::W2, ArithOption(ARM64Reg::W2, ShiftType::LSR, 30));
   MOVI2R(ARM64Reg::X1, 0x3800000000000000);
-  AND(ARM64Reg::W4, ARM64Reg::W0, LogicalImm(0x3fffffff, 32));
+  AND(ARM64Reg::W4, ARM64Reg::W0, LogicalImm(0x3fffffff, GPRSize::B32));
   LSL(ARM64Reg::X3, ARM64Reg::X3, 32);
   CMP(ARM64Reg::W2, 0);
   CSEL(ARM64Reg::X1, ARM64Reg::X1, ARM64Reg::ZR, CCFlags::CC_NEQ);
@@ -488,14 +494,15 @@ void JitArm64::GenerateFPRF(bool single)
   FixupBranch nan_or_inf = TBNZ(input_reg, input_size - 2);
 
   // exp == 0 && frac != 0
-  ORR(fprf_reg, fprf_reg, LogicalImm(Common::PPC_FPCLASS_PD & ~output_sign_mask, 32));
+  ORR(fprf_reg, fprf_reg, LogicalImm(Common::PPC_FPCLASS_PD & ~output_sign_mask, GPRSize::B32));
   B(write_fprf_and_ret);
 
   // exp == EXP_MASK
   SetJumpTarget(nan_or_inf);
   MOVI2R(ARM64Reg::W2, Common::PPC_FPCLASS_QNAN);
-  ORR(ARM64Reg::W1, fprf_reg, LogicalImm(Common::PPC_FPCLASS_PINF & ~output_sign_mask, 32));
-  TST(input_reg, LogicalImm(input_frac_mask, input_size));
+  ORR(ARM64Reg::W1, fprf_reg,
+      LogicalImm(Common::PPC_FPCLASS_PINF & ~output_sign_mask, GPRSize::B32));
+  TST(input_reg, LogicalImm(input_frac_mask, single ? GPRSize::B32 : GPRSize::B64));
   CSEL(fprf_reg, ARM64Reg::W1, ARM64Reg::W2, CCFlags::CC_EQ);
   B(write_fprf_and_ret);
 }

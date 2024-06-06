@@ -199,7 +199,7 @@ private:
 
   // MARK: State
   u16 m_dirty_textures;
-  u8 m_dirty_samplers;
+  u16 m_dirty_samplers;
   static_assert(sizeof(m_dirty_textures) * 8 >= MAX_TEXTURES, "Make this bigger");
   static_assert(sizeof(m_dirty_samplers) * 8 >= MAX_SAMPLERS, "Make this bigger");
   union Flags
@@ -237,7 +237,7 @@ private:
     NSString* label;
     id<MTLRenderPipelineState> pipeline;
     std::array<id<MTLBuffer>, 2> vertex_buffers;
-    std::array<id<MTLBuffer>, 2> fragment_buffers;
+    std::array<id<MTLBuffer>, 3> fragment_buffers;
     u32 width;
     u32 height;
     MathUtil::Rectangle<int> scissor_rect;
