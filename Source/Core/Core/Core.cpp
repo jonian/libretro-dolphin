@@ -741,7 +741,8 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
 }
 
 void RunEmuThread(WindowSystemInfo wsi) {
-  EmuThread(std::move(boot_params), wsi);
+  auto& system = Core::System::GetInstance();
+  EmuThread(std::ref(system), std::move(boot_params), wsi);
 }
 
 // Set or get the running state
