@@ -23,6 +23,10 @@ void Host_NotifyMapLoaded()
 {
 }
 
+void Host_PPCSymbolsChanged()
+{
+}
+
 void Host_RefreshDSPDebuggerWindow()
 {
 }
