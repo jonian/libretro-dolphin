@@ -101,7 +101,7 @@ HIDWiimote* GetHIDWiimoteSource(unsigned int index)
 
 namespace Wiimote
 {
-static InputConfig s_config(WIIMOTE_INI_NAME, _trans("Wii Remote"), "Wiimote");
+static InputConfig s_config(WIIMOTE_INI_NAME, _trans("Wii Remote"), "Wiimote", "Wiimote");
 
 InputConfig* GetConfig()
 {
@@ -210,7 +210,7 @@ void ResetAllWiimotes()
 
 void LoadConfig()
 {
-  s_config.LoadConfig(InputConfig::InputClass::Wii);
+  s_config.LoadConfig();
   s_last_connect_request_counter.fill(0);
 }
 

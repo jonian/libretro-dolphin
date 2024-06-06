@@ -170,7 +170,8 @@ void SConfig::SetRunningGameMetadata(const std::string& game_id, const std::stri
     return;
 
 #ifdef USE_RETRO_ACHIEVEMENTS
-  AchievementManager::GetInstance().SetDisabled(true);
+  if (game_id != "00000000")
+    AchievementManager::GetInstance().SetDisabled(true);
 #endif  // USE_RETRO_ACHIEVEMENTS
 
   if (game_id == "00000000")
@@ -306,7 +307,7 @@ struct SetGameMetadata
     }
 
     *region = tmd.GetRegion();
-    system.SetIsWii(false);
+    system.SetIsWii(true);
     config->SetRunningGameMetadata(tmd, DiscIO::Platform::WiiWAD);
 
     return true;
