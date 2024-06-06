@@ -20,7 +20,7 @@ unsigned int GetSampleRate()
 {
   if (g_sound_stream)
     return g_sound_stream->GetMixer()->GetSampleRate();
-  else if (SConfig::GetInstance().bWii)
+  else if (Core::System::GetInstance().IsWii())
     return Libretro::Options::audioMixerRate;
   else if (Libretro::Options::audioMixerRate == 32000u)
     return 32029;

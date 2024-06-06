@@ -111,7 +111,7 @@ void retro_get_system_av_info(retro_system_av_info* info)
 
   if (g_widescreen)
     Libretro::widescreen = g_widescreen->IsGameWidescreen() || g_Config.bWidescreenHack;
-  else if (SConfig::GetInstance().bWii)
+  else if (Core::System::GetInstance().IsWii())
     Libretro::widescreen = Config::Get(Config::SYSCONF_WIDESCREEN);
 
   info->geometry.aspect_ratio = Libretro::widescreen ? 16.0 / 9.0 : 4.0 / 3.0;
@@ -238,7 +238,7 @@ bool retro_unserialize(const void* data, size_t size)
 unsigned retro_get_region(void)
 {
   if (DiscIO::IsNTSC(SConfig::GetInstance().m_region) ||
-      (SConfig::GetInstance().bWii && Config::Get(Config::SYSCONF_PAL60)))
+      (Core::System::GetInstance().IsWii() && Config::Get(Config::SYSCONF_PAL60)))
     return RETRO_REGION_NTSC;
 
   return RETRO_REGION_PAL;

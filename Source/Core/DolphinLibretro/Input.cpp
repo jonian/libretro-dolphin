@@ -426,6 +426,7 @@ void Init()
 {
   environ_cb(RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, &rumble);
 
+  auto& system = Core::System::GetInstance();
   WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
   g_controller_interface.Initialize(wsi);
 
@@ -437,7 +438,7 @@ void Init()
   Keyboard::Initialize();
   FreeLook::Initialize();
 
-  int port_max = (SConfig::GetInstance().bWii && Libretro::Options::altGCPorts) ? 8 : 4;
+  int port_max = (system.IsWii() && Libretro::Options::altGCPorts) ? 8 : 4;
   for (int i = 0; i < port_max; i++)
     Libretro::Input::AddDevicesForPort(i);
 
@@ -445,7 +446,7 @@ void Init()
       {"GameCube Controller", RETRO_DEVICE_JOYPAD},
   };
 
-  if (SConfig::GetInstance().bWii && !Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
+  if (system.IsWii() && !Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
   {
     init_wiimotes = true;
     Wiimote::Initialize(Wiimote::InitializeMode::DO_NOT_WAIT_FOR_WIIMOTES);
@@ -569,7 +570,9 @@ void retro_set_input_state(retro_input_state_t cb)
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-  if (((!SConfig::GetInstance().bWii || !Libretro::Options::altGCPorts) && port > 3) || port > 7)
+  auto& system = Core::System::GetInstance();
+
+  if (((!system.IsWii() || !Libretro::Options::altGCPorts) && port > 3) || port > 7)
     return;
 
   Libretro::Input::input_types[port] = device;
@@ -587,10 +590,10 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
   if (device == RETRO_DEVICE_NONE)
   {
-    if (SConfig::GetInstance().bWii && port < 4)
+    if (system.IsWii() && port < 4)
       WiimoteCommon::SetSource(port, WiimoteSource::None);
 
-    if (!SConfig::GetInstance().bWii || !Libretro::Options::altGCPorts)
+    if (!system.IsWii() || !Libretro::Options::altGCPorts)
     {
       Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(port), SerialInterface::SIDEVICE_NONE);
       si.ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port)), port);
@@ -601,7 +604,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       si.ChangeDevice(Config::Get(Config::GetInfoForSIDevice(port - 4)), port - 4);
     }
   }
-  else if (!SConfig::GetInstance().bWii || device == RETRO_DEVICE_GC_ON_WII || port > 3)
+  else if (!system.IsWii() || device == RETRO_DEVICE_GC_ON_WII || port > 3)
   {
     if (device == RETRO_DEVICE_GC_ON_WII) // Disconnect Wii device if we're using GC controller as device type to avoid conflict
       WiimoteCommon::SetSource(port, WiimoteSource::None);
@@ -888,7 +891,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
   }
   std::vector<retro_input_descriptor> all_descs;
 
-  int port_max = (SConfig::GetInstance().bWii && Libretro::Options::altGCPorts) ? 8 : 4;
+  int port_max = (system.IsWii() && Libretro::Options::altGCPorts) ? 8 : 4;
   for (int i = 0; i < port_max; i++)
   {
     retro_input_descriptor* desc;
@@ -920,7 +923,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       break;
 
     default:
-      if (!SConfig::GetInstance().bWii || i > 3)
+      if (!system.IsWii() || i > 3)
       {
         desc = Libretro::Input::descGC;
       }
