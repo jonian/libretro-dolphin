@@ -65,9 +65,17 @@ void Init()
 
 void Shutdown()
 {
-  // delete g_sound_stream;
   g_sound_stream = nullptr;
 }
 
 }  // namespace Audio
 }  // namespace Libretro
+
+void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
+{
+  Libretro::Audio::batch_cb = cb;
+}
+
+void retro_set_audio_sample(retro_audio_sample_t cb)
+{
+}
