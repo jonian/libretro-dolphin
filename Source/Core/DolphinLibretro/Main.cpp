@@ -206,13 +206,13 @@ void retro_run(void)
 
 size_t retro_serialize_size(void)
 {
-  auto& system = Core::System::GetInstance();
   size_t size = 0;
 
-  Core::RunOnCPUThread(system, [&] {
-    PointerWrap p((u8**)&size, sizeof(size_t), PointerWrap::Mode::Measure);
-    State::DoState(system, p);
-  }, true);
+  auto& system = Core::System::GetInstance();
+  const Core::CPUThreadGuard guard(system);
+
+  PointerWrap p((u8**)&size, sizeof(size_t), PointerWrap::Mode::Measure);
+  State::DoState(system, p);
 
   return size;
 }
@@ -220,22 +220,20 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void* data, size_t size)
 {
   auto& system = Core::System::GetInstance();
+  const Core::CPUThreadGuard guard(system);
 
-  Core::RunOnCPUThread(system, [&] {
-    PointerWrap p((u8**)&data, size, PointerWrap::Mode::Write);
-    State::DoState(system, p);
-  }, true);
+  PointerWrap p((u8**)&data, size, PointerWrap::Mode::Write);
+  State::DoState(system, p);
 
   return true;
 }
 bool retro_unserialize(const void* data, size_t size)
 {
   auto& system = Core::System::GetInstance();
+  const Core::CPUThreadGuard guard(system);
 
-  Core::RunOnCPUThread(system, [&] {
-    PointerWrap p((u8**)&data, size, PointerWrap::Mode::Read);
-    State::DoState(system, p);
-  }, true);
+  PointerWrap p((u8**)&data, size, PointerWrap::Mode::Read);
+  State::DoState(system, p);
 
   return true;
 }
