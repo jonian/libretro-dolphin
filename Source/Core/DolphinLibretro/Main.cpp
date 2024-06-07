@@ -112,7 +112,7 @@ void retro_get_system_av_info(retro_system_av_info* info)
 
 void retro_reset(void)
 {
-  Core::System::GetInstance().GetProcessorInterface().PowerButton_Tap();
+  Core::System::GetInstance().GetProcessorInterface().ResetButton_Tap();
 }
 
 void retro_run(void)
