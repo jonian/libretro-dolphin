@@ -21,6 +21,10 @@
 #include "Core/ConfigManager.h"
 #include "Core/System.h"
 
+#ifdef __LIBRETRO__
+#include "DolphinLibretro/RSound.h"
+#endif
+
 namespace AudioCommon
 {
 constexpr int AUDIO_VOLUME_MIN = 0;
@@ -28,6 +32,9 @@ constexpr int AUDIO_VOLUME_MAX = 100;
 
 static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view backend)
 {
+#ifdef __LIBRETRO__
+  return std::make_unique<RSoundStream>();
+#else
   if (backend == BACKEND_CUBEB)
     return std::make_unique<CubebStream>();
   else if (backend == BACKEND_OPENAL && OpenALStream::IsValid())
@@ -43,6 +50,7 @@ static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view
   else if (backend == BACKEND_WASAPI && WASAPIStream::IsValid())
     return std::make_unique<WASAPIStream>();
   return {};
+#endif
 }
 
 void InitSoundStream(Core::System& system)

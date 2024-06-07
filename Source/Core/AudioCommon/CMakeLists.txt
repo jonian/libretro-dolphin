@@ -91,3 +91,7 @@ if(MSVC)
   # Add precompiled header
   target_link_libraries(audiocommon PRIVATE use_pch)
 endif()
+
+if(LIBRETRO)
+  include_directories(${CMAKE_SOURCE_DIR}/Externals/Libretro/Include)
+endif()

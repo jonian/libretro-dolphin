@@ -28,39 +28,10 @@ unsigned int GetSampleRate()
   return 48043;
 }
 
-class Stream final : public SoundStream
-{
-public:
-  Stream() : SoundStream(GetSampleRate()) {}
-  bool SetRunning(bool running) override { return running; }
-  void Update() override
-  {
-    unsigned int available = m_mixer->AvailableSamples();
-    while (available > MAX_SAMPLES)
-    {
-      m_mixer->Mix(m_buffer, MAX_SAMPLES);
-      batch_cb(m_buffer, MAX_SAMPLES);
-      available -= MAX_SAMPLES;
-    }
-    if (available)
-    {
-      m_mixer->Mix(m_buffer, available);
-      batch_cb(m_buffer, available);
-    }
-  }
-
-private:
-  static constexpr unsigned int MAX_SAMPLES = 512;
-  s16 m_buffer[MAX_SAMPLES * 2];
-};
-
 void Init()
 {
   auto& system = Core::System::GetInstance();
-  AudioCommon::SetSoundStreamRunning(system, false);
-  system.SetSoundStream(std::make_unique<Libretro::Audio::Stream>());
   g_sound_stream = system.GetSoundStream();
-  AudioCommon::SetSoundStreamRunning(system, true);
 }
 
 void Shutdown()
