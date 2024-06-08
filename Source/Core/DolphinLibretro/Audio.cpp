@@ -36,7 +36,11 @@ void Init()
 
 void Shutdown()
 {
+  auto& system = Core::System::GetInstance();
+  AudioCommon::ShutdownSoundStream(system);
+
   g_sound_stream = nullptr;
+  delete g_sound_stream;
 }
 
 }  // namespace Audio
