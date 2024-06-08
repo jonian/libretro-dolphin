@@ -181,16 +181,8 @@ void retro_run(void)
   RETRO_PERFORMANCE_INIT(dolphin_main_func);
   RETRO_PERFORMANCE_START(dolphin_main_func);
 
-  AsyncRequests::GetInstance()->SetEnable(true);
-  AsyncRequests::GetInstance()->SetPassthrough(false);
   Core::DoFrameStep(system);
-  Fifo::FifoManager& fifo = system.GetFifo();
-  fifo.RunGpuLoop();
-  if (!fifo.UseDeterministicGPUThread())
-  {
-    AsyncRequests::GetInstance()->SetEnable(false);
-    AsyncRequests::GetInstance()->SetPassthrough(true);
-  }
+  system.GetFifo().RunGpuLoop();
 
   RETRO_PERFORMANCE_STOP(dolphin_main_func);
 }
