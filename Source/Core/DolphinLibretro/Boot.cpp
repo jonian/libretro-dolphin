@@ -224,7 +224,7 @@ void retro_unload_game(void)
   auto& system = Core::System::GetInstance();
   Core::Stop(system);
   Core::Shutdown(system);
-  g_video_backend->Shutdown();
+  Libretro::Video::Shutdown();
   Libretro::Input::Shutdown();
   Libretro::Audio::Shutdown();
   Libretro::Log::Shutdown();
@@ -299,7 +299,7 @@ static bool retro_set_image_index(unsigned index)
 {
   if (eject_state)
     disk_index = index;
-  
+
   return eject_state;
 }
 
@@ -325,7 +325,7 @@ static bool retro_replace_image_index(unsigned index, const struct retro_game_in
     disk_paths.erase(disk_paths.begin() + index);
     if (!disk_paths.size())
       disk_index = -1;
-    else if (disk_index > (int)index)
+    else if (disk_index > index)
       disk_index--;
   }
   else

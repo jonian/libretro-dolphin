@@ -8,6 +8,7 @@ namespace Libretro
 namespace Video
 {
 void Init(void);
+void Shutdown(void);
 extern retro_video_refresh_t video_cb;
 extern struct retro_hw_render_callback hw_render;
 }  // namespace Video

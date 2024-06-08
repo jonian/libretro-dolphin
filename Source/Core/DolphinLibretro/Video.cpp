@@ -124,6 +124,11 @@ void Init()
   hw_render.context_type = RETRO_HW_CONTEXT_NONE;
 }
 
+void Shutdown()
+{
+  g_video_backend->Shutdown();
+}
+
 }  // namespace Video
 }  // namespace Libretro
 
