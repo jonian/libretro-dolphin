@@ -149,13 +149,9 @@ void retro_run(void)
   {
     g_Config.iEFBScale = Libretro::Options::efbScale;
 
-    unsigned cmd = RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO;
-    if (Libretro::Video::hw_render.context_type == RETRO_HW_CONTEXT_DIRECT3D)
-      cmd = RETRO_ENVIRONMENT_SET_GEOMETRY;
-
     retro_system_av_info info;
     retro_get_system_av_info(&info);
-    Libretro::environ_cb(cmd, &info);
+    Libretro::environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &info);
   }
 
   if (Libretro::widescreen != (g_widescreen->IsGameWidescreen() || g_Config.bWidescreenHack))

@@ -85,8 +85,11 @@ bool retro_load_game(const struct retro_game_info* game)
 
   /* disable throttling emulation to match GetTargetRefreshRate() */
   Core::SetIsThrottlerTempDisabled(true);
-  Config::SetBase(Config::MAIN_EMULATION_SPEED, Libretro::Options::EmulationSpeed);
 
+  SConfig::GetInstance().bEMUThread = false;
+  SConfig::GetInstance().bBootToPause = true;
+
+  Config::SetBase(Config::MAIN_EMULATION_SPEED, Libretro::Options::EmulationSpeed);
 #if defined(_DEBUG)
   Config::SetBase(Config::MAIN_FASTMEM, false);
 #else
@@ -97,8 +100,6 @@ bool retro_load_game(const struct retro_game_info* game)
   Config::SetBase(Config::MAIN_CPU_CORE, Libretro::Options::cpu_core);
   Config::SetBase(Config::MAIN_GC_LANGUAGE, (int)(DiscIO::Language)Libretro::Options::Language - 1);
   Config::SetBase(Config::MAIN_CPU_THREAD, true);
-  SConfig::GetInstance().bEMUThread = false;
-  SConfig::GetInstance().bBootToPause = true;
   Config::SetBase(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
   Config::SetBase(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
   Config::SetBase(Config::MAIN_AUDIO_BACKEND, BACKEND_NULLSOUND);
@@ -192,7 +193,7 @@ bool retro_load_game(const struct retro_game_info* game)
     normalized_game_paths = ReadM3UFile(normalized_game_paths.front(), folder_path);
     if (normalized_game_paths.empty())
     {
-      ERROR_LOG_FMT(BOOT, "Could not boot {}. M3U contains no paths\n", game->path);
+      ERROR_LOG_FMT(BOOT, "Could not boot {}. M3U contains no paths", game->path);
       return false;
     }
   }
@@ -204,7 +205,7 @@ bool retro_load_game(const struct retro_game_info* game)
 
   if (!BootManager::BootCore(system, BootParameters::GenerateFromFile(normalized_game_paths), wsi))
   {
-    ERROR_LOG_FMT(BOOT, "Could not boot {}\n", game->path);
+    ERROR_LOG_FMT(BOOT, "Could not boot {}", game->path);
     return false;
   }
 

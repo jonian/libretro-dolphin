@@ -37,7 +37,7 @@ struct retro_hw_render_callback hw_render;
 
 static void ContextReset(void)
 {
-  DEBUG_LOG_FMT(VIDEO, "Context reset!\n");
+  DEBUG_LOG_FMT(VIDEO, "Context reset!");
 
   WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
   wsi.render_surface_scale = Libretro::Options::efbScale;
@@ -47,7 +47,7 @@ static void ContextReset(void)
 
 static void ContextDestroy(void)
 {
-  DEBUG_LOG_FMT(VIDEO, "Context destroy!\n");
+  DEBUG_LOG_FMT(VIDEO, "Context destroy!");
 
   if (Config::Get(Config::MAIN_GFX_BACKEND) == "OGL")
   {
