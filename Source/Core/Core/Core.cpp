@@ -106,7 +106,6 @@ static bool s_hardware_initialized = false;
 static bool s_is_started = false;
 static Common::Flag s_is_booting;
 
-static std::thread::id s_gpu_thread_id;
 static std::vector<Common::ScopeGuard> s_emu_thread_scope_guards;
 std::unique_ptr<BootParameters> boot_params;
 static std::thread s_emu_thread;
@@ -222,12 +221,6 @@ bool IsCPUThread()
 
 bool IsGPUThread()
 {
-  if (Core::System::GetInstance().IsDualCoreMode())
-  {
-    if (!SConfig::GetInstance().bEMUThread)
-      return s_gpu_thread_id == std::this_thread::get_id();
-  }
-
   return tls_is_gpu_thread;
 }
 
@@ -276,7 +269,7 @@ bool Init(Core::System& system, std::unique_ptr<BootParameters> boot, const Wind
   s_is_booting.Set();
   boot_params = std::move(boot);
 
-  if (!Core::System::GetInstance().IsDualCoreMode())
+  if (!system.IsDualCoreMode())
     SConfig::GetInstance().bEMUThread = true;
 
   if (!SConfig::GetInstance().bEMUThread)
@@ -689,7 +682,6 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
   UpdateTitle(system);
 
   // ENTER THE VIDEO THREAD LOOP
-  s_gpu_thread_id = std::this_thread::get_id();
   if (system.IsDualCoreMode())
   {
     // This thread, after creating the EmuWindow, spawns a CPU
@@ -705,10 +697,12 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
     if (!SConfig::GetInstance().bEMUThread)
     {
       s_emu_thread_scope_guards.push_back(std::move(flag_guard));
+      s_emu_thread_scope_guards.push_back(std::move(sd_folder_sync_guard));
+      s_emu_thread_scope_guards.push_back(std::move(asset_loader_guard));
       s_emu_thread_scope_guards.push_back(std::move(movie_guard));
+      s_emu_thread_scope_guards.push_back(std::move(audio_guard));
       s_emu_thread_scope_guards.push_back(std::move(hw_guard));
       s_emu_thread_scope_guards.push_back(std::move(video_guard));
-      s_emu_thread_scope_guards.push_back(std::move(audio_guard));
       s_emu_thread_scope_guards.push_back(std::move(wiifs_guard));
       return;
     }
@@ -961,7 +955,7 @@ void Callback_NewField(Core::System& system)
 #endif  // USE_RETRO_ACHIEVEMENTS
 
   if (!SConfig::GetInstance().bEMUThread)
-    Core::System::GetInstance().GetFifo().StopGpuLoop();
+    system.GetFifo().StopGpuLoop();
 }
 
 void UpdateTitle(Core::System& system)
@@ -990,23 +984,22 @@ void Shutdown(Core::System& system)
   // shut down.
   // For more info read "DirectX Graphics Infrastructure (DXGI): Best Practices"
   // on MSDN.
-  if (SConfig::GetInstance().bEMUThread)
+  if (!SConfig::GetInstance().bEMUThread && system.IsDualCoreMode())
   {
-    if (s_emu_thread.joinable())
-      s_emu_thread.join();
-  }
-  else
-  {
-    if (Core::System::GetInstance().IsDualCoreMode())
-      s_cpu_thread.join();
+    s_cpu_thread.join();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
+
+    DeclareAsCPUThread();
 #ifdef USE_GDBSTUB
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "Stopping GDB ..."));
-    gdb_deinit();
+    GDBStub::Deinit();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
 #endif
     s_emu_thread_scope_guards.clear();
   }
+
+  if (s_emu_thread.joinable())
+    s_emu_thread.join();
 
   // Make sure there's nothing left over in case we're about to exit.
   HostDispatchJobs(system);
