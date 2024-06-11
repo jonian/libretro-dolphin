@@ -118,14 +118,17 @@ void retro_reset(void)
 void retro_run(void)
 {
   Libretro::Options::CheckVariables();
-#if defined(_DEBUG)
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Common::Log::LogLevel::LDEBUG);
-#else
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
-#endif
-  Config::SetCurrent(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
-  Config::SetCurrent(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
-  g_Config.bWidescreenHack = Libretro::Options::WidescreenHack;
+
+  if (Libretro::Options::cpuClockRate.Updated())
+  {
+    Config::SetCurrent(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
+    Config::SetCurrent(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
+  }
+
+  if (Libretro::Options::WidescreenHack.Updated())
+  {
+    g_Config.bWidescreenHack = Libretro::Options::WidescreenHack;
+  }
 
   Libretro::Input::Update();
   auto& system = Core::System::GetInstance();
