@@ -55,20 +55,6 @@ static void ContextDestroy(void)
   }
 
   g_video_backend->Shutdown();
-  switch (hw_render.context_type)
-  {
-  case RETRO_HW_CONTEXT_DIRECT3D:
-    break;
-  case RETRO_HW_CONTEXT_VULKAN:
-    break;
-  case RETRO_HW_CONTEXT_OPENGL:
-  case RETRO_HW_CONTEXT_OPENGL_CORE:
-  case RETRO_HW_CONTEXT_OPENGLES3:
-    break;
-  default:
-  case RETRO_HW_CONTEXT_NONE:
-    break;
-  }
 }
 
 static bool SetHWRender(retro_hw_context_type type)
@@ -111,8 +97,9 @@ static bool SetHWRender(retro_hw_context_type type)
 void Init()
 {
   retro_hw_context_type preferred = RETRO_HW_CONTEXT_NONE;
+  environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred);
 
-  if (environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred) && SetHWRender(preferred))
+  if (preferred && SetHWRender(preferred))
     return;
   if (SetHWRender(RETRO_HW_CONTEXT_OPENGL_CORE))
     return;
