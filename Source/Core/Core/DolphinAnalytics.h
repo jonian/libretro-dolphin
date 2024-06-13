@@ -150,8 +150,10 @@ public:
   template <typename T>
   void Send(T report)
   {
+#ifndef __LIBRETRO__
     std::lock_guard lk{m_reporter_mutex};
     m_reporter.Send(report);
+#endif
   }
 
 private:
