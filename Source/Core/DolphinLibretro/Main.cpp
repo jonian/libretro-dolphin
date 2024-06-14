@@ -118,6 +118,11 @@ void retro_reset(void)
 void retro_run(void)
 {
   Libretro::Options::CheckVariables();
+#if defined(_DEBUG)
+  Common::Log::LogManager::GetInstance()->SetLogLevel(Common::Log::LogLevel::LDEBUG);
+#else
+  Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
+#endif
 
   if (Libretro::Options::cpuClockRate.Updated())
   {

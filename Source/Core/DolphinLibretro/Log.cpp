@@ -37,11 +37,6 @@ void Shutdown()
 
 LogListener::LogListener(retro_log_printf_t log) : m_log(log)
 {
-#if defined(_DEBUG)
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Common::Log::LogLevel::LDEBUG);
-#else
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
-#endif
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::BOOT, true);
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::CORE, true);
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::VIDEO, true);
