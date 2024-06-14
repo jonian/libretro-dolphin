@@ -989,13 +989,12 @@ void Shutdown(Core::System& system)
     s_cpu_thread.join();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
 
+    s_emu_thread_scope_guards.clear();
     DeclareAsCPUThread();
-#ifdef USE_GDBSTUB
+
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "Stopping GDB ..."));
     GDBStub::Deinit();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
-#endif
-    s_emu_thread_scope_guards.clear();
   }
 
   if (s_emu_thread.joinable())
