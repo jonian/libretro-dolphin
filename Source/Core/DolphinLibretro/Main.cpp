@@ -191,6 +191,12 @@ void retro_run(void)
   Core::DoFrameStep(system);
   system.GetFifo().RunGpuLoop();
 
+  if (!system.GetFifo().UseDeterministicGPUThread())
+  {
+    AsyncRequests::GetInstance()->SetEnable(false);
+    AsyncRequests::GetInstance()->SetPassthrough(true);
+  }
+
   RETRO_PERFORMANCE_STOP(dolphin_main_func);
 }
 

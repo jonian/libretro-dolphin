@@ -292,8 +292,10 @@ void FifoManager::ResetVideoBuffer()
 // Purpose: Keep the Core HW updated about the CPU-GPU distance
 void FifoManager::RunGpuLoop()
 {
+#ifndef __LIBRETRO__
   AsyncRequests::GetInstance()->SetEnable(true);
   AsyncRequests::GetInstance()->SetPassthrough(false);
+#endif
 
   m_gpu_mainloop.Run(
       [this] {
@@ -397,8 +399,10 @@ void FifoManager::RunGpuLoop()
       },
       100);
 
+#ifndef __LIBRETRO__
   AsyncRequests::GetInstance()->SetEnable(false);
   AsyncRequests::GetInstance()->SetPassthrough(true);
+#endif
 }
 
 void FifoManager::FlushGpu()
