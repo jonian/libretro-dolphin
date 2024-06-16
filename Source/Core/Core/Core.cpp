@@ -267,13 +267,13 @@ bool Init(Core::System& system, std::unique_ptr<BootParameters> boot, const Wind
 
   // Start the emu thread
   s_is_booting.Set();
+
+#ifdef __LIBRETRO__
   boot_params = std::move(boot);
 
-  if (!system.IsDualCoreMode())
-    SConfig::GetInstance().bEMUThread = true;
-
-  if (!SConfig::GetInstance().bEMUThread)
+  if (system.IsDualCoreMode())
     return true;
+#endif
 
   s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(boot), prepared_wsi);
   return true;
@@ -694,18 +694,17 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
     s_cpu_thread =
         std::thread(cpuThreadFunc, std::ref(system), std::ref(savestate_path), delete_savestate);
 
-    if (!SConfig::GetInstance().bEMUThread)
-    {
-      s_emu_thread_scope_guards.push_back(std::move(flag_guard));
-      s_emu_thread_scope_guards.push_back(std::move(sd_folder_sync_guard));
-      s_emu_thread_scope_guards.push_back(std::move(asset_loader_guard));
-      s_emu_thread_scope_guards.push_back(std::move(movie_guard));
-      s_emu_thread_scope_guards.push_back(std::move(audio_guard));
-      s_emu_thread_scope_guards.push_back(std::move(hw_guard));
-      s_emu_thread_scope_guards.push_back(std::move(video_guard));
-      s_emu_thread_scope_guards.push_back(std::move(wiifs_guard));
-      return;
-    }
+#ifdef __LIBRETRO__
+    s_emu_thread_scope_guards.push_back(std::move(flag_guard));
+    s_emu_thread_scope_guards.push_back(std::move(sd_folder_sync_guard));
+    s_emu_thread_scope_guards.push_back(std::move(asset_loader_guard));
+    s_emu_thread_scope_guards.push_back(std::move(movie_guard));
+    s_emu_thread_scope_guards.push_back(std::move(audio_guard));
+    s_emu_thread_scope_guards.push_back(std::move(hw_guard));
+    s_emu_thread_scope_guards.push_back(std::move(video_guard));
+    s_emu_thread_scope_guards.push_back(std::move(wiifs_guard));
+    return;
+#endif
 
     // become the GPU thread
     system.GetFifo().RunGpuLoop();
@@ -954,8 +953,10 @@ void Callback_NewField(Core::System& system)
   AchievementManager::GetInstance().DoFrame();
 #endif  // USE_RETRO_ACHIEVEMENTS
 
-  if (!SConfig::GetInstance().bEMUThread)
+#ifdef __LIBRETRO__
+  if (system.IsDualCoreMode())
     system.GetFifo().StopGpuLoop();
+#endif
 }
 
 void UpdateTitle(Core::System& system)
@@ -984,7 +985,8 @@ void Shutdown(Core::System& system)
   // shut down.
   // For more info read "DirectX Graphics Infrastructure (DXGI): Best Practices"
   // on MSDN.
-  if (!SConfig::GetInstance().bEMUThread && system.IsDualCoreMode())
+#ifdef __LIBRETRO__
+  if (system.IsDualCoreMode())
   {
     s_cpu_thread.join();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
@@ -996,6 +998,7 @@ void Shutdown(Core::System& system)
     GDBStub::Deinit();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
   }
+#endif
 
   if (s_emu_thread.joinable())
     s_emu_thread.join();

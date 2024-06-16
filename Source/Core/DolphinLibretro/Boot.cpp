@@ -86,7 +86,6 @@ bool retro_load_game(const struct retro_game_info* game)
   /* disable throttling emulation to match GetTargetRefreshRate() */
   Core::SetIsThrottlerTempDisabled(true);
 
-  SConfig::GetInstance().bEMUThread = false;
   SConfig::GetInstance().bBootToPause = true;
 
   Config::SetBase(Config::MAIN_EMULATION_SPEED, Libretro::Options::EmulationSpeed);
