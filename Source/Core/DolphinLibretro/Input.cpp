@@ -777,7 +777,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       }
       else
       {
-        if (device == RETRO_DEVICE_WIIMOTE)
+        if (device == RETRO_DEVICE_WIIMOTE || device == RETRO_DEVICE_WIIMOTE_SW)
         {
           wmButtons->SetControlExpression(0, "A | `" + devMouse + ":Left`");   // A
           wmButtons->SetControlExpression(1, "B | `" + devMouse + ":Right`");  // B
