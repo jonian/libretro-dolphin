@@ -8,8 +8,6 @@
 #include "Common/IniFile.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/ConfigManager.h"
-#include "Core/FreeLookManager.h"
-#include "Core/HW/GBAPad.h"
 #include "Core/HW/GCKeyboard.h"
 #include "Core/HW/GCPad.h"
 #include "Core/HW/GCPadEmu.h"
@@ -34,6 +32,7 @@
 #include "InputCommon/GCAdapter.h"
 #include "InputCommon/GCPadStatus.h"
 #include "InputCommon/InputConfig.h"
+#include "UICommon/UICommon.h"
 
 #define RETRO_DEVICE_WIIMOTE RETRO_DEVICE_JOYPAD
 #define RETRO_DEVICE_WIIMOTE_SW ((2 << 8) | RETRO_DEVICE_JOYPAD)
@@ -53,7 +52,6 @@ static retro_input_state_t input_cb;
 struct retro_rumble_interface rumble;
 static const std::string source = "Libretro";
 static unsigned input_types[8];
-static bool init_wiimotes = false;
 
 static struct retro_input_descriptor descEmpty[] = {{0}};
 
@@ -428,15 +426,9 @@ void Init()
 
   auto& system = Core::System::GetInstance();
   WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
-  g_controller_interface.Initialize(wsi);
 
+  UICommon::InitControllers(wsi);
   g_controller_interface.AddDevice(std::make_shared<Device>(RETRO_DEVICE_KEYBOARD, 0));
-
-  GCAdapter::Init();
-  Pad::Initialize();
-  Pad::InitializeGBA();
-  Keyboard::Initialize();
-  FreeLook::Initialize();
 
   int port_max = (system.IsWii() && Libretro::Options::altGCPorts) ? 8 : 4;
   for (int i = 0; i < port_max; i++)
@@ -448,9 +440,6 @@ void Init()
 
   if (system.IsWii() && !Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
   {
-    init_wiimotes = true;
-    Wiimote::Initialize(Wiimote::InitializeMode::DO_NOT_WAIT_FOR_WIIMOTES);
-
     if (Libretro::Options::altGCPorts) // Wii devices listed in ports 1-4, GC controllers in ports 5-8
     {
       static const struct retro_controller_description wiimote_desc[] = {
@@ -515,25 +504,7 @@ void Init()
 
 void Shutdown()
 {
-  if (init_wiimotes)
-  {
-    Wiimote::ResetAllWiimotes();
-    Wiimote::Shutdown();
-    init_wiimotes = false;
-  }
-
-#if defined(__LIBUSB__)
-  GCAdapter::ResetRumble();
-#endif
-  for (int i = 0; i < 4; ++i)
-    Pad::ResetRumble(i);
-
-  Keyboard::Shutdown();
-  Pad::Shutdown();
-  Pad::ShutdownGBA();
-  FreeLook::Shutdown();
-
-  g_controller_interface.Shutdown();
+  UICommon::ShutdownControllers();
 
   rumble.set_rumble_state = nullptr;
 }
