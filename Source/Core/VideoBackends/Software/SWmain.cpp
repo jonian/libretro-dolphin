@@ -30,6 +30,10 @@
 #include "VideoCommon/VideoCommon.h"
 #include "VideoCommon/VideoConfig.h"
 
+#ifdef __LIBRETRO__
+#include "DolphinLibretro/RSW.h"
+#endif
+
 namespace SW
 {
 class PerfQuery : public PerfQueryBase
@@ -106,10 +110,17 @@ bool VideoSoftware::Initialize(const WindowSystemInfo& wsi)
   Clipper::Init();
   Rasterizer::Init();
 
+#ifdef __LIBRETRO__
+  return InitializeShared(std::make_unique<RSWGfx>(std::move(window)),
+                          std::make_unique<SWVertexLoader>(), std::make_unique<PerfQuery>(),
+                          std::make_unique<SWBoundingBox>(), std::make_unique<SWRenderer>(),
+                          std::make_unique<TextureCache>());
+#else
   return InitializeShared(std::make_unique<SWGfx>(std::move(window)),
                           std::make_unique<SWVertexLoader>(), std::make_unique<PerfQuery>(),
                           std::make_unique<SWBoundingBox>(), std::make_unique<SWRenderer>(),
                           std::make_unique<TextureCache>());
+#endif
 }
 
 void VideoSoftware::Shutdown()
