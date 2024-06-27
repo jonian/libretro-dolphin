@@ -11,11 +11,6 @@
 class GLContextRGL : public GLContext
 {
 public:
-  GLContextRGL()
-  {
-    WindowSystemInfo wsi(WindowSystemType::Libretro, nullptr, nullptr, nullptr);
-    Initialize(wsi, g_Config.stereo_mode == StereoMode::QuadBuffer, true);
-  }
   bool IsHeadless() const override
   {
     return false;
@@ -30,19 +25,13 @@ public:
   }
   virtual bool Initialize(const WindowSystemInfo& wsi, bool stereo, bool core) override
   {
-    m_backbuffer_width = EFB_WIDTH * Libretro::Options::efbScale;
+    m_backbuffer_width  = EFB_WIDTH * Libretro::Options::efbScale;
     m_backbuffer_height = EFB_HEIGHT * Libretro::Options::efbScale;
-    switch (Libretro::Video::hw_render.context_type)
-    {
-    case RETRO_HW_CONTEXT_OPENGLES3:
+
+    if (Libretro::Video::hw_render.context_type == RETRO_HW_CONTEXT_OPENGLES3)
       m_opengl_mode = Mode::OpenGLES;
-      break;
-    default:
-    case RETRO_HW_CONTEXT_OPENGL_CORE:
-    case RETRO_HW_CONTEXT_OPENGL:
+    else
       m_opengl_mode = Mode::OpenGL;
-      break;
-    }
 
     return true;
   }

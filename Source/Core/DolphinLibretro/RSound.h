@@ -18,7 +18,7 @@ public:
   }
   bool SetRunning(bool running) override
   {
-    return running;
+    return true;
   }
   void Update() override
   {
