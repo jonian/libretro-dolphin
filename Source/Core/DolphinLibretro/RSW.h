@@ -32,12 +32,27 @@ public:
   void ShowImage(const AbstractTexture* source_texture, const MathUtil::Rectangle<int>& source_rc) override
   {
     const SW::SWTexture* m_texture = static_cast<const SW::SWTexture*>(source_texture);
+    const u8* rgba8_data = m_texture->GetData(0, 0);
+
+    unsigned texture_width = m_texture->GetWidth();
+    unsigned total_pixels = texture_width * m_texture->GetHeight();
+
+    std::vector<u32> xrgb8_data(total_pixels);
+
+    for (unsigned i = 0, j = 0; i < total_pixels; i++, j += 4)
+    {
+      xrgb8_data[i] =
+        (rgba8_data[j + 3] << 24) |
+        (rgba8_data[j + 0] << 16) |
+        (rgba8_data[j + 1] << 8)  |
+        (rgba8_data[j + 2]);
+    }
 
     Libretro::Video::video_cb(
-      m_texture->GetData(0, 0),
+      xrgb8_data.data(),
       source_rc.GetWidth(),
       source_rc.GetHeight(),
-      m_texture->GetWidth() * 4
+      texture_width * 4
     );
   }
   SurfaceInfo GetSurfaceInfo() const override
