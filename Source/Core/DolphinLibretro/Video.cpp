@@ -26,6 +26,7 @@
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"
 #include "VideoCommon/VideoConfig.h"
+#include "VideoCommon/OnScreenDisplay.h"
 
 namespace Libretro
 {
@@ -54,6 +55,7 @@ static void ContextDestroy(void)
     OGL::GetOGLGfx()->SetSystemFrameBuffer(0);
   }
 
+  OSD::ClearMessages();
   g_video_backend->Shutdown();
 }
 
