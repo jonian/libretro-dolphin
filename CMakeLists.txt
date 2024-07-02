@@ -47,13 +47,13 @@ if (COMPILER STREQUAL "GNU")
   set(COMPILER "GCC") # perfer printing GCC instead of GNU
 endif()
 
-# Enforce minimium compiler versions that support the c++20 features we use
-set (GCC_min_version 10)
-set (Clang_min_version 12)
-set (AppleClang_min_version 13.0.0)
-set (min_xcode_version "13.0") # corrosponding xcode version for AppleClang_min_version
+# Enforce minimum compiler versions that support the c++20 features we use
+set (GCC_min_version 11)
+set (Clang_min_version 14)
+set (AppleClang_min_version 14.0.3)
+set (min_xcode_version "14.0") # corresponding xcode version for AppleClang_min_version
 set (MSVC_min_version 14.32)
-set (min_vs_version "2022 17.2.3") # corrosponding Visual Studio version for MSVC_min_version
+set (min_vs_version "2022 17.2.3") # corresponding Visual Studio version for MSVC_min_version
 
 message(STATUS "Using ${COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 
@@ -408,7 +408,7 @@ endif()
 # All commands and submodule commands also need to see these
 # changes, so just setting them in the project scope via
 # include_directories and link_directories is not sufficient
-if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD|NetBSD")
+if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};/usr/local")
   set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
@@ -527,14 +527,14 @@ if (OPENGL_GL)
 endif()
 
 if(ENABLE_X11)
-  find_package(X11)
+  pkg_check_modules(X11 x11 IMPORTED_TARGET)
   if(X11_FOUND)
     add_definitions(-DHAVE_X11=1)
-    check_lib(XRANDR xrandr Xrandr)
+    pkg_check_modules(XRANDR xrandr IMPORTED_TARGET)
     if(XRANDR_FOUND)
       add_definitions(-DHAVE_XRANDR=1)
     endif()
-    pkg_check_modules(X11_INPUT REQUIRED xi>=1.5.0)
+    pkg_check_modules(X11_INPUT REQUIRED xi>=1.5.0 IMPORTED_TARGET)
     message(STATUS "X11 support enabled")
   else()
     message(WARNING "X11 support enabled but not found. This build will not support X11.")
@@ -651,7 +651,9 @@ if (_M_X86_64)
 endif()
 add_subdirectory(Externals/cpp-optparse)
 
-dolphin_find_optional_system_library(fmt Externals/fmt 10.1)
+dolphin_find_optional_system_library_pkgconfig(FMT
+  fmt>=10.1 fmt::fmt Externals/fmt
+)
 
 add_subdirectory(Externals/imgui)
 add_subdirectory(Externals/implot)
@@ -697,9 +699,9 @@ dolphin_find_optional_system_library_pkgconfig(ZSTD libzstd>=1.4.0 zstd::zstd Ex
 
 dolphin_find_optional_system_library_pkgconfig(ZLIB zlib-ng ZLIB::ZLIB Externals/zlib-ng)
 
-# https://github.com/zlib-ng/minizip-ng/commit/6c5f265a55f1a12a7a016cd2962feff91cff5d2e
-add_definitions(-DMZ_COMPAT_VERSION=110)  # This macro is for forwards compatibility with 4.0.4+
-dolphin_find_optional_system_library_pkgconfig(MINIZIP minizip>=3.0.0 minizip::minizip Externals/minizip)
+dolphin_find_optional_system_library_pkgconfig(MINIZIP
+  "minizip-ng>=4.0.4;minizip>=4.0.4" minizip::minizip Externals/minizip-ng
+)
 
 dolphin_find_optional_system_library(LZO Externals/LZO)
 
@@ -726,7 +728,9 @@ include_directories(Externals/soundtouch)
 dolphin_find_optional_system_library(CUBEB Externals/cubeb)
 
 if(NOT ANDROID)
-  dolphin_find_optional_system_library(LibUSB Externals/libusb)
+  dolphin_find_optional_system_library_pkgconfig(
+    LibUSB libusb-1.0 LibUSB::LibUSB Externals/libusb
+  )
   add_definitions(-D__LIBUSB__)
 endif()
 
@@ -807,14 +811,26 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/Common/scmrev.h)
 	file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/Common/scmrev.h)
 endif()
 
+if(APPLE)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/DolphinQt)
+  if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/DolphinQt/Info.plist)
+    file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/DolphinQt/Info.plist)
+  endif()
+
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/MacUpdater)
+  if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/MacUpdater/Info.plist)
+    file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/MacUpdater/Info.plist)
+  endif()
+endif()
+
 find_package(Git)
 if(NOT GIT_FOUND)
 	set(GIT_EXECUTABLE "")
 endif()
 add_custom_target(
 	dolphin_scmrev
-	${CMAKE_COMMAND} -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} -DDISTRIBUTOR=${DISTRIBUTOR} -DDOLPHIN_DEFAULT_UPDATE_TRACK=${DOLPHIN_DEFAULT_UPDATE_TRACK} -DGIT_FOUND=${GIT_FOUND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DDOLPHIN_WC_REVISION=${DOLPHIN_WC_REVISION} -DDOLPHIN_WC_DESCRIBE=${DOLPHIN_WC_DESCRIBE} -DDOLPHIN_WC_BRANCH=${DOLPHIN_WC_BRANCH} -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ScmRevGen.cmake
-	BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/Source/Core/Common/scmrev.h
+	${CMAKE_COMMAND} -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} -DDISTRIBUTOR=${DISTRIBUTOR} -DDOLPHIN_DEFAULT_UPDATE_TRACK=${DOLPHIN_DEFAULT_UPDATE_TRACK} -DGIT_FOUND=${GIT_FOUND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DDOLPHIN_WC_REVISION=${DOLPHIN_WC_REVISION} -DDOLPHIN_WC_DESCRIBE=${DOLPHIN_WC_DESCRIBE} -DDOLPHIN_WC_BRANCH=${DOLPHIN_WC_BRANCH} -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ScmRevGen.cmake
+	BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/Source/Core/Common/scmrev.h" "${CMAKE_CURRENT_BINARY_DIR}/Source/Core/DolphinQt/Info.plist" "${CMAKE_CURRENT_BINARY_DIR}/Source/Core/MacUpdater/Info.plist"
 	VERBATIM
 )
 
@@ -825,15 +841,16 @@ include_directories("${PROJECT_BINARY_DIR}/Source/Core")
 # Unit testing.
 #
 if(ENABLE_TESTS)
-  find_package(GTest)
-  if (GTEST_FOUND)
-    message(STATUS "Using the system gtest")
-    include_directories(${GTEST_INCLUDE_DIRS})
-  else()
-    message(STATUS "Using static gtest from Externals")
-    add_subdirectory(Externals/gtest EXCLUDE_FROM_ALL)
+  dolphin_find_optional_system_library_pkgconfig(GTEST
+    gtest gtest::gtest Externals/gtest
+  )
+  # dolphin_find_optional_system_library_pkgconfig() doesn't add an alias if it
+  # uses the bundled libraries, so we add one ourselves.
+  if (NOT TARGET gtest::gtest)
+    add_library(gtest::gtest ALIAS gtest)
   endif()
-  # Force gtest to link the C runtime dynamically on Windows in order to avoid runtime mismatches.
+  # Force gtest to link the C runtime dynamically on Windows in order to avoid
+  # runtime mismatches.
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 else()
   message(STATUS "Unit tests are disabled")

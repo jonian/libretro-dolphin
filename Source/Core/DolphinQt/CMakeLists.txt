@@ -28,6 +28,8 @@ add_executable(dolphin-emu
   CheatSearchWidget.h
   CheatsManager.cpp
   CheatsManager.h
+  Achievements/AchievementBox.cpp
+  Achievements/AchievementBox.h
   Achievements/AchievementHeaderWidget.cpp
   Achievements/AchievementHeaderWidget.h
   Achievements/AchievementLeaderboardWidget.cpp
@@ -569,7 +571,7 @@ if(APPLE)
   # Ask for an application bundle.
   set_target_properties(dolphin-emu PROPERTIES
     MACOSX_BUNDLE true
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
     XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/DolphinEmu.entitlements"
     XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep --options=runtime"
     OUTPUT_NAME Dolphin
@@ -612,8 +614,8 @@ if(APPLE)
     if(USE_BUNDLED_MOLTENVK)
       add_dependencies(dolphin-emu MoltenVK)
       ExternalProject_Get_Property(MoltenVK SOURCE_DIR)
-      target_sources(dolphin-emu PRIVATE "${SOURCE_DIR}/Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib")
-      set_source_files_properties("${SOURCE_DIR}/Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib" PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks GENERATED ON)
+      target_sources(dolphin-emu PRIVATE "${SOURCE_DIR}/Package/Release/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib")
+      set_source_files_properties("${SOURCE_DIR}/Package/Release/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib" PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks GENERATED ON)
     else()
       find_file(MOLTENVK_DYLIB NAMES libMoltenVK.dylib PATH_SUFFIXES lib)
       if(NOT MOLTENVK_DYLIB)

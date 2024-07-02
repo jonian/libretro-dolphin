@@ -4,14 +4,12 @@
 #include "Core/PowerPC/PowerPC.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstring>
-#include <istream>
-#include <ostream>
 #include <type_traits>
 #include <vector>
 
 #include "Common/Assert.h"
-#include "Common/BitUtils.h"
 #include "Common/ChunkFile.h"
 #include "Common/CommonTypes.h"
 #include "Common/FPURoundMode.h"
@@ -37,52 +35,28 @@ namespace PowerPC
 {
 double PairedSingle::PS0AsDouble() const
 {
-  return Common::BitCast<double>(ps0);
+  return std::bit_cast<double>(ps0);
 }
 
 double PairedSingle::PS1AsDouble() const
 {
-  return Common::BitCast<double>(ps1);
+  return std::bit_cast<double>(ps1);
 }
 
 void PairedSingle::SetPS0(double value)
 {
-  ps0 = Common::BitCast<u64>(value);
+  ps0 = std::bit_cast<u64>(value);
 }
 
 void PairedSingle::SetPS1(double value)
 {
-  ps1 = Common::BitCast<u64>(value);
+  ps1 = std::bit_cast<u64>(value);
 }
 
 static void InvalidateCacheThreadSafe(Core::System& system, u64 userdata, s64 cyclesLate)
 {
   system.GetPPCState().iCache.Invalidate(system.GetMemory(), system.GetJitInterface(),
                                          static_cast<u32>(userdata));
-}
-
-std::istream& operator>>(std::istream& is, CPUCore& core)
-{
-  std::underlying_type_t<CPUCore> val{};
-
-  if (is >> val)
-  {
-    core = static_cast<CPUCore>(val);
-  }
-  else
-  {
-    // Upon failure, fall back to the cached interpreter
-    // to ensure we always initialize our core reference.
-    core = CPUCore::CachedInterpreter;
-  }
-
-  return is;
-}
-
-std::ostream& operator<<(std::ostream& os, CPUCore core)
-{
-  os << static_cast<std::underlying_type_t<CPUCore>>(core);
-  return os;
 }
 
 PowerPCManager::PowerPCManager(Core::System& system)
