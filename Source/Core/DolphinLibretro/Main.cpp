@@ -122,6 +122,8 @@ void retro_run(void)
   Common::Log::LogManager::GetInstance()->SetLogLevel(Common::Log::LogLevel::LDEBUG);
 #else
   Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
+  Common::SetEnableAlert(false);
+  Common::SetAbortOnPanicAlert(false);
 #endif
 
   if (Libretro::Options::cpuClockRate.Updated())

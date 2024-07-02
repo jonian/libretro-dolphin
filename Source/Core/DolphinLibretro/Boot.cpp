@@ -79,6 +79,7 @@ bool retro_load_game(const struct retro_game_info* game)
   Libretro::Log::Init();
   Discord::SetDiscordPresenceEnabled(false);
   Common::SetEnableAlert(false);
+  Common::SetAbortOnPanicAlert(false);
 
   INFO_LOG_FMT(COMMON, "User Directory set to '{}'", user_dir);
   INFO_LOG_FMT(COMMON, "System Directory set to '{}'", sys_dir);
