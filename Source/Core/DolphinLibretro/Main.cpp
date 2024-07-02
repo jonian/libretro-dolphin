@@ -146,7 +146,7 @@ void retro_run(void)
     Core::RunEmuThread(wsi);
     Libretro::Audio::Init();
 
-    while (!Core::IsRunningAndStarted())
+    while (!Core::IsRunning(system))
       Common::SleepCurrentThread(100);
   }
 
