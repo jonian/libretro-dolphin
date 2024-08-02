@@ -32,24 +32,13 @@ public:
   void ShowImage(const AbstractTexture* source_texture, const MathUtil::Rectangle<int>& source_rc) override
   {
     const SW::SWTexture* m_texture = static_cast<const SW::SWTexture*>(source_texture);
-    const u8* rgba8_data = m_texture->GetData(0, 0);
+    const unsigned texture_width = m_texture->GetWidth();
 
-    unsigned texture_width = m_texture->GetWidth();
-    unsigned total_pixels = texture_width * m_texture->GetHeight();
-
-    std::vector<u32> xrgb8_data(total_pixels);
-
-    for (unsigned i = 0, j = 0; i < total_pixels; i++, j += 4)
-    {
-      xrgb8_data[i] =
-        (rgba8_data[j + 3] << 24) |
-        (rgba8_data[j + 0] << 16) |
-        (rgba8_data[j + 1] << 8)  |
-        (rgba8_data[j + 2]);
-    }
+    ResizePixelBuffer(texture_width * m_texture->GetHeight());
+    FillPixelBuffer(m_texture->GetData(0, 0));
 
     Libretro::Video::video_cb(
-      xrgb8_data.data(),
+      pixel_buffer.data(),
       source_rc.GetWidth(),
       source_rc.GetHeight(),
       texture_width * 4
@@ -66,6 +55,35 @@ public:
   }
 
 private:
+  void ClearPixelBuffer()
+  {
+    memset(pixel_buffer.data(), 0, pixel_buffer.size() * sizeof(pixel_buffer[0]));
+  }
+  void ResizePixelBuffer(unsigned new_size)
+  {
+    if (new_size != pixel_buffer_size)
+    {
+      pixel_buffer.resize(new_size);
+      pixel_buffer_size = new_size;
+
+      ClearPixelBuffer();
+    }
+  }
+  void FillPixelBuffer(const u8* rgba8_data)
+  {
+    for (unsigned i = 0, j = 0; i < pixel_buffer_size; i++, j += 4)
+    {
+      pixel_buffer[i] =
+        (0xFF000000) |
+        (rgba8_data[j + 0] << 16) |
+        (rgba8_data[j + 1] << 8) |
+        (rgba8_data[j + 2]);
+    }
+  }
+
   unsigned backbuffer_width;
   unsigned backbuffer_height;
+
+  std::vector<u32> pixel_buffer;
+  unsigned pixel_buffer_size;
 };
