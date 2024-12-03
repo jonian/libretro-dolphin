@@ -81,8 +81,6 @@ public:
     return memcmp(GetUidData(), obj.GetUidData(), GetUidDataSize()) == 0;
   }
 
-  bool operator!=(const ShaderUid& obj) const { return !operator==(obj); }
-
   // determines the storage order inside STL containers
   bool operator<(const ShaderUid& obj) const
   {
@@ -286,6 +284,7 @@ void WriteSwitch(ShaderCode& out, APIType ApiType, std::string_view variable,
 #define I_POSTTRANSFORMMATRICES "cpostmtx"
 #define I_PIXELCENTERCORRECTION "cpixelcenter"
 #define I_VIEWPORT_SIZE "cviewport"
+#define I_CACHED_NORMAL "cnormal"
 #define I_CACHED_TANGENT "ctangent"
 #define I_CACHED_BINORMAL "cbinormal"
 
@@ -309,6 +308,7 @@ static const char s_shader_uniforms[] = "\tuint    components;\n"
                                         "\tfloat4 " I_PIXELCENTERCORRECTION ";\n"
                                         "\tfloat2 " I_VIEWPORT_SIZE ";\n"
                                         "\tuint4   xfmem_pack1[8];\n"
+                                        "\tfloat4 " I_CACHED_NORMAL ";\n"
                                         "\tfloat4 " I_CACHED_TANGENT ";\n"
                                         "\tfloat4 " I_CACHED_BINORMAL ";\n"
                                         "\tuint vertex_stride;\n"
