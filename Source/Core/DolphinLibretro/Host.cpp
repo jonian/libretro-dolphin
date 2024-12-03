@@ -23,6 +23,10 @@ void Host_PPCSymbolsChanged()
 {
 }
 
+void Host_PPCBreakpointsChanged()
+{
+}
+
 void Host_RefreshDSPDebuggerWindow()
 {
 }
@@ -55,6 +59,14 @@ bool Host_UpdateDiscordPresenceRaw(const std::string& details, const std::string
 }
 
 void Host_UpdateDisasmDialog()
+{
+}
+
+void Host_JitCacheInvalidation()
+{
+}
+
+void Host_JitProfileDataWiped()
 {
 }
 

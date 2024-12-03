@@ -24,10 +24,13 @@ public:
   {
     return false;
   }
-  void BindBackbuffer(const ClearColor& clear_color) override
+  bool BindBackbuffer(const ClearColor& clear_color) override
   {
     if (g_presenter->SurfaceResizedTestAndClear())
-      g_presenter->SetBackbuffer(backbuffer_width, backbuffer_height);
+      return true;
+
+    g_presenter->SetBackbuffer(backbuffer_width, backbuffer_height);
+    return true;
   }
   void ShowImage(const AbstractTexture* source_texture, const MathUtil::Rectangle<int>& source_rc) override
   {
