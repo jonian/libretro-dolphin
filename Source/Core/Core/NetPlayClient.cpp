@@ -158,7 +158,7 @@ NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlay
       return;
     }
 
-    // Update time in milliseconds of no acknoledgment of
+    // Update time in milliseconds of no acknowledgment of
     // sent packets before a connection is deemed disconnected
     enet_peer_timeout(m_server, 0, PEER_TIMEOUT.count(), PEER_TIMEOUT.count());
 
@@ -221,7 +221,7 @@ NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlay
         case ENET_EVENT_TYPE_CONNECT:
           m_server = netEvent.peer;
 
-          // Update time in milliseconds of no acknoledgment of
+          // Update time in milliseconds of no acknowledgment of
           // sent packets before a connection is deemed disconnected
           enet_peer_timeout(m_server, 0, PEER_TIMEOUT.count(), PEER_TIMEOUT.count());
 
@@ -1303,7 +1303,7 @@ void NetPlayClient::OnSyncSaveDataGBA(sf::Packet& packet)
 
 void NetPlayClient::OnSyncCodes(sf::Packet& packet)
 {
-  // Recieve Data Packet
+  // Receive Data Packet
   SyncCodeID sub_id;
   packet >> sub_id;
 
@@ -2486,8 +2486,8 @@ bool NetPlayClient::PlayerHasControllerMapped(const PlayerId pid) const
 {
   const auto mapping_matches_player_id = [pid](const PlayerId& mapping) { return mapping == pid; };
 
-  return std::any_of(m_pad_map.begin(), m_pad_map.end(), mapping_matches_player_id) ||
-         std::any_of(m_wiimote_map.begin(), m_wiimote_map.end(), mapping_matches_player_id);
+  return std::ranges::any_of(m_pad_map, mapping_matches_player_id) ||
+         std::ranges::any_of(m_wiimote_map, mapping_matches_player_id);
 }
 
 bool NetPlayClient::IsLocalPlayer(const PlayerId pid) const
@@ -2543,7 +2543,7 @@ bool NetPlayClient::DoAllPlayersHaveGame()
 {
   std::lock_guard lkp(m_crit.players);
 
-  return std::all_of(std::begin(m_players), std::end(m_players), [](auto entry) {
+  return std::ranges::all_of(m_players, [](const auto& entry) {
     return entry.second.game_status == SyncIdentifierComparison::SameGame;
   });
 }

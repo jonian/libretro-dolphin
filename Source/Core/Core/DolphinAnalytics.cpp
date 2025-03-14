@@ -139,8 +139,7 @@ void DolphinAnalytics::ReportGameStart()
 }
 
 // Keep in sync with enum class GameQuirk definition.
-constexpr std::array<const char*, 34> GAME_QUIRKS_NAMES{
-    "directly-reads-wiimote-input",
+constexpr std::array GAME_QUIRKS_NAMES{
     "uses-DVDLowStopLaser",
     "uses-DVDLowOffset",
     "uses-DVDLowReadDiskBca",
@@ -303,7 +302,7 @@ void DolphinAnalytics::MakeBaseBuilder()
       s64 minor_version;  // NSInteger minorVersion
       s64 patch_version;  // NSInteger patchVersion
     };
-    // Under arm64, we need to call objc_msgSend to recieve a struct.
+    // Under arm64, we need to call objc_msgSend to receive a struct.
     // On x86_64, we need to explicitly call objc_msgSend_stret for a struct.
 #ifdef _M_ARM_64
 #define msgSend objc_msgSend

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "InputCommon/ControllerInterface/CoreDevice.h"
 
@@ -17,13 +16,15 @@ enum class Quote
 };
 
 std::string GetExpressionForControl(const std::string& control_name,
-                                    const ciface::Core::DeviceQualifier& control_device,
-                                    const ciface::Core::DeviceQualifier& default_device,
+                                    const Core::DeviceQualifier& control_device,
+                                    const Core::DeviceQualifier& default_device,
                                     Quote quote = Quote::On);
 
-std::string BuildExpression(const std::vector<ciface::Core::DeviceContainer::InputDetection>&,
-                            const ciface::Core::DeviceQualifier& default_device, Quote quote);
+std::string BuildExpression(const Core::InputDetector::Results&,
+                            const Core::DeviceQualifier& default_device, Quote quote);
 
-void RemoveSpuriousTriggerCombinations(std::vector<ciface::Core::DeviceContainer::InputDetection>*);
+void RemoveSpuriousTriggerCombinations(Core::InputDetector::Results*);
+void RemoveDetectionsAfterTimePoint(Core::InputDetector::Results*, Clock::time_point after);
+bool ContainsCompleteDetection(const Core::InputDetector::Results&);
 
 }  // namespace ciface::MappingCommon
