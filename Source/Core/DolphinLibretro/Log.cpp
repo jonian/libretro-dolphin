@@ -20,19 +20,18 @@ private:
   retro_log_printf_t m_log;
 };
 
-static LogListener* logListener;
+static std::unique_ptr<LogListener> logListener;
 
 void Init()
 {
   struct retro_log_callback log = {};
   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log) && log.log)
-    logListener = new LogListener(log.log);
+    logListener = std::make_unique<LogListener>(log.log);
 }
 
 void Shutdown()
 {
-  delete logListener;
-  logListener = nullptr;
+  logListener.reset();
 }
 
 LogListener::LogListener(retro_log_printf_t log) : m_log(log)
@@ -47,9 +46,13 @@ LogListener::LogListener(retro_log_printf_t log) : m_log(log)
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::DSPHLE, true);
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::DSPLLE, true);
   Common::Log::LogManager::GetInstance()->SetEnable(Common::Log::LogType::DSP_MAIL, true);
-  Common::Log::LogManager::GetInstance()->RegisterListener(LogListener::CUSTOM_LISTENER, this);
   Common::Log::LogManager::GetInstance()->EnableListener(LogListener::CONSOLE_LISTENER, false);
   Common::Log::LogManager::GetInstance()->EnableListener(LogListener::CUSTOM_LISTENER, true);
+
+  Common::Log::LogManager::GetInstance()->RegisterListener(
+    LogListener::CUSTOM_LISTENER,
+    std::unique_ptr<Common::Log::LogListener>(logListener.get())
+  );
 }
 
 LogListener::~LogListener()

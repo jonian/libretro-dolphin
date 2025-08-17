@@ -129,7 +129,14 @@ Option<bool> progressiveScan("dolphin_progressive_scan", "Progressive Scan", tru
 Option<bool> pal60("dolphin_pal60", "PAL60", true);
 Option<int> antiAliasing("dolphin_anti_aliasing", "Anti-Aliasing",
     {"None", "2x MSAA", "4x MSAA", "8x MSAA", "2x SSAA", "4x SSAA", "8x SSAA"});
-Option<int> maxAnisotropy("dolphin_max_anisotropy", "Max Anisotropy", {"1x", "2x", "4x", "8x", "16x"});
+Option<AnisotropicFilteringMode> maxAnisotropy("dolphin_max_anisotropy", "Max Anisotropy", {
+                                              {"Default", AnisotropicFilteringMode::Default},
+                                              {"1x", AnisotropicFilteringMode::Force1x},
+                                              {"2x", AnisotropicFilteringMode::Force2x},
+                                              {"4x", AnisotropicFilteringMode::Force4x},
+                                              {"8x", AnisotropicFilteringMode::Force8x},
+                                              {"16x", AnisotropicFilteringMode::Force16x},
+});
 Option<bool> skipDupeFrames("dolphin_skip_dupe_frames", "Skip Presenting Duplicate Frames", true);
 Option<bool> immediatexfb("dolphin_immediate_xfb", "Immediate XFB", false);
 Option<bool> efbScaledCopy("dolphin_efb_scaled_copy", "Scaled EFB Copy", true);

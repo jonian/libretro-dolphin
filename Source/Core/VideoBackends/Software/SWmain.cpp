@@ -106,7 +106,7 @@ bool VideoSoftware::Initialize(const WindowSystemInfo& wsi)
 #ifdef __LIBRETRO__
   return InitializeShared(std::make_unique<RSWGfx>(std::move(window)),
                           std::make_unique<SWVertexLoader>(), std::make_unique<PerfQuery>(),
-                          std::make_unique<SWBoundingBox>(), std::make_unique<SWRenderer>(),
+                          std::make_unique<SWBoundingBox>(), std::make_unique<SWEFBInterface>(),
                           std::make_unique<TextureCache>());
 #else
   return InitializeShared(std::make_unique<SWGfx>(std::move(window)),

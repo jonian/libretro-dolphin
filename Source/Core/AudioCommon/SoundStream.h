@@ -20,7 +20,7 @@ public:
   Mixer* GetMixer() const { return m_mixer.get(); }
   virtual bool Init() { return false; }
   virtual void SetVolume(int) {}
-  virtual void Update() {}
+  virtual void Update(unsigned int num_samples) {}
   // Returns true if successful.
   virtual bool SetRunning(bool running) { return false; }
 };

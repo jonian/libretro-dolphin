@@ -66,6 +66,12 @@ public:
     return m_value;
   }
 
+  operator T() const
+  {
+    const_cast<Option*>(this)->Updated();
+    return m_value;
+  }
+
   template <typename S>
   bool operator==(S value)
   {
@@ -98,7 +104,7 @@ extern Option<bool> waitForShaders;
 extern Option<bool> progressiveScan;
 extern Option<bool> pal60;
 extern Option<int> antiAliasing;
-extern Option<int> maxAnisotropy;
+extern Option<AnisotropicFilteringMode> maxAnisotropy;
 extern Option<bool> skipDupeFrames;
 extern Option<bool> immediatexfb;
 extern Option<bool> efbScaledCopy;

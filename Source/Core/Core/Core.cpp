@@ -90,6 +90,7 @@
 #include "VideoCommon/PerformanceMetrics.h"
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoEvents.h"
+#include "VideoCommon/Present.h"
 
 namespace Core
 {

@@ -21,7 +21,7 @@
 #include "VideoBackends/OGL/VideoBackend.h"
 #include "VideoCommon/AsyncRequests.h"
 #include "VideoCommon/Fifo.h"
-#include "VideoCommon/RenderBase.h"
+#include "VideoCommon/EFBInterface.h"
 #include "VideoCommon/VertexLoaderManager.h"
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"

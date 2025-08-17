@@ -106,7 +106,6 @@ bool retro_load_game(const struct retro_game_info* game)
   Config::SetBase(Config::MAIN_DUMP_AUDIO, false);
   Config::SetBase(Config::MAIN_DPL2_DECODER, false);
   Config::SetBase(Config::MAIN_AUDIO_LATENCY, 0);
-  Config::SetBase(Config::MAIN_AUDIO_STRETCH, false);
   Config::SetBase(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING, Libretro::Options::WiimoteContinuousScanning);
   Config::SetBase(Config::MAIN_ENABLE_CHEATS, Libretro::Options::cheatsEnabled);
   Config::SetBase(Config::MAIN_FAST_DISC_SPEED, Libretro::Options::fastDiscSpeed);

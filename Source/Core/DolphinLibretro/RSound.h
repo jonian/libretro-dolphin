@@ -20,9 +20,9 @@ public:
   {
     return true;
   }
-  void Update() override
+  void Update(unsigned int num_samples) override
   {
-    unsigned int available = m_mixer->AvailableSamples();
+    unsigned int available = num_samples;
     while (available > MAX_SAMPLES)
     {
       m_mixer->Mix(m_buffer, MAX_SAMPLES);

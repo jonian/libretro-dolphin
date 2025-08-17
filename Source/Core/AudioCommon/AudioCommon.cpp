@@ -215,9 +215,8 @@ void SendAIBuffer(Core::System& system, const short* samples, unsigned int num_s
   if (mixer && samples)
   {
     mixer->PushSamples(samples, num_samples);
+    sound_stream->Update(num_samples);
   }
-
-  sound_stream->Update();
 }
 
 void StartAudioDump(Core::System& system)

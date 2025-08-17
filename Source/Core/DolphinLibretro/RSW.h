@@ -7,6 +7,8 @@
 #include "VideoBackends/Software/SWGfx.h"
 #include "VideoBackends/Software/SWTexture.h"
 
+#include "VideoCommon/Present.h"
+
 #include "DolphinLibretro/Options.h"
 #include "DolphinLibretro/Video.h"
 
