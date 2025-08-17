@@ -80,6 +80,7 @@ void Shutdown();
 void Initialize(InitializeMode init_mode);
 void ResetAllWiimotes();
 void LoadConfig();
+void GenerateDynamicInputTextures();
 void Resume();
 void Pause();
 

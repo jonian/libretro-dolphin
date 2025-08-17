@@ -216,6 +216,11 @@ void LoadConfig()
   s_last_connect_request_counter.fill(0);
 }
 
+void GenerateDynamicInputTextures()
+{
+  s_config.GenerateControllerTextures();
+}
+
 void Resume()
 {
   WiimoteReal::Resume();
