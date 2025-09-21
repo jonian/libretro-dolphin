@@ -666,7 +666,6 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
 #ifdef __LIBRETRO__
     s_emu_thread_scope_guards.push_back(std::move(flag_guard));
     s_emu_thread_scope_guards.push_back(std::move(sd_folder_sync_guard));
-    s_emu_thread_scope_guards.push_back(std::move(asset_loader_guard));
     s_emu_thread_scope_guards.push_back(std::move(movie_guard));
     s_emu_thread_scope_guards.push_back(std::move(audio_guard));
     s_emu_thread_scope_guards.push_back(std::move(hw_guard));
