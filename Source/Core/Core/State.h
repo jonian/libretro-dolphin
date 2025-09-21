@@ -110,7 +110,7 @@ void LoadAs(Core::System& system, const std::string& filename);
 
 void DoState(Core::System& system, PointerWrap& p);
 void SaveToBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
-void LoadFromBuffer(Core::System& system, const Common::UniqueBuffer<u8>& buffer);
+void LoadFromBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
 
 void LoadLastSaved(Core::System& system, int i = 1);
 void SaveFirstSaved(Core::System& system);

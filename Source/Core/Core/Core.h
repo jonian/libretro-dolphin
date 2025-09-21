@@ -148,7 +148,7 @@ void RunEmuThread(WindowSystemInfo wsi);
 
 // [NOT THREADSAFE] For use by Host only
 void SetState(Core::System& system, State state, bool report_state_change = true,
-              bool initial_execution_state = false);
+              bool override_achievement_restrictions = false);
 State GetState(Core::System& system);
 
 void SaveScreenShot();

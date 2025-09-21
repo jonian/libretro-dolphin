@@ -6,18 +6,14 @@
 #include <bit>
 
 #include "Common/Arm64Emitter.h"
-#include "Common/Assert.h"
-#include "Common/BitUtils.h"
+#include "Common/ArmCommon.h"
 #include "Common/CommonTypes.h"
 #include "Common/MathUtil.h"
 
-#include "Core/Core.h"
-#include "Core/CoreTiming.h"
 #include "Core/PowerPC/Interpreter/Interpreter.h"
 #include "Core/PowerPC/JitArm64/JitArm64_RegCache.h"
 #include "Core/PowerPC/JitCommon/DivUtils.h"
 #include "Core/PowerPC/PPCTables.h"
-#include "Core/PowerPC/PowerPC.h"
 
 using namespace Arm64Gen;
 using namespace JitCommon;
@@ -1306,13 +1302,10 @@ void JitArm64::subfex(UGeckoInstruction inst)
   JITDISABLE(bJITIntegerOff);
   FALLBACK_IF(inst.OE);
 
-  bool mex = inst.SUBOP10 & 32;
-  int a = inst.RA, b = inst.RB, d = inst.RD;
+  const bool mex = inst.SUBOP10 & 32;
+  const int a = inst.RA, b = inst.RB, d = inst.RD;
 
-  if (gpr.IsImm(a) && (mex || gpr.IsImm(b)))
-  {
-    const u32 i = gpr.GetImm(a);
-    const u32 j = mex ? -1 : gpr.GetImm(b);
+  const auto handle_imm = [&](const u32 i, const u32 j) {
     const u32 imm = ~i + j;
     const bool is_zero = imm == 0;
     const bool is_all_ones = imm == 0xFFFFFFFF;
@@ -1339,7 +1332,12 @@ void JitArm64::subfex(UGeckoInstruction inst)
     {
       gpr.BindToRegister(d, false);
       ARM64Reg RD = gpr.R(d);
-      if (is_all_ones)
+      if (is_zero)
+      {
+        // RD = 0 + carry
+        CSET(RD, CC_CS);
+      }
+      else if (is_all_ones)
       {
         // RD = -1 + carry = carry ? 0 : -1
         // CSETM sets the destination to -1 if the condition is true, 0
@@ -1380,6 +1378,21 @@ void JitArm64::subfex(UGeckoInstruction inst)
     {
       ComputeCarry(false);
     }
+  };
+
+  if (!mex && a == b)
+  {
+    // Special case: subfe A, B, B is a common compiler idiom to copy the carry
+    // flag to a register.
+    // We handle this as-if we're dealing with two identical immediate values.
+    // The exact values used here don't matter. We use zeroes.
+    handle_imm(0, 0);
+  }
+  else if (gpr.IsImm(a) && (mex || gpr.IsImm(b)))
+  {
+    const u32 i = gpr.GetImm(a);
+    const u32 j = mex ? -1 : gpr.GetImm(b);
+    handle_imm(i, j);
   }
   else
   {
@@ -1431,6 +1444,41 @@ void JitArm64::subfcx(UGeckoInstruction inst)
 
     if (inst.Rc)
       ComputeRC0(gpr.GetImm(d));
+  }
+  else if (gpr.IsImm(a, 0))
+  {
+    if (d != b)
+    {
+      gpr.BindToRegister(d, false);
+      MOV(gpr.R(d), gpr.R(b));
+    }
+    ComputeCarry(true);
+    if (inst.Rc)
+      ComputeRC0(gpr.R(d));
+  }
+  else if (gpr.IsImm(a) && ((gpr.GetImm(a) & 0xFFF) == gpr.GetImm(a)))
+  {
+    gpr.BindToRegister(d, d == b);
+    CARRY_IF_NEEDED(SUB, SUBS, gpr.R(d), gpr.R(b), gpr.GetImm(a));
+    ComputeCarry();
+    if (inst.Rc)
+      ComputeRC0(gpr.R(d));
+  }
+  else if (gpr.IsImm(a) && ((gpr.GetImm(a) & 0xFFF000) == gpr.GetImm(a)))
+  {
+    gpr.BindToRegister(d, d == b);
+    CARRY_IF_NEEDED(SUB, SUBS, gpr.R(d), gpr.R(b), gpr.GetImm(a) >> 12, true);
+    ComputeCarry();
+    if (inst.Rc)
+      ComputeRC0(gpr.R(d));
+  }
+  else if (gpr.IsImm(b, 0))
+  {
+    gpr.BindToRegister(d, d == a);
+    CARRY_IF_NEEDED(NEG, NEGS, gpr.R(d), gpr.R(a));
+    ComputeCarry();
+    if (inst.Rc)
+      ComputeRC0(gpr.R(d));
   }
   else
   {

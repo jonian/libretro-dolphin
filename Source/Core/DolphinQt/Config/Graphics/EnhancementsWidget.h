@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <array>
-
 #include <QWidget>
 
 class ConfigBool;
@@ -12,11 +10,9 @@ class ConfigChoice;
 class ConfigComplexChoice;
 class ConfigStringChoice;
 class ConfigSlider;
-class GameConfigWidget;
-class GraphicsWindow;
+class GraphicsPane;
 class QPushButton;
 class ToolTipPushButton;
-enum class StereoMode : int;
 
 namespace Config
 {
@@ -29,8 +25,7 @@ class EnhancementsWidget final : public QWidget
 {
   Q_OBJECT
 public:
-  explicit EnhancementsWidget(GraphicsWindow* parent);
-  EnhancementsWidget(GameConfigWidget* parent, Config::Layer* layer);
+  explicit EnhancementsWidget(GraphicsPane* gfx_pane);
 
 private:
   template <typename T>
@@ -41,8 +36,8 @@ private:
   void AddDescriptions();
 
   void OnBackendChanged();
-  void UpdateAAOptions();
-  void LoadPPShaders();
+  void UpdateAntialiasingOptions();
+  void LoadPostProcessingShaders();
   void ShaderChanged();
   void OnConfigChanged();
 
@@ -51,12 +46,12 @@ private:
 
   // Enhancements
   ConfigChoice* m_ir_combo;
-  ConfigComplexChoice* m_aa_combo;
+  ConfigComplexChoice* m_antialiasing_combo;
   ConfigComplexChoice* m_texture_filtering_combo;
   ConfigChoice* m_output_resampling_combo;
-  ConfigStringChoice* m_pp_effect;
+  ConfigStringChoice* m_post_processing_effect;
   ToolTipPushButton* m_configure_color_correction;
-  QPushButton* m_configure_pp_effect;
+  QPushButton* m_configure_post_processing_effect;
   ConfigBool* m_scaled_efb_copy;
   ConfigBool* m_per_pixel_lighting;
   ConfigBool* m_widescreen_hack;

@@ -23,6 +23,7 @@
 #include "Common/Config/Config.h"
 #include "Common/MsgHandler.h"
 #include "Common/ScopeGuard.h"
+#include "Common/StringUtil.h"
 
 #include "Core/Boot/Boot.h"
 #include "Core/Config/MainSettings.h"
@@ -92,7 +93,6 @@ static bool QtMsgAlertHandler(const char* caption, const char* text, bool yes_no
       return QMessageBox::NoIcon;
     }());
 
-    SetQWidgetWindowDecorations(&message_box);
     const int button = message_box.exec();
     if (button == QMessageBox::Yes)
       return true;
@@ -153,8 +153,8 @@ int main(int argc, char* argv[])
   // from happening.
   // For more information: https://bugs.dolphin-emu.org/issues/11807
   const char* current_qt_platform = getenv("QT_QPA_PLATFORM");
-  const bool replace_qt_platform =
-      (current_qt_platform && strcasecmp(current_qt_platform, "wayland") == 0);
+  const bool replace_qt_platform = current_qt_platform != nullptr &&
+                                   Common::CaseInsensitiveContains(current_qt_platform, "wayland");
   setenv("QT_QPA_PLATFORM", "xcb", replace_qt_platform);
 #endif
 
@@ -170,6 +170,8 @@ int main(int argc, char* argv[])
   const std::vector<std::string> args = parser->args();
 
 #ifdef _WIN32
+  QtUtils::InstallWindowDecorationFilter(&app);
+
   FreeConsole();
 #endif
 
@@ -263,31 +265,44 @@ int main(int argc, char* argv[])
 #if defined(USE_ANALYTICS) && USE_ANALYTICS
     if (!Config::Get(Config::MAIN_ANALYTICS_PERMISSION_ASKED))
     {
-      ModalMessageBox analytics_prompt(&win);
+      // To ensure that the analytics prompt appears aligned with the center of the main window,
+      // the dialog is only shown after the application is ready, as only then it is guaranteed that
+      // the main window has been placed in its final position.
+      auto* const connection_context = new QObject(&win);
+      QObject::connect(
+          qApp, &QGuiApplication::applicationStateChanged, connection_context,
+          [connection_context, &win](const Qt::ApplicationState state) {
+            if (state != Qt::ApplicationState::ApplicationActive)
+              return;
 
-      analytics_prompt.setIcon(QMessageBox::Question);
-      analytics_prompt.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-      analytics_prompt.setWindowTitle(QObject::tr("Allow Usage Statistics Reporting"));
-      analytics_prompt.setText(
-          QObject::tr("Do you authorize Dolphin to report information to Dolphin's developers?"));
-      analytics_prompt.setInformativeText(
-          QObject::tr("If authorized, Dolphin can collect data on its performance, "
-                      "feature usage, and configuration, as well as data on your system's "
-                      "hardware and operating system.\n\n"
-                      "No private data is ever collected. This data helps us understand "
-                      "how people and emulated games use Dolphin and prioritize our "
-                      "efforts. It also helps us identify rare configurations that are "
-                      "causing bugs, performance and stability issues.\n"
-                      "This authorization can be revoked at any time through Dolphin's "
-                      "settings."));
+            // Severe the connection after the first run.
+            delete connection_context;
 
-      SetQWidgetWindowDecorations(&analytics_prompt);
-      const int answer = analytics_prompt.exec();
+            ModalMessageBox analytics_prompt(&win);
 
-      Config::SetBase(Config::MAIN_ANALYTICS_PERMISSION_ASKED, true);
-      Settings::Instance().SetAnalyticsEnabled(answer == QMessageBox::Yes);
+            analytics_prompt.setIcon(QMessageBox::Question);
+            analytics_prompt.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            analytics_prompt.setWindowTitle(QObject::tr("Allow Usage Statistics Reporting"));
+            analytics_prompt.setText(QObject::tr(
+                "Do you authorize Dolphin to report information to Dolphin's developers?"));
+            analytics_prompt.setInformativeText(
+                QObject::tr("If authorized, Dolphin can collect data on its performance, "
+                            "feature usage, and configuration, as well as data on your system's "
+                            "hardware and operating system.\n\n"
+                            "No private data is ever collected. This data helps us understand "
+                            "how people and emulated games use Dolphin and prioritize our "
+                            "efforts. It also helps us identify rare configurations that are "
+                            "causing bugs, performance and stability issues.\n"
+                            "This authorization can be revoked at any time through Dolphin's "
+                            "settings."));
 
-      DolphinAnalytics::Instance().ReloadConfig();
+            const int answer = analytics_prompt.exec();
+
+            Config::SetBase(Config::MAIN_ANALYTICS_PERMISSION_ASKED, true);
+            Settings::Instance().SetAnalyticsEnabled(answer == QMessageBox::Yes);
+
+            DolphinAnalytics::Instance().ReloadConfig();
+          });
     }
 #endif
 
