@@ -98,7 +98,7 @@ namespace Core
 static bool s_wants_determinism;
 
 // Declarations and definitions
-static std::vector<Common::ScopeGuard> s_emu_thread_scope_guards;
+static std::vector<Common::MoveOnlyFunction<void()>> s_emu_thread_scope_guards;
 std::unique_ptr<BootParameters> boot_params;
 
 static std::thread s_emu_thread;
@@ -664,13 +664,13 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
         std::thread(cpuThreadFunc, std::ref(system), std::ref(savestate_path), delete_savestate);
 
 #ifdef __LIBRETRO__
-    s_emu_thread_scope_guards.push_back(std::move(flag_guard));
-    s_emu_thread_scope_guards.push_back(std::move(sd_folder_sync_guard));
-    s_emu_thread_scope_guards.push_back(std::move(movie_guard));
-    s_emu_thread_scope_guards.push_back(std::move(audio_guard));
-    s_emu_thread_scope_guards.push_back(std::move(hw_guard));
-    s_emu_thread_scope_guards.push_back(std::move(video_guard));
-    s_emu_thread_scope_guards.push_back(std::move(wiifs_guard));
+    s_emu_thread_scope_guards.push_back([g = std::move(flag_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(sd_folder_sync_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(movie_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(audio_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(hw_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(video_guard)]() {});
+    s_emu_thread_scope_guards.push_back([g = std::move(wiifs_guard)]() {});
     return;
 #endif
 

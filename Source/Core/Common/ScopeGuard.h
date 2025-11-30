@@ -3,31 +3,26 @@
 
 #pragma once
 
-#include <functional>
+#include <optional>
 
 namespace Common
 {
+template <typename Callable>
 class ScopeGuard final
 {
 public:
-  template <class Callable>
-  ScopeGuard(Callable&& finalizer) : m_finalizer(std::forward<Callable>(finalizer))
-  {
-  }
+  ScopeGuard(Callable&& finalizer) : m_finalizer(std::forward<Callable>(finalizer)) {}
 
-  ScopeGuard(ScopeGuard&& other) : m_finalizer(std::move(other.m_finalizer))
-  {
-    other.m_finalizer = nullptr;
-  }
+  ScopeGuard(ScopeGuard&& other) : m_finalizer(std::move(other.m_finalizer)) { other.Dismiss(); }
 
   ~ScopeGuard() { Exit(); }
-  void Dismiss() { m_finalizer = nullptr; }
+  void Dismiss() { m_finalizer.reset(); }
   void Exit()
   {
     if (m_finalizer)
     {
-      m_finalizer();  // must not throw
-      m_finalizer = nullptr;
+      (*m_finalizer)();  // must not throw
+      m_finalizer.reset();
     }
   }
 
@@ -36,7 +31,7 @@ public:
   void operator=(const ScopeGuard&) = delete;
 
 private:
-  std::function<void()> m_finalizer;
+  std::optional<Callable> m_finalizer;
 };
 
 }  // Namespace Common
