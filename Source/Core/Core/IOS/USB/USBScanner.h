@@ -35,6 +35,14 @@ public:
 
   DeviceMap GetDevices() const;
 
+#ifdef __LIBRETRO__
+  void Shutdown()
+  {
+    if (m_context)
+      m_context.Shutdown();
+  }
+#endif
+
 private:
   void StartScanning();
   void StopScanning();

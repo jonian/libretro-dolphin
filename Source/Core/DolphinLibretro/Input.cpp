@@ -18,6 +18,7 @@
 #include "Core/HW/WiimoteReal/WiimoteReal.h"
 #include "Core/HW/SI/SI.h"
 #include "Core/HW/SI/SI_Device.h"
+#include "Core/IOS/USB/USBScanner.h"
 #include "Core/Host.h"
 #include "Core/System.h"
 #include "DolphinLibretro/Input.h"
@@ -505,6 +506,7 @@ void Init()
 void Shutdown()
 {
   UICommon::ShutdownControllers();
+  Core::System::GetInstance().GetUSBScanner().Shutdown();
 
   rumble.set_rumble_state = nullptr;
 }

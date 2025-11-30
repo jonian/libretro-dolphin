@@ -118,6 +118,14 @@ int Context::GetDeviceList(GetDeviceListCallback callback) const
   return m_impl->GetDeviceList(std::move(callback));
 }
 
+#ifdef __LIBRETRO__
+void Context::Shutdown()
+{
+  if (m_impl)
+    m_impl.reset();
+}
+#endif
+
 std::pair<int, ConfigDescriptor> MakeConfigDescriptor(libusb_device* device, u8 config_num)
 {
 #if defined(__LIBUSB__)
