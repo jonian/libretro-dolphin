@@ -40,6 +40,10 @@ public:
   }
 
   ~Impl()
+#ifdef __LIBRETRO__
+  { Shutdown(); }
+  void Shutdown()
+#endif
   {
     if (!m_context || !m_event_thread_running.TestAndClear())
       return;
@@ -122,7 +126,7 @@ int Context::GetDeviceList(GetDeviceListCallback callback) const
 void Context::Shutdown()
 {
   if (m_impl)
-    m_impl.reset();
+    m_impl->Shutdown();
 }
 #endif
 
