@@ -98,8 +98,10 @@ namespace Core
 static bool s_wants_determinism;
 
 // Declarations and definitions
+#ifdef __LIBRETRO__
 static std::vector<Common::MoveOnlyFunction<void()>> s_emu_thread_scope_guards;
-std::unique_ptr<BootParameters> boot_params;
+std::unique_ptr<BootParameters> s_boot_params;
+#endif
 
 static std::thread s_emu_thread;
 static std::vector<StateChangedCallbackFunc> s_on_state_changed_callbacks;
@@ -246,24 +248,24 @@ bool Init(Core::System& system, std::unique_ptr<BootParameters> boot, const Wind
   INFO_LOG_FMT(BOOT, "Starting core = {} mode", system.IsWii() ? "Wii" : "GameCube");
   INFO_LOG_FMT(BOOT, "CPU Thread separate = {}", system.IsDualCoreMode() ? "Yes" : "No");
 
+#ifndef __LIBRETRO__
   // Manually reactivate the video backend in case a GameINI overrides the video backend setting.
   VideoBackendBase::PopulateBackendInfo(wsi);
 
   // Issue any API calls which must occur on the main thread for the graphics backend.
   WindowSystemInfo prepared_wsi(wsi);
   g_video_backend->PrepareWindow(prepared_wsi);
+#endif
 
   // Start the emu thread
   s_state.store(State::Starting);
 
 #ifdef __LIBRETRO__
-  boot_params = std::move(boot);
-
-  if (system.IsDualCoreMode())
-    return true;
+  s_boot_params = std::move(boot);
+#else
+  s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(boot), prepared_wsi);
 #endif
 
-  s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(boot), prepared_wsi);
   return true;
 }
 
@@ -626,9 +628,7 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
   // with the correct title context since save copying requires title directories to exist.
   Common::ScopeGuard wiifs_guard{[&boot_session_data] {
     Core::CleanUpWiiFileSystemContents(boot_session_data);
-#ifndef __LIBRETRO__
     boot_session_data.InvokeWiiSyncCleanup();
-#endif
   }};
   if (system.IsWii())
     Core::InitializeWiiFileSystemContents(savegame_redirect, boot_session_data);
@@ -699,10 +699,17 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
   INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
 }
 
-void RunEmuThread(WindowSystemInfo wsi) {
+#ifdef __LIBRETRO__
+void RunEmuThread(WindowSystemInfo wsi)
+{
   auto& system = Core::System::GetInstance();
-  EmuThread(std::ref(system), std::move(boot_params), wsi);
+
+  if (system.IsDualCoreMode())
+    EmuThread(std::ref(system), std::move(s_boot_params), wsi);
+  else
+    s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(s_boot_params), wsi);
 }
+#endif
 
 // Set or get the running state
 
@@ -954,23 +961,24 @@ void Shutdown(Core::System& system)
   // shut down.
   // For more info read "DirectX Graphics Infrastructure (DXGI): Best Practices"
   // on MSDN.
+  if (s_emu_thread.joinable())
+    s_emu_thread.join();
+
 #ifdef __LIBRETRO__
   if (system.IsDualCoreMode())
   {
     s_cpu_thread.join();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "CPU thread stopped."));
 
-    s_emu_thread_scope_guards.clear();
     DeclareAsCPUThread();
 
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "Stopping GDB ..."));
     GDBStub::Deinit();
     INFO_LOG_FMT(CONSOLE, "{}", StopMessage(true, "GDB stopped."));
   }
-#endif
 
-  if (s_emu_thread.joinable())
-    s_emu_thread.join();
+  s_emu_thread_scope_guards.clear();
+#endif
 
   // Make sure there's nothing left over in case we're about to exit.
   HostDispatchJobs(system);

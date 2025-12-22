@@ -144,7 +144,9 @@ bool IsHostThread();
 
 bool WantsDeterminism();
 
+#ifdef __LIBRETRO__
 void RunEmuThread(WindowSystemInfo wsi);
+#endif
 
 // [NOT THREADSAFE] For use by Host only
 void SetState(Core::System& system, State state, bool report_state_change = true,

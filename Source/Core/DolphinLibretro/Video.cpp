@@ -120,9 +120,6 @@ void Init()
 void Shutdown()
 {
   g_video_backend->Shutdown();
-
-  g_video_backend = nullptr;
-  delete g_video_backend;
 }
 
 }  // namespace Video
