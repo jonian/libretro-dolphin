@@ -446,6 +446,11 @@ static void FifoPlayerThread(Core::System& system, const std::optional<std::stri
 
     CPUSetInitialExecutionState();
 
+#ifdef __LIBRETRO__
+    if (!system.IsDualCoreMode())
+      return;
+#endif
+
     system.GetCPU().Run();
 
     system.GetPowerPC().InjectExternalCPUCore(nullptr);
@@ -473,15 +478,21 @@ static void FifoPlayerThread(Core::System& system, const std::optional<std::stri
 
     AsyncRequests::GetInstance()->SetPassthrough(!system.IsDualCoreMode());
 
+#ifdef __LIBRETRO__
+    if (g_presenter)
+      return true;
+#endif
     // Must happen on the proper thread for some video backends, e.g. OpenGL.
     return g_video_backend->Initialize(wsi);
   };
 
   const auto deinit_video = [] {
+#ifndef __LIBRETRO__
     // Clear on screen messages that haven't expired
     OSD::ClearMessages();
 
     g_video_backend->Shutdown();
+#endif
   };
 
   if (system.IsDualCoreMode())
@@ -498,10 +509,12 @@ static void FifoPlayerThread(Core::System& system, const std::optional<std::stri
       if (!is_init)
         return;
 
+#ifndef __LIBRETRO__
       system.GetFifo().RunGpuLoop();
       INFO_LOG_FMT(CONSOLE, "{}", StopMessage(false, "Video Loop Ended"));
 
       deinit_video();
+#endif
     }};
 
     if (init_from_thread.get_future().get())
@@ -701,8 +714,10 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
     s_emu_thread_scope_guards.push_back([g = std::move(movie_guard)]() {});
     s_emu_thread_scope_guards.push_back([g = std::move(audio_guard)]() {});
     s_emu_thread_scope_guards.push_back([g = std::move(hw_guard)]() {});
-    s_emu_thread_scope_guards.push_back([g = std::move(video_guard)]() {});
     s_emu_thread_scope_guards.push_back([g = std::move(wiifs_guard)]() {});
+
+    if (system.IsDualCoreMode() && video_guard)
+      s_emu_thread_scope_guards.push_back([g = std::move(video_guard.get())]() {});
   }
 #endif
 
@@ -714,11 +729,7 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
 void RunEmuThread(WindowSystemInfo wsi)
 {
   auto& system = Core::System::GetInstance();
-
-  if (system.IsDualCoreMode())
-    EmuThread(std::ref(system), std::move(s_boot_params), wsi);
-  else
-    s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(s_boot_params), wsi);
+  s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(s_boot_params), wsi);
 }
 #endif
 

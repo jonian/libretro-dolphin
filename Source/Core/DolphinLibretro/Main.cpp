@@ -119,9 +119,9 @@ void retro_run(void)
 {
   Libretro::Options::CheckVariables();
 #if defined(_DEBUG)
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Common::Log::LogLevel::LDEBUG);
+  Common::Log::LogManager::GetInstance()->SetConfigLogLevel(Common::Log::LogLevel::LDEBUG);
 #else
-  Common::Log::LogManager::GetInstance()->SetLogLevel(Libretro::Options::logLevel);
+  Common::Log::LogManager::GetInstance()->SetConfigLogLevel(Libretro::Options::logLevel);
   Common::SetEnableAlert(false);
   Common::SetAbortOnPanicAlert(false);
 #endif
@@ -147,7 +147,7 @@ void retro_run(void)
     Libretro::Audio::Init();
 
     while (!Core::IsRunning(system))
-      Common::SleepCurrentThread(100);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
   if (Config::Get(Config::MAIN_GFX_BACKEND) == "OGL")
@@ -187,16 +187,10 @@ void retro_run(void)
   RETRO_PERFORMANCE_INIT(dolphin_main_func);
   RETRO_PERFORMANCE_START(dolphin_main_func);
 
-  AsyncRequests::GetInstance()->SetEnable(true);
-  AsyncRequests::GetInstance()->SetPassthrough(false);
-
-  Core::DoFrameStep(system);
-  system.GetFifo().RunGpuLoop();
-
-  if (!system.GetFifo().UseDeterministicGPUThread())
+  if (system.IsDualCoreMode())
   {
-    AsyncRequests::GetInstance()->SetEnable(false);
-    AsyncRequests::GetInstance()->SetPassthrough(true);
+    Core::DoFrameStep(system);
+    system.GetFifo().RunGpuLoop();
   }
 
   RETRO_PERFORMANCE_STOP(dolphin_main_func);
@@ -207,10 +201,17 @@ size_t retro_serialize_size(void)
   size_t size = 0;
 
   auto& system = Core::System::GetInstance();
+  AsyncRequests* ar = AsyncRequests::GetInstance();
   const Core::CPUThreadGuard guard(system);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(true);
 
   PointerWrap p((u8**)&size, sizeof(size_t), PointerWrap::Mode::Measure);
   State::DoState(system, p);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(false);
 
   return size;
 }
@@ -218,20 +219,34 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void* data, size_t size)
 {
   auto& system = Core::System::GetInstance();
+  AsyncRequests* ar = AsyncRequests::GetInstance();
   const Core::CPUThreadGuard guard(system);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(true);
 
   PointerWrap p((u8**)&data, size, PointerWrap::Mode::Write);
   State::DoState(system, p);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(false);
 
   return true;
 }
 bool retro_unserialize(const void* data, size_t size)
 {
   auto& system = Core::System::GetInstance();
+  AsyncRequests* ar = AsyncRequests::GetInstance();
   const Core::CPUThreadGuard guard(system);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(true);
 
   PointerWrap p((u8**)&data, size, PointerWrap::Mode::Read);
   State::DoState(system, p);
+
+  if (system.IsDualCoreMode())
+    ar->SetPassthrough(false);
 
   return true;
 }
@@ -263,8 +278,7 @@ void* retro_get_memory_data(unsigned id)
 {
   if (id == RETRO_MEMORY_SYSTEM_RAM)
   {
-    std::span<u8> span = Core::System::GetInstance().GetMemory().GetSpanForAddress(0);
-    return span.data();
+    return Core::System::GetInstance().GetMemory().GetRAM();
   }
   return NULL;
 }
