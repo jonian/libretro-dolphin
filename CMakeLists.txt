@@ -30,6 +30,10 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_CURRENT_SOURCE_DIR}/CMake/FlagsOverr
 
 project(dolphin-emu)
 
+if (CMAKE_VERSION VERSION_LESS "3.25" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
+  set(LINUX TRUE)
+endif()
+
 if (MSVC)
   if (POLICY CMP0117)
     # cmake is a weird language. You can't do if(not POLICY)
@@ -120,7 +124,6 @@ option(ENCODE_FRAMEDUMPS "Encode framedumps in AVI format" ON)
 
 option(ENABLE_GPROF "Enable gprof profiling (must be using Debug build)" OFF)
 option(FASTLOG "Enable all logs" OFF)
-option(OPROFILING "Enable profiling" OFF)
 
 if (MSVC)
    set(CMAKE_CXX_FLAGS_DEBUG   "/MTd")
@@ -175,6 +178,7 @@ list(APPEND CMAKE_MODULE_PATH
 # Support functions
 include(CheckAndAddFlag)
 include(CheckCCompilerFlag)
+include(CheckSymbolExists)
 include(DolphinCompileDefinitions)
 include(DolphinDisableWarningsMSVC)
 include(DolphinLibraryTools)
@@ -589,16 +593,6 @@ if(ENCODE_FRAMEDUMPS)
   endif()
 endif()
 
-if(OPROFILING)
-  find_package(OProfile)
-  if(OPROFILE_FOUND)
-    message(STATUS "OProfile found, enabling profiling support")
-    add_definitions(-DUSE_OPROFILE=1)
-  else()
-    message(FATAL_ERROR "OProfile not found. Can't build profiling support.")
-  endif()
-endif()
-
 if(ENABLE_HWDB)
   find_package(LIBUDEV REQUIRED)
   if(LIBUDEV_FOUND)
@@ -676,7 +670,9 @@ dolphin_find_optional_system_library_pkgconfig(FMT
 
 add_subdirectory(Externals/imgui)
 add_subdirectory(Externals/implot)
-add_subdirectory(Externals/glslang)
+
+dolphin_find_optional_system_library(glslang Externals/glslang DOLPHIN_TRY_VERSIONS 15 16)
+
 # SPIRV-Cross is used on Windows for GLSL to HLSL conversion for the Direct3D 11 and Direct3D 12
 # video backends, and on Apple devices for the Metal video backend.
 if(WIN32 OR APPLE)
@@ -762,11 +758,13 @@ dolphin_find_optional_system_library(MBEDTLS Externals/mbedtls 2.28)
 
 dolphin_find_optional_system_library(CURL Externals/curl)
 
-if(NOT ANDROID)
-  dolphin_find_optional_system_library(Iconv Externals/libiconv-1.14)
-else()
-  message(STATUS "Using static iconv from Externals")
-  add_subdirectory(Externals/libiconv-1.14 EXCLUDE_FROM_ALL)
+if(NOT WIN32)
+  if(NOT ANDROID)
+    dolphin_find_optional_system_library(Iconv Externals/libiconv 1.14)
+  else()
+    message(STATUS "Using static iconv from Externals")
+    add_subdirectory(Externals/libiconv EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 if(NOT ANDROID)
@@ -783,7 +781,7 @@ if(NOT ENABLE_QT)
   set(USE_MGBA 0)
 endif()
 if(USE_MGBA)
-  dolphin_find_optional_system_library(LIBMGBA Externals/mGBA)
+  dolphin_find_optional_system_library(LIBMGBA Externals/mGBA 0.11)
 endif()
 
 find_package(SYSTEMD)
@@ -812,6 +810,10 @@ if (USE_RETRO_ACHIEVEMENTS)
 endif()
 
 add_subdirectory(Externals/watcher)
+
+if(WIN32 OR LINUX)
+  add_subdirectory(Externals/cpp-ipc)
+endif()
 
 ########################################
 # Pre-build events: Define configuration variables and write SCM info header
