@@ -192,6 +192,10 @@ void retro_run(void)
     Core::DoFrameStep(system);
     system.GetFifo().RunGpuLoop();
   }
+  else
+  {
+    system.GetCPU().RunSingleFrame();
+  }
 
   RETRO_PERFORMANCE_STOP(dolphin_main_func);
 }

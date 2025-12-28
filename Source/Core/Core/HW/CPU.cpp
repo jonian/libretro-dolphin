@@ -22,6 +22,9 @@
 #include "Core/System.h"
 #include "Core/TimePlayed.h"
 #include "VideoCommon/Fifo.h"
+#ifdef __LIBRETRO__
+#include "VideoCommon/AsyncRequests.h"
+#endif
 
 namespace CPU
 {
@@ -220,6 +223,22 @@ void CPUManager::Run()
   state_lock.unlock();
   Host_UpdateDisasmDialog();
 }
+
+#ifdef __LIBRETRO__
+void CPUManager::RunSingleFrame()
+{
+  auto& system = Core::System::GetInstance();
+  auto& power_pc = system.GetPowerPC();
+
+  Core::HostDispatchJobs(system);
+  Core::SetFrameStepState(true);
+
+  SetState(system, Core::State::Running, false, true);
+  power_pc.RunLoop();
+
+  AsyncRequests::GetInstance()->PullEvents();
+}
+#endif
 
 // Requires holding m_state_change_lock
 void CPUManager::RunAdjacentSystems(bool running)

@@ -403,6 +403,10 @@ static void CpuThread(Core::System& system, const std::optional<std::string>& sa
     }
   }
 
+#ifdef __LIBRETRO__
+  if (!system.IsDualCoreMode())
+    return;
+#endif
   // Enter CPU run loop. When we leave it - we are done.
   system.GetCPU().Run();
 
@@ -729,7 +733,17 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
 void RunEmuThread(WindowSystemInfo wsi)
 {
   auto& system = Core::System::GetInstance();
-  s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(s_boot_params), wsi);
+
+  if (system.IsDualCoreMode())
+    s_emu_thread = std::thread(EmuThread, std::ref(system), std::move(s_boot_params), wsi);
+  else
+    EmuThread(std::ref(system), std::move(s_boot_params), wsi);
+}
+
+void SetFrameStepState(bool value)
+{
+  s_stop_frame_step.store(!value);
+  s_frame_step = value;
 }
 #endif
 

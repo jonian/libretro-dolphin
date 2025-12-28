@@ -52,6 +52,10 @@ public:
   // To be called by the CPU Thread.
   void Run();
 
+#ifdef __LIBRETRO__
+  void RunSingleFrame();
+#endif
+
   // Causes shutdown
   // Once started, State::PowerDown cannot be stopped.
   // Synchronizes with the CPU Thread (waits for CPU::Run to exit).

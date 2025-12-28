@@ -145,6 +145,7 @@ bool WantsDeterminism();
 
 #ifdef __LIBRETRO__
 void RunEmuThread(WindowSystemInfo wsi);
+void SetFrameStepState(bool value);
 #endif
 
 // SetState can't be called by the CPU thread, but can be called by any thread that isn't launched

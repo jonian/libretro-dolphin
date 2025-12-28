@@ -99,7 +99,7 @@ bool retro_load_game(const struct retro_game_info* game)
   Config::SetBase(Config::MAIN_DSP_JIT, Libretro::Options::DSPEnableJIT);
   Config::SetBase(Config::MAIN_CPU_CORE, Libretro::Options::cpu_core);
   Config::SetBase(Config::MAIN_GC_LANGUAGE, (int)(DiscIO::Language)Libretro::Options::Language - 1);
-  Config::SetBase(Config::MAIN_CPU_THREAD, true);
+  Config::SetBase(Config::MAIN_CPU_THREAD, Libretro::Options::mainCpuThread);
   Config::SetBase(Config::MAIN_OVERCLOCK, Libretro::Options::cpuClockRate);
   Config::SetBase(Config::MAIN_OVERCLOCK_ENABLE, Libretro::Options::cpuClockRate != 1.0);
   Config::SetBase(Config::MAIN_AUDIO_BACKEND, BACKEND_NULLSOUND);
