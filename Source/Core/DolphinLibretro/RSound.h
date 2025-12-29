@@ -11,9 +11,9 @@
 class RSoundStream final : public SoundStream
 {
 public:
-  RSoundStream() : SoundStream(Libretro::Audio::GetSampleRate()) {}
   bool Init() override
   {
+    GetMixer()->SetSampleRate(Libretro::Audio::GetSampleRate());
     return true;
   }
   bool SetRunning(bool running) override

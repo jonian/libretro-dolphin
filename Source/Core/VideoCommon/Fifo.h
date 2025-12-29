@@ -73,7 +73,9 @@ public:
   void GpuMaySleep();
   void RunGpuLoop();
   void ExitGpuLoop();
+#ifdef __LIBRETRO__
   void StopGpuLoop();
+#endif
   void EmulatorState(bool running);
   void ResetVideoBuffer();
 

@@ -64,10 +64,12 @@ void RefreshConfig()
 
 namespace WiimoteCommon
 {
+#ifdef __LIBRETRO__
 void SetSource(unsigned int index, WiimoteSource source)
 {
   OnSourceChanged(index, source);
 }
+#endif
 
 void UpdateSource(unsigned int index)
 {

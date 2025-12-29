@@ -13,7 +13,9 @@
 #include "Common/Buffer.h"
 #include "Common/CommonTypes.h"
 
+#ifdef __LIBRETRO__
 class PointerWrap;
+#endif
 
 namespace Core
 {
@@ -108,7 +110,9 @@ void Load(Core::System& system, int slot);
 void SaveAs(Core::System& system, const std::string& filename, bool wait = false);
 void LoadAs(Core::System& system, const std::string& filename);
 
+#ifdef __LIBRETRO__
 void DoState(Core::System& system, PointerWrap& p);
+#endif
 void SaveToBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
 void LoadFromBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
 

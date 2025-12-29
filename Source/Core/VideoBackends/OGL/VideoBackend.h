@@ -23,6 +23,7 @@ public:
 
   static constexpr const char* CONFIG_NAME = "OGL";
 
+private:
   bool InitializeGLExtensions(GLContext* context);
   bool FillBackendInfo(GLContext* context);
 };

@@ -34,7 +34,7 @@ static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view
 {
 #ifdef __LIBRETRO__
   return std::make_unique<RSoundStream>();
-#else
+#endif
   if (backend == BACKEND_CUBEB && CubebStream::IsValid())
     return std::make_unique<CubebStream>();
   else if (backend == BACKEND_OPENAL && OpenALStream::IsValid())
@@ -50,7 +50,6 @@ static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view
   else if (backend == BACKEND_WASAPI && WASAPIStream::IsValid())
     return std::make_unique<WASAPIStream>();
   return {};
-#endif
 }
 
 void InitSoundStream(Core::System& system)
@@ -202,7 +201,7 @@ void SetSoundStreamRunning(Core::System& system, bool running)
 
 void SendAIBuffer(Core::System& system, const short* samples, unsigned int num_samples)
 {
-  SoundStream* sound_stream = system.GetSoundStream();
+  const SoundStream* const sound_stream = system.GetSoundStream();
 
   if (!sound_stream)
     return;
@@ -217,7 +216,9 @@ void SendAIBuffer(Core::System& system, const short* samples, unsigned int num_s
   if (mixer && samples)
   {
     mixer->PushSamples(samples, num_samples);
-    sound_stream->Update(num_samples);
+#ifdef __LIBRETRO__
+    const_cast<SoundStream*>(sound_stream)->Update(num_samples);
+#endif
   }
 }
 

@@ -55,7 +55,9 @@ namespace WiimoteCommon
 {
 class HIDWiimote;
 
+#ifdef __LIBRETRO__
 void SetSource(unsigned int index, WiimoteSource source);
+#endif
 
 // Used to reconnect WiimoteDevice instance to HID source.
 // Must be run from CPU thread.

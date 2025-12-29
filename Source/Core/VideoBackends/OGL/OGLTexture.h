@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "Common/GL/GLUtil.h"
+#ifdef __LIBRETRO__
 #include "Common/GL/GLExtensions/GLExtensions.h"
+#endif
 
 #include "VideoCommon/AbstractFramebuffer.h"
 #include "VideoCommon/AbstractStagingTexture.h"
@@ -113,7 +115,9 @@ public:
          std::vector<AbstractTexture*> additional_color_attachments);
 
   GLuint GetFBO() const { return m_fbo; }
+#ifdef __LIBRETRO__
   void SetFBO(GLuint fbo) { m_fbo = fbo; }
+#endif
 
   // Used for updating the dimensions of the system/window framebuffer.
   void UpdateDimensions(u32 width, u32 height);

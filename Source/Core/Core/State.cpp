@@ -135,6 +135,9 @@ void EnableCompression(bool compression)
   s_use_compression = compression;
 }
 
+#ifndef __LIBRETRO__
+static
+#endif
 void DoState(Core::System& system, PointerWrap& p)
 {
   bool is_wii = system.IsWii() || system.IsMIOS();

@@ -9,7 +9,11 @@ class SWOGLWindow;
 
 namespace SW
 {
+#ifdef __LIBRETRO__
 class SWGfx : public AbstractGfx
+#else
+class SWGfx final : public AbstractGfx
+#endif
 {
 public:
   explicit SWGfx(std::unique_ptr<SWOGLWindow> window);

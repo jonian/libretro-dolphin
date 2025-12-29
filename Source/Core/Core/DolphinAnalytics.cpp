@@ -261,7 +261,7 @@ bool DolphinAnalytics::ShouldStartPerformanceSampling()
 {
 #ifdef __LIBRETRO__
   return false;
-#else
+#endif
   if (Common::Timer::NowUs() < m_sampling_next_start_us)
     return false;
 
@@ -270,7 +270,6 @@ bool DolphinAnalytics::ShouldStartPerformanceSampling()
       Common::Random::GenerateValue<u64>() % (PERFORMANCE_SAMPLING_WAIT_TIME_JITTER_SECS * 1000000);
   m_sampling_next_start_us = Common::Timer::NowUs() + wait_us;
   return true;
-#endif
 }
 
 void DolphinAnalytics::MakeBaseBuilder()

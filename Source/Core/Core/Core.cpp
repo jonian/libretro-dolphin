@@ -92,7 +92,9 @@
 #include "VideoCommon/PerformanceMetrics.h"
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoEvents.h"
+#ifdef __LIBRETRO__
 #include "VideoCommon/Present.h"
+#endif
 
 namespace Core
 {

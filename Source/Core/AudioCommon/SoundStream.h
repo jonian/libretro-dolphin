@@ -14,13 +14,15 @@ protected:
   std::unique_ptr<Mixer> m_mixer;
 
 public:
-  SoundStream(unsigned int backendSampleRate = 48000) : m_mixer(new Mixer(backendSampleRate)) {}
+  SoundStream() : m_mixer(new Mixer(48000)) {}
   virtual ~SoundStream() {}
   static bool IsValid() { return false; }
   Mixer* GetMixer() const { return m_mixer.get(); }
   virtual bool Init() { return false; }
   virtual void SetVolume(int) {}
-  virtual void Update(unsigned int num_samples) {}
   // Returns true if successful.
   virtual bool SetRunning(bool running) { return false; }
+#ifdef __LIBRETRO__
+  virtual void Update(unsigned int num_samples) {}
+#endif
 };

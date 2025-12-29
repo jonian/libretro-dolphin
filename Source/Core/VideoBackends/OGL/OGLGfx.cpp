@@ -726,10 +726,12 @@ void OGLGfx::RestoreFramebufferBinding()
       m_current_framebuffer ? static_cast<OGLFramebuffer*>(m_current_framebuffer)->GetFBO() : 0);
 }
 
+#ifdef __LIBRETRO__
 void OGLGfx::SetSystemFrameBuffer(GLuint fbo)
 {
   m_system_framebuffer->SetFBO(fbo);
 }
+#endif
 
 SurfaceInfo OGLGfx::GetSurfaceInfo() const
 {

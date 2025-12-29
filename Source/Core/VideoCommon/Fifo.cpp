@@ -135,10 +135,12 @@ void FifoManager::ExitGpuLoop()
   m_gpu_mainloop.Stop(Common::BlockingLoop::StopMode::NonBlock);
 }
 
+#ifdef __LIBRETRO__
 void FifoManager::StopGpuLoop()
 {
   m_gpu_mainloop.Stop(Common::BlockingLoop::StopMode::NonBlock);
 }
+#endif
 
 void FifoManager::EmulatorState(bool running)
 {
