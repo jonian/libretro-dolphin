@@ -26,6 +26,7 @@
 #include "DolphinLibretro/Options.h"
 #include "DolphinLibretro/Audio.h"
 #include "DolphinLibretro/Video.h"
+#include "DolphinLibretro/RSound.h"
 #include "VideoBackends/OGL/OGLTexture.h"
 #include "VideoBackends/OGL/OGLGfx.h"
 #include "VideoCommon/AsyncRequests.h"
@@ -195,6 +196,11 @@ void retro_run(void)
   else
   {
     system.GetCPU().RunSingleFrame();
+  }
+
+  auto* sound_stream = static_cast<RSoundStream*>(system.GetSoundStream());
+  if (sound_stream) {
+    sound_stream->Render(Libretro::Audio::GetSamplesPerFrame());
   }
 
   RETRO_PERFORMANCE_STOP(dolphin_main_func);

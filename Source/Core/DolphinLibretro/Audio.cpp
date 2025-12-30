@@ -15,6 +15,7 @@ namespace Libretro
 namespace Audio
 {
 retro_audio_sample_batch_t batch_cb;
+unsigned int num_samples;
 
 unsigned int GetSampleRate()
 {
@@ -28,6 +29,19 @@ unsigned int GetSampleRate()
   return 48043;
 }
 
+unsigned int GetSamplesPerFrame()
+{
+  if (!num_samples)
+  {
+    if (retro_get_region() == RETRO_REGION_NTSC)
+      num_samples = GetSampleRate() / 60;
+    else
+      num_samples = GetSampleRate() / 50;
+  }
+
+  return num_samples;
+}
+
 void Init()
 {
   auto& system = Core::System::GetInstance();
@@ -38,6 +52,8 @@ void Shutdown()
 {
   g_sound_stream = nullptr;
   delete g_sound_stream;
+
+  num_samples = 0;
 }
 
 }  // namespace Audio

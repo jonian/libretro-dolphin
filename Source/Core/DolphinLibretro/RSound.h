@@ -22,6 +22,16 @@ public:
   }
   void Update(unsigned int num_samples) override
   {
+    if (Libretro::Options::audioCallback == 0)
+      MixAndPush(num_samples);
+  }
+  void Render(unsigned int num_samples)
+  {
+    if (Libretro::Options::audioCallback == 1)
+      MixAndPush(num_samples);
+  }
+  void MixAndPush(unsigned int num_samples)
+  {
     unsigned int available = num_samples;
     while (available > MAX_SAMPLES)
     {
@@ -37,6 +47,6 @@ public:
   }
 
 private:
-  static constexpr unsigned int MAX_SAMPLES = 512;
+  static constexpr unsigned int MAX_SAMPLES = 1024;
   s16 m_buffer[MAX_SAMPLES * 2];
 };

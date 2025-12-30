@@ -228,6 +228,8 @@ Option<u32> sensorBarPosition("dolphin_sensor_bar_position", "Sensor Bar Positio
                               {"Bottom", "Top"});
 Option<bool> WiimoteContinuousScanning("dolphin_wiimote_continuous_scanning", "Wiimote Continuous Scanning", false);
 Option<bool> altGCPorts("dolphin_alt_gc_ports_on_wii", "Use ports 5-8 for GameCube controllers in Wii mode", false);
+Option<int> audioCallback("dolphin_audio_callback_method", "Audio Callback",
+                                    {"Dolphin", "Per Frame"});
 Option<unsigned int> audioMixerRate("dolphin_mixer_rate", "Audio Mixer Rate",
                                     {{"32000", 32000u}, {"48000", 48000u}});
 Option<bool> DSPHLE("dolphin_dsp_hle", "DSP HLE", true);
