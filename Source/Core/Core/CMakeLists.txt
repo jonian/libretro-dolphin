@@ -123,8 +123,6 @@ add_library(core
   FifoPlayer/FifoPlayer.h
   FifoPlayer/FifoRecorder.cpp
   FifoPlayer/FifoRecorder.h
-  FreeLookConfig.cpp
-  FreeLookConfig.h
   FreeLookManager.cpp
   FreeLookManager.h
   GeckoCode.cpp
@@ -183,6 +181,8 @@ add_library(core
   HW/DSPLLE/DSPSymbols.h
   HW/DVD/DVDInterface.cpp
   HW/DVD/DVDInterface.h
+  HW/DVD/AMMediaboard.cpp
+  HW/DVD/AMMediaboard.h
   HW/DVD/DVDMath.cpp
   HW/DVD/DVDMath.h
   HW/DVD/DVDThread.cpp
@@ -254,6 +254,12 @@ add_library(core
   HW/HSP/HSP_DeviceNull.h
   HW/HW.cpp
   HW/HW.h
+  HW/MagCard/C1231BR.cpp
+  HW/MagCard/C1231BR.h
+  HW/MagCard/C1231LR.cpp
+  HW/MagCard/C1231LR.h
+  HW/MagCard/MagneticCardReader.cpp
+  HW/MagCard/MagneticCardReader.h
   HW/Memmap.cpp
   HW/Memmap.h
   HW/MemoryInterface.cpp
@@ -276,6 +282,8 @@ add_library(core
   HW/SI/SI_DeviceGCSteeringWheel.h
   HW/SI/SI_DeviceKeyboard.cpp
   HW/SI/SI_DeviceKeyboard.h
+  HW/SI/SI_DeviceAMBaseboard.cpp
+  HW/SI/SI_DeviceAMBaseboard.h
   HW/SI/SI_DeviceNull.cpp
   HW/SI/SI_DeviceNull.h
   HW/SI/SI.cpp
@@ -652,7 +660,6 @@ PUBLIC
   inputcommon
   MbedTLS::mbedtls
   pugixml
-  RangeSet::RangeSet
   sfml-network
   videonull
   videoogl
@@ -801,7 +808,7 @@ if(UNIX)
   )
 endif()
 
-if(WIN32 OR LINUX)
+if(TARGET cpp-ipc::ipc)
   target_sources(core PRIVATE HW/EXI/BBA/IPC.cpp)
   target_link_libraries(core PRIVATE cpp-ipc::ipc)
 endif()

@@ -10,7 +10,6 @@
 #include <string>
 #include <type_traits>
 
-#include "Common/Buffer.h"
 #include "Common/CommonTypes.h"
 
 #ifdef __LIBRETRO__
@@ -85,12 +84,7 @@ struct StateExtendedHeader
 };
 
 void Init(Core::System& system);
-
 void Shutdown();
-
-void EnableCompression(bool compression);
-
-bool ReadHeader(const std::string& filename, StateHeader& header);
 
 // Returns a string containing information of the savestate in the given slot
 // which can be presented to the user for identification purposes
@@ -101,20 +95,16 @@ u64 GetUnixTimeOfSlot(int slot);
 
 // These don't happen instantly - they get scheduled as events.
 // ...But only if we're not in the main CPU thread.
-//    If we're in the main CPU thread then they run immediately instead
-//    because some things (like Lua) need them to run immediately.
-// Slots from 0-99.
-void Save(Core::System& system, int slot, bool wait = false);
+//    If we're in the main CPU thread then they run immediately instead.
+void Save(Core::System& system, int slot);
 void Load(Core::System& system, int slot);
 
-void SaveAs(Core::System& system, const std::string& filename, bool wait = false);
-void LoadAs(Core::System& system, const std::string& filename);
+void SaveAs(Core::System& system, std::string filename);
+void LoadAs(Core::System& system, std::string filename);
 
 #ifdef __LIBRETRO__
 void DoState(Core::System& system, PointerWrap& p);
 #endif
-void SaveToBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
-void LoadFromBuffer(Core::System& system, Common::UniqueBuffer<u8>& buffer);
 
 void LoadLastSaved(Core::System& system, int i = 1);
 void SaveFirstSaved(Core::System& system);

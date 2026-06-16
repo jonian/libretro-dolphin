@@ -377,7 +377,7 @@ ID3D11SamplerState* StateCache::Get(SamplerState state)
   }
 
   ComPtr<ID3D11SamplerState> res;
-  HRESULT hr = D3D::device->CreateSamplerState(&sampdc, res.GetAddressOf());
+  HRESULT hr = D3D::device->CreateSamplerState(&sampdc, &res);
   ASSERT_MSG(VIDEO, SUCCEEDED(hr), "Creating D3D sampler state failed: {}", DX11HRWrap(hr));
   return m_sampler.emplace(state, std::move(res)).first->second.Get();
 }
@@ -411,7 +411,7 @@ ID3D11BlendState* StateCache::Get(BlendingState state)
     tdesc.LogicOp = logic_ops[u32(state.logic_mode.Value())];
 
     ComPtr<ID3D11BlendState1> res;
-    HRESULT hr = D3D::device1->CreateBlendState1(&desc, res.GetAddressOf());
+    HRESULT hr = D3D::device1->CreateBlendState1(&desc, &res);
     if (SUCCEEDED(hr))
     {
       return m_blend.emplace(state.hex, std::move(res)).first->second.Get();
@@ -454,7 +454,7 @@ ID3D11BlendState* StateCache::Get(BlendingState state)
   tdesc.BlendOpAlpha = state.subtract_alpha ? D3D11_BLEND_OP_REV_SUBTRACT : D3D11_BLEND_OP_ADD;
 
   ComPtr<ID3D11BlendState> res;
-  HRESULT hr = D3D::device->CreateBlendState(&desc, res.GetAddressOf());
+  HRESULT hr = D3D::device->CreateBlendState(&desc, &res);
   ASSERT_MSG(VIDEO, SUCCEEDED(hr), "Creating D3D blend state failed: {}", DX11HRWrap(hr));
   return m_blend.emplace(state.hex, std::move(res)).first->second.Get();
 }
@@ -475,7 +475,7 @@ ID3D11RasterizerState* StateCache::Get(RasterizationState state)
   desc.ScissorEnable = TRUE;
 
   ComPtr<ID3D11RasterizerState> res;
-  HRESULT hr = D3D::device->CreateRasterizerState(&desc, res.GetAddressOf());
+  HRESULT hr = D3D::device->CreateRasterizerState(&desc, &res);
   ASSERT_MSG(VIDEO, SUCCEEDED(hr), "Creating D3D rasterizer state failed: {}", DX11HRWrap(hr));
   return m_raster.emplace(state.hex, std::move(res)).first->second.Get();
 }
@@ -517,7 +517,7 @@ ID3D11DepthStencilState* StateCache::Get(DepthState state)
   }
 
   ComPtr<ID3D11DepthStencilState> res;
-  HRESULT hr = D3D::device->CreateDepthStencilState(&depthdc, res.GetAddressOf());
+  HRESULT hr = D3D::device->CreateDepthStencilState(&depthdc, &res);
   ASSERT_MSG(VIDEO, SUCCEEDED(hr), "Creating D3D depth stencil state failed: {}", DX11HRWrap(hr));
   return m_depth.emplace(state.hex, std::move(res)).first->second.Get();
 }

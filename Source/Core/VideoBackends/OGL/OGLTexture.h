@@ -8,10 +8,7 @@
 #include <string_view>
 #include <vector>
 
-#include "Common/GL/GLUtil.h"
-#ifdef __LIBRETRO__
 #include "Common/GL/GLExtensions/GLExtensions.h"
-#endif
 
 #include "VideoCommon/AbstractFramebuffer.h"
 #include "VideoCommon/AbstractStagingTexture.h"
