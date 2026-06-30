@@ -112,6 +112,11 @@ bool Host_UIBlocksControllerState()
   return false;
 }
 
+std::unique_ptr<GBAHostInterface> Host_CreateGBAHost(std::weak_ptr<HW::GBA::Core> core)
+{
+  return nullptr;
+}
+
 #ifdef __ANDROID__
 
 namespace GCAdapter
