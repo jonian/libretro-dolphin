@@ -56,7 +56,7 @@ public:
 
   libusb_context* GetContext() const { return m_context; }
 
-  int GetDeviceList(GetDeviceListCallback callback) const
+  int GetDeviceList(const GetDeviceListCallback& callback) const
   {
     std::lock_guard lock{m_device_list_mutex};
 
@@ -117,9 +117,9 @@ bool Context::IsValid() const
   return m_impl->GetContext() != nullptr;
 }
 
-int Context::GetDeviceList(GetDeviceListCallback callback) const
+int Context::GetDeviceList(const GetDeviceListCallback& callback) const
 {
-  return m_impl->GetDeviceList(std::move(callback));
+  return m_impl->GetDeviceList(callback);
 }
 
 #ifdef __LIBRETRO__

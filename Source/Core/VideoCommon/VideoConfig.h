@@ -33,8 +33,8 @@ enum class AspectMode : int
 enum class StereoMode : int
 {
   Off,
-  SBS,
-  TAB,
+  SideBySide,
+  TopAndBottom,
   Anaglyph,
   QuadBuffer,
   Passive
@@ -206,7 +206,12 @@ struct VideoConfig final
   float widescreen_heuristic_aspect_ratio_slop = 0.f;
   float widescreen_heuristic_standard_ratio = 0.f;
   float widescreen_heuristic_widescreen_ratio = 0.f;
-  bool bCrop = false;  // Aspect ratio controls.
+  bool bCropToAspectRatio = false;
+  bool bCropCustom = false;
+  int iCropCustomLeft = 0;
+  int iCropCustomTop = 0;
+  int iCropCustomRight = 0;
+  int iCropCustomBottom = 0;
   bool bShaderCache = false;
 
   // Enhancements
@@ -245,6 +250,7 @@ struct VideoConfig final
 
   // Information
   bool bShowFPS = false;
+  bool bShowInternalResolution = false;
   bool bShowFTimes = false;
   bool bShowVPS = false;
   bool bShowVTimes = false;
@@ -364,7 +370,8 @@ struct VideoConfig final
   }
   bool UseGPUTextureDecoding() const
   {
-    return g_backend_info.bSupportsGPUTextureDecoding && bEnableGPUTextureDecoding;
+    return g_backend_info.bSupportsGPUTextureDecoding && bEnableGPUTextureDecoding &&
+           !bArbitraryMipmapDetection;
   }
   bool UseVertexRounding() const { return bVertexRounding && iEFBScale != 1; }
   bool ManualTextureSamplingWithCustomTextureSizes() const
